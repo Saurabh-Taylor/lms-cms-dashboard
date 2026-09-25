@@ -76,7 +76,7 @@ export function AnnouncementActions() {
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}><MegaphoneIcon /> New announcement</Button>
+      <Button size="sm" onClick={() => setOpen(true)}><MegaphoneIcon className="group-hover/button:translate-x-0.5" /> New announcement</Button>
       <CreateDialog open={open} onOpenChange={setOpen} />
     </>
   );

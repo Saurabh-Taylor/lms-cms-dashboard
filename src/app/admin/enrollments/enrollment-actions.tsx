@@ -14,7 +14,7 @@ export function EnrollmentActions({ openBulk }: { openBulk: boolean }) {
         <UsersIcon /> Bulk enroll
       </Button>
       <Button size="sm" onClick={() => setSingle(true)}>
-        <PlusIcon /> New enrollment
+        <PlusIcon className="group-hover/button:translate-x-0.5" /> New enrollment
       </Button>
       <SingleEnrollDialog open={single} onOpenChange={setSingle} />
       <BulkEnrollDialog open={bulk} onOpenChange={setBulk} />

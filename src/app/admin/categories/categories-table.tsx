@@ -62,7 +62,7 @@ export function CategoryActions() {
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon /> New category</Button>
+      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon className="group-hover/button:translate-x-0.5" /> New category</Button>
       <CategoryDialog open={open} onOpenChange={setOpen} />
     </>
   );

@@ -29,9 +29,11 @@ export function StatusBadge({ value, className }: { value: string; className?: s
   return (
     <Badge
       variant="outline"
-      className={cn("capitalize font-medium", STYLES[value] ?? "bg-muted text-muted-foreground border-border", className)}
+      className={cn("capitalize font-medium transition-colors duration-(--duration-fast)", STYLES[value] ?? "bg-muted text-muted-foreground border-border", className)}
     >
-      {value.replace(/-/g, " ")}
+      <span key={value} className="animate-in fade-in zoom-in-95 duration-(--duration-normal)">
+        {value.replace(/-/g, " ")}
+      </span>
     </Badge>
   );
 }

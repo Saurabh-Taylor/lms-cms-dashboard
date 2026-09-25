@@ -201,7 +201,7 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
         emptyDescription={st.q || Object.keys(st.filters).length ? "Try adjusting your search or filters." : "No courses have been created yet."}
         emptyAction={
           <Button size="sm" onClick={() => setFormOpen(true)}>
-            <PlusIcon /> Create course
+            <PlusIcon className="group-hover/button:translate-x-0.5" /> Create course
           </Button>
         }
         toolbar={

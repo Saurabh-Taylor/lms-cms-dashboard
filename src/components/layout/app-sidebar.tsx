@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GraduationCapIcon } from "lucide-react";
@@ -29,7 +30,8 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="gap-1">
+      <SidebarContent className="relative gap-1">
+        <ActiveNavIndicator />
         {NAV.map((group, gi) => {
           const items = group.items.filter(
             (i) => !i.permission || can(CURRENT_ROLE, i.permission)
@@ -53,7 +55,7 @@ export function AppSidebar() {
                           render={<Link href={item.href as never} />}
                           isActive={active}
                           tooltip={item.title}
-                          className="h-7 gap-2.5 px-2 text-[13px] text-sidebar-foreground/80 transition-colors duration-100 hover:text-sidebar-foreground data-active:font-medium data-active:text-sidebar-foreground data-active:shadow-[inset_2px_0_0_0_var(--color-sidebar-primary)] [&_svg]:text-sidebar-foreground/50 data-active:[&_svg]:text-sidebar-primary"
+                          className="h-7 gap-2.5 px-2 text-[13px] text-sidebar-foreground/80 transition-colors duration-(--duration-fast) hover:text-sidebar-foreground data-active:bg-transparent data-active:font-medium data-active:text-sidebar-foreground [&_svg]:text-sidebar-foreground/50 data-active:[&_svg]:text-sidebar-primary [&>span]:transition-opacity [&>span]:duration-(--duration-fast) group-data-[collapsible=icon]:[&>span]:opacity-0"
                         >
                           <item.icon />
                           <span>{item.title}</span>
@@ -69,5 +71,57 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
+  );
+}
+
+/**
+ * Sliding selection layer that glides to whichever nav item is active.
+ * Measures the active SidebarMenuButton inside SidebarContent and animates
+ * top/height between nav targets; hidden until measured.
+ */
+function ActiveNavIndicator() {
+  const pathname = usePathname();
+  const pillRef = React.useRef<HTMLDivElement>(null);
+  const [rect, setRect] = React.useState<{
+    top: number; left: number; width: number; height: number;
+  } | null>(null);
+
+  React.useLayoutEffect(() => {
+    const container = pillRef.current?.parentElement;
+    if (!container) return;
+    const measure = () => {
+      const el = container.querySelector<HTMLElement>(
+        '[data-slot="sidebar-menu-button"][data-active]'
+      );
+      if (!el) return setRect(null);
+      const cr = container.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      setRect({
+        top: r.top - cr.top + container.scrollTop,
+        left: r.left - cr.left,
+        width: r.width,
+        height: r.height,
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [pathname]);
+
+  return (
+    <div
+      ref={pillRef}
+      aria-hidden
+      className="pointer-events-none absolute top-0 left-0 z-0 rounded-md bg-sidebar-accent transition-[transform,width,height,opacity] duration-(--duration-moderate) ease-(--ease-standard)"
+      style={{
+        transform: `translate(${rect?.left ?? 0}px, ${rect?.top ?? 0}px)`,
+        width: rect?.width ?? 0,
+        height: rect?.height ?? 0,
+        opacity: rect ? 1 : 0,
+      }}
+    >
+      <span className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-full bg-sidebar-primary" />
+    </div>
   );
 }

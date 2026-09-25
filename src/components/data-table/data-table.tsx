@@ -9,7 +9,7 @@ import {
   type RowSelectionState,
 } from "@tanstack/react-table";
 import {
-  ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, Columns3Icon,
+  ArrowUpIcon, ChevronsUpDownIcon, Columns3Icon,
   ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon,
   AlertTriangleIcon, SearchSlashIcon,
 } from "lucide-react";
@@ -133,7 +133,7 @@ export function DataTable<T>({
       {(toolbar || selectedCount > 0) && (
         <div className="flex flex-wrap items-center gap-2">
           {selectedCount > 0 && bulkBar ? (
-            <>
+            <div className="flex flex-1 items-center gap-2 animate-in fade-in slide-in-from-left-1 duration-(--duration-normal)">
               <span className="text-sm text-muted-foreground tabular-nums">
                 {selectedCount} selected
               </span>
@@ -141,7 +141,7 @@ export function DataTable<T>({
               <Button variant="ghost" size="sm" onClick={() => onRowSelectionChange?.({})}>
                 Clear
               </Button>
-            </>
+            </div>
           ) : (
             <>
               {toolbar}
@@ -186,16 +186,19 @@ export function DataTable<T>({
                     <TableHead key={h.id} className={meta?.headerClassName}>
                       {h.isPlaceholder ? null : sortKey ? (
                         <button
-                          className="inline-flex items-center gap-1 font-medium text-inherit hover:text-foreground"
+                          className="group inline-flex items-center gap-1 font-medium text-inherit hover:text-foreground"
                           onClick={() => onSort(sortKey)}
                         >
                           {flexRender(h.column.columnDef.header, h.getContext())}
-                          {sorted === "asc" ? (
-                            <ArrowUpIcon className="size-3" />
-                          ) : sorted === "desc" ? (
-                            <ArrowDownIcon className="size-3" />
+                          {sorted ? (
+                            <ArrowUpIcon
+                              className={cn(
+                                "size-3 transition-transform duration-(--duration-fast)",
+                                sorted === "desc" && "rotate-180"
+                              )}
+                            />
                           ) : (
-                            <ChevronsUpDownIcon className="size-3 opacity-40" />
+                            <ChevronsUpDownIcon className="size-3 opacity-40 transition-opacity duration-(--duration-fast) group-hover:opacity-70" />
                           )}
                         </button>
                       ) : (
@@ -234,7 +237,7 @@ export function DataTable<T>({
             ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-48">
-                  <div className="flex flex-col items-center justify-center gap-2 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-center animate-in fade-in duration-(--duration-normal)">
                     <SearchSlashIcon className="size-5 text-muted-foreground/60" />
                     <p className="text-sm font-medium">{emptyTitle}</p>
                     {emptyDescription && (

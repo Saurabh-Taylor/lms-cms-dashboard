@@ -106,7 +106,7 @@ export function LabsActions() {
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon /> New lab</Button>
+      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon className="group-hover/button:translate-x-0.5" /> New lab</Button>
       <CreateLabDialog open={open} onOpenChange={setOpen} />
     </>
   );

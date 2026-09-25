@@ -35,8 +35,8 @@ export function SearchInput({
   }, [debounced]);
 
   return (
-    <div className={`relative ${className}`}>
-      <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className={`group relative ${className}`}>
+      <SearchIcon className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-colors duration-(--duration-fast) group-focus-within:text-foreground" />
       <Input
         value={local}
         onChange={(e) => setLocal(e.target.value)}

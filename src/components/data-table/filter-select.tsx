@@ -29,7 +29,8 @@ export function FilterSelect({
           size="sm"
           className={cn(
             className,
-            value ? "pr-6" : "text-muted-foreground",
+            "transition-[color,border-color,background-color] duration-(--duration-fast)",
+            value ? "pr-6 border-primary/40 text-foreground" : "text-muted-foreground",
           )}
         >
           <span className="flex-1 truncate text-left">
@@ -47,7 +48,7 @@ export function FilterSelect({
         <button
           type="button"
           aria-label={`Clear ${placeholder}`}
-          className="absolute right-6 text-muted-foreground hover:text-foreground"
+          className="absolute right-6 text-muted-foreground transition-colors duration-(--duration-instant) hover:text-foreground animate-in fade-in zoom-in-75"
           onClick={(e) => { e.stopPropagation(); onChange(undefined); }}
         >
           <XIcon className="size-3" />

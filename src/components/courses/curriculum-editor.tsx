@@ -13,7 +13,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import {
-  CheckIcon, ChevronDownIcon, ChevronRightIcon, CopyIcon, GripVerticalIcon,
+  CheckIcon, ChevronRightIcon, CopyIcon, GripVerticalIcon,
   PencilIcon, PlusIcon, Trash2Icon, FileTextIcon, VideoIcon, LinkIcon,
   CodeIcon, ClipboardListIcon, FlaskConicalIcon, FileIcon, FolderIcon,
 } from "lucide-react";
@@ -276,8 +276,8 @@ function SortableSection(props: {
         <button {...attributes} {...listeners} className="cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted" aria-label="Drag section">
           <GripVerticalIcon className="size-4" />
         </button>
-        <button onClick={onToggle} className="rounded p-1 text-muted-foreground hover:bg-muted" aria-label="Toggle section">
-          {collapsed ? <ChevronRightIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+        <button onClick={onToggle} className="rounded p-1 text-muted-foreground transition-colors duration-(--duration-fast) hover:bg-muted" aria-label="Toggle section">
+          <ChevronRightIcon className={cn("size-4 transition-transform duration-(--duration-fast)", !collapsed && "rotate-90")} />
         </button>
         {editing ? (
           <form

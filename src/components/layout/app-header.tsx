@@ -55,10 +55,16 @@ export function AppHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 {i === crumbs.length - 1 ? (
-                  <BreadcrumbPage className="capitalize">{c.label}</BreadcrumbPage>
+                  <BreadcrumbPage className="capitalize">
+                    <span key={c.label} className="inline-block animate-in fade-in slide-in-from-left-0.5 duration-(--duration-fast)">
+                      {c.label}
+                    </span>
+                  </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink render={<Link href={c.href as never} />} className="capitalize">
-                    {c.label}
+                    <span key={c.label} className="inline-block animate-in fade-in slide-in-from-left-0.5 duration-(--duration-fast)">
+                      {c.label}
+                    </span>
                   </BreadcrumbLink>
                 )}
               </BreadcrumbItem>

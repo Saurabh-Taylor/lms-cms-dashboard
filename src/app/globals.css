@@ -81,6 +81,14 @@
   --sidebar-accent-foreground: oklch(0.18 0 0);
   --sidebar-border: oklch(0.91 0 0);
   --sidebar-ring: oklch(0.62 0.18 264);
+  /* motion tokens */
+  --duration-instant: 80ms;
+  --duration-fast: 120ms;
+  --duration-normal: 160ms;
+  --duration-moderate: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 .dark {
@@ -116,6 +124,17 @@
   --sidebar-accent-foreground: oklch(0.96 0.005 264);
   --sidebar-border: oklch(1 0 0 / 7%);
   --sidebar-ring: oklch(0.66 0.18 264);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @layer base {

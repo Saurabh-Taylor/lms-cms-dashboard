@@ -19,7 +19,9 @@ export function StatCard({
           {loading ? (
             <Skeleton className="mt-1.5 h-7 w-20" />
           ) : (
-            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{value}</p>
+            <p key={String(value)} className="mt-1 text-2xl font-semibold tabular-nums tracking-tight animate-in fade-in slide-in-from-bottom-0.5 duration-(--duration-moderate)">
+              {value}
+            </p>
           )}
           {sub && !loading && (
             <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>

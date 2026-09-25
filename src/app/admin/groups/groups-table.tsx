@@ -39,7 +39,7 @@ export function GroupActions() {
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon /> New cohort</Button>
+      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon className="group-hover/button:translate-x-0.5" /> New cohort</Button>
       <CreateGroup open={open} onOpenChange={setOpen} />
     </>
   );

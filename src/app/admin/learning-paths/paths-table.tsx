@@ -44,7 +44,7 @@ export function PathActions() {
   const [open, setOpen] = React.useState(false);
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon /> New path</Button>
+      <Button size="sm" onClick={() => setOpen(true)}><PlusIcon className="group-hover/button:translate-x-0.5" /> New path</Button>
       <CreatePath open={open} onOpenChange={setOpen} />
     </>
   );

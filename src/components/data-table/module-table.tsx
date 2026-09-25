@@ -91,7 +91,7 @@ export function ModuleTable<T extends { id: number }>({
               <button
                 type="button"
                 onClick={clearFilters}
-                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                className="text-xs text-muted-foreground underline-offset-2 transition-colors duration-(--duration-fast) hover:text-foreground hover:underline animate-in fade-in slide-in-from-left-1"
               >
                 Clear filters
               </button>

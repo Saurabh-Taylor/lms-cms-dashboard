@@ -12,7 +12,7 @@ export function CoursesHeaderActions() {
   return (
     <>
       <Button size="sm" onClick={() => setOpen(true)}>
-        <PlusIcon /> New course
+        <PlusIcon className="group-hover/button:translate-x-0.5" /> New course
       </Button>
       <CourseFormDialog open={open} onOpenChange={setOpen} onCreated={(id) => router.push(`/admin/courses/${id}` as never)} />
     </>

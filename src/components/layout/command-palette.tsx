@@ -94,6 +94,17 @@ export function CommandPalette({
           </>
         )}
       </CommandList>
+      <div className="flex items-center gap-4 border-t px-3 py-2 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <kbd className="rounded border bg-muted px-1 font-medium">↑↓</kbd> Navigate
+        </span>
+        <span className="flex items-center gap-1.5">
+          <kbd className="rounded border bg-muted px-1 font-medium">↵</kbd> Open
+        </span>
+        <span className="flex items-center gap-1.5">
+          <kbd className="rounded border bg-muted px-1 font-medium">esc</kbd> Close
+        </span>
+      </div>
     </CommandDialog>
   );
 }
