@@ -22,7 +22,6 @@ interface EnrollResultResponse { succeeded: number; results: EnrollResult[] }
 export function LearnerActions({ user }: { user: { id: number; name: string; email: string; status: string } }) {
   const qc = useQueryClient();
   const [assignOpen, setAssignOpen] = React.useState(false);
-  const [assignLabOpen, setAssignLabOpen] = React.useState(false);
 
   const patch = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -37,7 +36,6 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
   return (
     <div className="flex items-center gap-2">
       <Button size="sm" variant="outline" onClick={() => setAssignOpen(true)}>Assign course</Button>
-      <Button size="sm" variant="outline" onClick={() => setAssignLabOpen(true)}>Assign lab</Button>
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" />}>
           <EllipsisIcon />
@@ -57,28 +55,23 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AssignDialog kind="courses" user={user} open={assignOpen} onOpenChange={setAssignOpen} />
-      <AssignDialog kind="labs" user={user} open={assignLabOpen} onOpenChange={setAssignLabOpen} />
+      <AssignDialog user={user} open={assignOpen} onOpenChange={setAssignOpen} />
     </div>
   );
 }
 
 function AssignDialog({
-  kind, user, open, onOpenChange,
+  user, open, onOpenChange,
 }: {
-  kind: "courses" | "labs";
   user: { id: number; name: string };
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
   const qc = useQueryClient();
   const [item, setItem] = React.useState<OptionItem | null>(null);
-  const isCourse = kind === "courses";
   const assign = useMutation({
     mutationFn: () =>
-      isCourse
-        ? api<EnrollResultResponse>("/api/admin/enrollments", { method: "POST", body: JSON.stringify({ userId: user.id, courseId: item!.id }) })
-        : api<EnrollResultResponse>(`/api/admin/labs/${item!.id}/assign`, { method: "POST", body: JSON.stringify({ userIds: [user.id] }) }),
+      api<EnrollResultResponse>("/api/admin/enrollments", { method: "POST", body: JSON.stringify({ userId: user.id, courseId: item!.id }) }),
     onSuccess: (r) => {
       if (r.succeeded) toast.success(`Assigned to ${user.name}`);
       else toast.warning(r.results?.[0]?.reason ?? "Not assigned");
@@ -91,14 +84,14 @@ function AssignDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Assign {isCourse ? "course" : "lab"} to {user.name}</DialogTitle>
+          <DialogTitle>Assign course to {user.name}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <AsyncCombobox
-            resource={kind}
+            resource="courses"
             value={item}
             onChange={(v) => setItem(v as OptionItem | null)}
-            placeholder={`Search ${kind}…`}
+            placeholder="Search courses…"
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

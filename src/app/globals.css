@@ -126,6 +126,23 @@
   --sidebar-ring: oklch(0.66 0.18 264);
 }
 
+/* Semantic typography scale — product defaults. Per-admin overrides are applied
+   as inline custom properties on <html> from the resolved user preference. */
+:root {
+  --fs-sidebar-nav: 13px;
+  --fs-sidebar-label: 10.5px;
+  --fs-header: 14px;
+  --fs-page-title: 18px;
+  --fs-page-desc: 13px;
+  --fs-meta: 12px;
+  --fs-table-header: 11px;
+  --fs-table-body: 13px;
+  --fs-label: 14px;
+  --fs-control: 14px;
+  --fs-button: 14px;
+  --fs-badge: 12px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

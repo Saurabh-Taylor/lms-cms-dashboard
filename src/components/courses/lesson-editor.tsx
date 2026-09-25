@@ -46,8 +46,12 @@ const BLOCK_TYPES: { type: Block["type"]; label: string; icon: React.ReactNode }
   { type: "code", label: "Code", icon: <CodeIcon className="size-4" /> },
   { type: "resource", label: "Resource", icon: <PackageIcon className="size-4" /> },
   { type: "quiz", label: "Quiz", icon: <ClipboardListIcon className="size-4" /> },
-  { type: "lab", label: "Lab", icon: <FlaskConicalIcon className="size-4" /> },
 ];
+
+/** Legacy block kinds that still exist in saved content — render read-only, not addable. */
+const LEGACY_BLOCKS: Record<string, { label: string; icon: React.ReactNode }> = {
+  lab: { label: "Lab", icon: <FlaskConicalIcon className="size-4" /> },
+};
 
 let uid = 0;
 const nextId = () => `blk-${Date.now()}-${uid++}`;
@@ -159,7 +163,7 @@ export function LessonEditor({ lessonId }: { lessonId: number }) {
       </DndContext>
 
       <div className="flex flex-wrap gap-1.5 rounded-lg border bg-muted/30 p-2">
-        <span className="mr-1 self-center text-xs text-muted-foreground">Add block:</span>
+        <span className="mr-1 self-center text-(length:--fs-meta) leading-4 text-muted-foreground">Add block:</span>
         {BLOCK_TYPES.map((t) => (
           <Button
             key={t.type}
@@ -183,7 +187,7 @@ function SortableBlock({
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
-  const meta = BLOCK_TYPES.find((t) => t.type === block.type);
+  const meta = BLOCK_TYPES.find((t) => t.type === block.type) ?? LEGACY_BLOCKS[block.type];
 
   return (
     <div
@@ -268,12 +272,9 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
       );
     case "lab":
       return (
-        <AsyncCombobox
-          resource="labs"
-          value={block.refId ? { id: block.refId, label: block.text ?? `Lab #${block.refId}` } : null}
-          onChange={(v) => { const o = v as OptionItem | null; onChange(block.id, { refId: o?.id, text: o?.label }); }}
-          placeholder="Link a lab…"
-        />
+        <div className="rounded-md bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          {block.text ?? `Lab #${block.refId ?? "—"}`}
+        </div>
       );
     default:
       return null;

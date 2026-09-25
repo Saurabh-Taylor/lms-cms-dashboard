@@ -92,7 +92,7 @@ export function AsyncCombobox({
                       <CheckIcon className={cn("size-4", selectedIds.has(o.id) ? "opacity-100" : "opacity-0")} />
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate">{o.label}</span>
-                        {o.sub && <span className="truncate text-xs text-muted-foreground">{o.sub}</span>}
+                        {o.sub && <span className="truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{o.sub}</span>}
                       </div>
                     </CommandItem>
                   ))}

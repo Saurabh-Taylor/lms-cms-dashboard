@@ -53,7 +53,6 @@ export default async function LearnerProfilePage({
       <Suspense>
         <LearnerProfileTabs userId={id} stats={{
           enrolledCount: u.enrolledCount,
-          labsCount: u.labsCount,
           avgProgress: u.avgProgress,
         }} />
       </Suspense>

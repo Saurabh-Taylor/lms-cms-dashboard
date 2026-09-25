@@ -32,7 +32,7 @@ export function CategoriesTable() {
   const columns = React.useMemo<ColumnDef<CategoryRow, unknown>[]>(() => [
     { id: "name", accessorKey: "name", header: "Name", meta: { sortKey: "name" }, cell: ({ row }) => (
       <div><span className="font-medium">{row.original.name}</span>
-      <span className="ml-2 text-xs text-muted-foreground">{row.original.slug}</span></div>
+      <span className="ml-2 text-(length:--fs-meta) leading-4 text-muted-foreground">{row.original.slug}</span></div>
     ) },
     { id: "courseCount", accessorKey: "courseCount", header: "Courses", meta: { sortKey: "courseCount", className: "text-right", headerClassName: "text-right" }, cell: ({ getValue }) => <span className="tabular-nums">{getValue() as number}</span> },
     { id: "createdAt", accessorKey: "createdAt", header: "Created", meta: { sortKey: "createdAt" }, cell: ({ getValue }) => <span className="text-sm text-muted-foreground">{fmtDate(getValue() as number)}</span> },

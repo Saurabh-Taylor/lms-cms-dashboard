@@ -3,12 +3,6 @@ import { db } from "@/lib/db/client";
 import { activityEvents, courses, users } from "@/lib/db/schema";
 import { likePattern, listOk, listQuery, orderBy } from "@/lib/api/helpers";
 
-export const ACTIVITY_TYPES = [
-  "logged_in", "course_opened", "chapter_completed", "lab_started",
-  "lab_completed", "assignment_submitted", "quiz_completed",
-  "resource_downloaded", "certificate_viewed",
-] as const;
-
 const sortMap = {
   createdAt: activityEvents.createdAt,
   type: activityEvents.type,

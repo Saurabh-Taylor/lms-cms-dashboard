@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  BookOpenIcon, ClipboardCheckIcon, FlaskConicalIcon,
+  BookOpenIcon, ClipboardCheckIcon,
   GraduationCapIcon, LoaderCircleIcon,
 } from "lucide-react";
 import {
@@ -53,18 +53,18 @@ export function CommandPalette({
           <CommandItem key={`${label}-${o.id}`} value={`${label}-${o.id}-${o.label}`} onSelect={() => go(hrefFor(o))}>
             {icon}
             <span className="truncate">{o.label}</span>
-            {o.sub && <span className="ml-auto truncate text-xs text-muted-foreground">{o.sub}</span>}
+            {o.sub && <span className="ml-auto truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{o.sub}</span>}
           </CommandItem>
         ))}
       </CommandGroup>
     );
 
   const empty = !loading && debounced.length >= 2 && results &&
-    !results.learners.length && !results.courses.length && !results.labs.length && !results.assessments.length;
+    !results.learners.length && !results.courses.length && !results.assessments.length;
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput placeholder="Search learners, courses, labs, assessments…" value={q} onValueChange={setQ} />
+      <CommandInput placeholder="Search learners, courses, assessments…" value={q} onValueChange={setQ} />
       <CommandList>
         {loading && (
           <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -89,7 +89,6 @@ export function CommandPalette({
           <>
             {group("Learners", <GraduationCapIcon />, results.learners, (o) => `/admin/learners/${o.id}`)}
             {group("Courses", <BookOpenIcon />, results.courses, (o) => `/admin/courses/${o.id}`)}
-            {group("Labs", <FlaskConicalIcon />, results.labs, (o) => `/admin/labs/${o.id}`)}
             {group("Assessments", <ClipboardCheckIcon />, results.assessments, (o) => `/admin/assessments/${o.id}`)}
           </>
         )}

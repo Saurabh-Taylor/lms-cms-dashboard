@@ -88,7 +88,7 @@ export function UsersTable({ role }: { role: Role }) {
               <Link href={`/admin/learners/${row.original.id}` as never} className="block truncate font-medium hover:underline" onClick={(e) => e.stopPropagation()}>
                 {row.original.name}
               </Link>
-              <span className="block truncate text-xs text-muted-foreground">{row.original.email}</span>
+              <span className="block truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{row.original.email}</span>
             </div>
           </div>
         ),
@@ -103,11 +103,6 @@ export function UsersTable({ role }: { role: Role }) {
             {
               id: "enrolledCount", accessorKey: "enrolledCount", header: "Courses",
               meta: { sortKey: "enrolledCount", className: "text-right", headerClassName: "text-right" },
-              cell: ({ getValue }: { getValue: () => unknown }) => <span className="tabular-nums">{getValue() as number}</span>,
-            },
-            {
-              id: "labsCount", accessorKey: "labsCount", header: "Labs",
-              meta: { sortKey: "labsCount", className: "text-right", headerClassName: "text-right" },
               cell: ({ getValue }: { getValue: () => unknown }) => <span className="tabular-nums">{getValue() as number}</span>,
             },
             {

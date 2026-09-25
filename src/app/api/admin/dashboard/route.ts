@@ -1,7 +1,7 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
-  activityEvents, certificates, courses, enrollments, labs, users,
+  activityEvents, certificates, courses, enrollments, users,
 } from "@/lib/db/schema";
 import { ok } from "@/lib/api/helpers";
 
@@ -24,10 +24,6 @@ export async function GET(req: Request) {
     enrollments: sql<number>`COUNT(*)`,
     completionRate: sql<number>`CAST(100.0 * SUM(CASE WHEN ${enrollments.status} = 'completed' THEN 1 ELSE 0 END) / COUNT(*) AS INT)`,
   }).from(enrollments);
-
-  const [l] = await db.select({
-    active: sql<number>`SUM(CASE WHEN ${labs.status} = 'active' THEN 1 ELSE 0 END)`,
-  }).from(labs);
 
   const [cert] = await db.select({ total: sql<number>`COUNT(*)` }).from(certificates);
 
@@ -92,7 +88,6 @@ export async function GET(req: Request) {
       publishedCourses: c?.published ?? 0,
       enrollments: e?.enrollments ?? 0,
       completionRate: e?.completionRate ?? 0,
-      activeLabs: l?.active ?? 0,
       certificates: cert?.total ?? 0,
     },
     enrollmentSeries,

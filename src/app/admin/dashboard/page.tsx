@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AwardIcon, FlaskConicalIcon, GraduationCapIcon, BookOpenIcon,
+  AwardIcon, GraduationCapIcon, BookOpenIcon,
   UsersIcon, ActivityIcon, CheckCircleIcon, TrendingUpIcon,
 } from "lucide-react";
 import {
@@ -55,7 +55,6 @@ export default function DashboardPage() {
     { label: "Published courses", value: t?.publishedCourses, icon: CheckCircleIcon },
     { label: "Enrollments", value: t?.enrollments, icon: TrendingUpIcon },
     { label: "Completion rate", value: t ? `${t.completionRate}%` : undefined, icon: ActivityIcon },
-    { label: "Active labs", value: t?.activeLabs, icon: FlaskConicalIcon },
     { label: "Certificates issued", value: t?.certificates, icon: AwardIcon },
   ];
 
@@ -157,7 +156,7 @@ export default function DashboardPage() {
                           </>
                         ) : null}
                       </span>
-                      <div className="text-xs text-muted-foreground">{fmtRelative(a.createdAt)}</div>
+                      <div className="text-(length:--fs-meta) leading-4 text-muted-foreground">{fmtRelative(a.createdAt)}</div>
                     </div>
                   </li>
                 ))}
@@ -170,7 +169,7 @@ export default function DashboardPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-sm font-medium">Course performance</CardTitle>
-          <Link href={"/admin/courses" as never} className="text-xs text-muted-foreground hover:text-foreground">
+          <Link href={"/admin/courses" as never} className="text-(length:--fs-meta) leading-4 text-muted-foreground hover:text-foreground">
             View all →
           </Link>
         </CardHeader>
@@ -181,7 +180,7 @@ export default function DashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left text-xs text-muted-foreground">
+                  <tr className="border-b text-left text-(length:--fs-meta) leading-4 text-muted-foreground">
                     <th className="py-2 pr-4 font-medium">Course</th>
                     <th className="py-2 pr-4 font-medium text-right">Learners</th>
                     <th className="py-2 pr-4 font-medium text-right">Completion</th>

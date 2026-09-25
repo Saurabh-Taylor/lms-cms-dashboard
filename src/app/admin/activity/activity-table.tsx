@@ -16,8 +16,6 @@ const TYPE_OPTS = [
   { value: "logged_in", label: "Logged in" },
   { value: "course_opened", label: "Course opened" },
   { value: "chapter_completed", label: "Chapter completed" },
-  { value: "lab_started", label: "Lab started" },
-  { value: "lab_completed", label: "Lab completed" },
   { value: "assignment_submitted", label: "Assignment submitted" },
   { value: "quiz_completed", label: "Quiz completed" },
   { value: "resource_downloaded", label: "Resource downloaded" },
@@ -57,7 +55,7 @@ export function ActivityTable() {
         : <span className="text-sm text-muted-foreground">—</span>
     ) },
     { id: "meta", accessorKey: "meta", header: "Device", cell: ({ getValue }) => (
-      <span className="text-xs text-muted-foreground">{safeMeta(getValue() as string)}</span>
+      <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">{safeMeta(getValue() as string)}</span>
     ) },
     { id: "createdAt", accessorKey: "createdAt", header: "When", meta: { sortKey: "createdAt" }, cell: ({ getValue }) => (
       <span className="text-sm text-muted-foreground">{fmtDateTime(getValue() as number)}</span>

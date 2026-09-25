@@ -56,7 +56,7 @@ export function AnalyticsClient() {
         </Select>
         <div className="w-56"><AsyncCombobox resource="courses" value={course} onChange={(v) => setCourse(v as OptionItem | null)} placeholder="All courses" /></div>
         <div className="w-48"><AsyncCombobox resource="categories" value={category} onChange={(v) => setCategory(v as OptionItem | null)} placeholder="All categories" /></div>
-        {q.isFetching && <span className="text-xs text-muted-foreground">Refreshing…</span>}
+        {q.isFetching && <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">Refreshing…</span>}
       </div>
 
       {/* learner KPIs */}
@@ -96,7 +96,7 @@ export function AnalyticsClient() {
           <CardContent className="p-0">
             {!d ? <Skeleton className="m-4 h-56" /> : (
               <table className="w-full text-sm">
-                <thead><tr className="border-b text-left text-xs text-muted-foreground">
+                <thead><tr className="border-b text-left text-(length:--fs-meta) leading-4 text-muted-foreground">
                   <th className="px-4 py-2 font-medium">Course</th>
                   <th className="px-4 py-2 text-right font-medium">Enrolled</th>
                   <th className="px-4 py-2 text-right font-medium">Completion</th>
@@ -126,11 +126,11 @@ export function AnalyticsClient() {
         <Card className="xl:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium">Assessment health</CardTitle>
-            {d && <span className="text-xs text-muted-foreground">{d.assessments.attempts.toLocaleString()} attempts · avg {d.assessments.avgScore}% · {d.assessments.passRate}% pass</span>}
+            {d && <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">{d.assessments.attempts.toLocaleString()} attempts · avg {d.assessments.avgScore}% · {d.assessments.passRate}% pass</span>}
           </CardHeader>
           <CardContent className="p-0">
             <table className="w-full text-sm">
-              <thead><tr className="border-b text-left text-xs text-muted-foreground">
+              <thead><tr className="border-b text-left text-(length:--fs-meta) leading-4 text-muted-foreground">
                 <th className="px-4 py-2 font-medium">Hardest assessments</th>
                 <th className="px-4 py-2 text-right font-medium">Attempts</th>
                 <th className="px-4 py-2 text-right font-medium">Avg score</th>
@@ -160,7 +160,7 @@ export function AnalyticsClient() {
               const total = d!.coursesByCategory.reduce((s, x) => s + x.n, 0) || 1;
               return (
                 <div key={c.name} className="flex items-center gap-2 text-sm">
-                  <span className="w-28 truncate text-xs text-muted-foreground">{c.name}</span>
+                  <span className="w-28 truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{c.name}</span>
                   <Progress value={Math.round((c.n / total) * 100)} className="flex-1" />
                   <span className="w-10 text-right text-xs tabular-nums">{c.n}</span>
                 </div>

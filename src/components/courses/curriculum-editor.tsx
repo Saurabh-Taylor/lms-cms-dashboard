@@ -45,7 +45,7 @@ const LESSON_ICONS: Record<string, React.ReactNode> = {
   assignment: <ClipboardListIcon className="size-3.5" />,
 };
 
-const LESSON_TYPES = ["text", "video", "pdf", "link", "code", "quiz", "lab", "assignment"];
+const LESSON_TYPES = ["text", "video", "pdf", "link", "code", "quiz", "assignment"];
 
 interface Curriculum { course: CourseRow; sections: SectionNode[] }
 
@@ -327,7 +327,7 @@ function SortableSection(props: {
               />
             ))}
             {sec.lessons.length === 0 && (
-              <li className="px-3 py-3 text-center text-xs text-muted-foreground">
+              <li className="px-3 py-3 text-center text-(length:--fs-meta) leading-4 text-muted-foreground">
                 No chapters — drag one here or{" "}
                 <button className="underline" onClick={onAddLesson}>add a chapter</button>
               </li>
@@ -378,7 +378,7 @@ function SortableLesson({
         {lesson.title}
       </button>
       {lesson.status === "draft" && <Badge variant="outline" className="text-[10px]">draft</Badge>}
-      <span className="text-xs text-muted-foreground tabular-nums">{lesson.durationMin}m</span>
+      <span className="text-(length:--fs-meta) leading-4 text-muted-foreground tabular-nums">{lesson.durationMin}m</span>
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" className="opacity-0 group-hover:opacity-100" />}>
           <EllipsisIconSmall />

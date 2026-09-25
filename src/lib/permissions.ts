@@ -6,7 +6,6 @@ export type Permission =
   | "learner:view" | "learner:update" | "learner:suspend"
   | "enrollment:view" | "enrollment:create" | "enrollment:update"
   | "assessment:view" | "assessment:create" | "assessment:update"
-  | "lab:view" | "lab:create" | "lab:assign" | "lab:update"
   | "certificate:view" | "certificate:issue"
   | "announcement:view" | "announcement:create"
   | "analytics:view" | "activity:view" | "audit:view"
@@ -19,7 +18,6 @@ const ALL: Permission[] = [
   "learner:view", "learner:update", "learner:suspend",
   "enrollment:view", "enrollment:create", "enrollment:update",
   "assessment:view", "assessment:create", "assessment:update",
-  "lab:view", "lab:create", "lab:assign", "lab:update",
   "certificate:view", "certificate:issue",
   "announcement:view", "announcement:create",
   "analytics:view", "activity:view", "audit:view",
@@ -32,11 +30,11 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
   instructor: [
     "course:view", "course:update", "learner:view",
     "assessment:view", "assessment:create", "assessment:update",
-    "lab:view", "certificate:view", "analytics:view",
+    "certificate:view", "analytics:view",
   ],
   content_manager: [
     "course:view", "course:create", "course:update", "course:publish",
-    "assessment:view", "lab:view", "announcement:view", "announcement:create",
+    "assessment:view", "announcement:view", "announcement:create",
   ],
   support: ["learner:view", "enrollment:view", "activity:view", "certificate:view"],
 };

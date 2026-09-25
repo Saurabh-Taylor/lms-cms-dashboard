@@ -43,7 +43,6 @@ export interface UserRow {
   status: UserStatus;
   title: string | null;
   enrolledCount: number;
-  labsCount: number;
   avgProgress: number;
   lastActiveAt: number | null;
   createdAt: number;
@@ -80,20 +79,6 @@ export interface EnrollmentRow {
   enrolledAt: number;
   expiresAt: number | null;
   completedAt: number | null;
-}
-
-export interface LabRow {
-  id: number;
-  name: string;
-  type: "vm" | "container" | "jupyter" | "cloud-sandbox";
-  categoryId: number | null;
-  categoryName: string | null;
-  description: string | null;
-  durationMin: number;
-  resourceTier: "small" | "medium" | "large";
-  status: "active" | "disabled" | "archived";
-  assignedCount: number;
-  createdAt: number;
 }
 
 export interface AssessmentRow {
@@ -219,7 +204,6 @@ export interface DashboardStats {
     publishedCourses: number;
     enrollments: number;
     completionRate: number;
-    activeLabs: number;
     certificates: number;
   };
   enrollmentSeries: { date: string; count: number }[];
@@ -244,6 +228,5 @@ export interface DashboardStats {
 export interface SearchResults {
   learners: OptionItem[];
   courses: OptionItem[];
-  labs: OptionItem[];
   assessments: OptionItem[];
 }

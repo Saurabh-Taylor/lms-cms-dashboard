@@ -10,7 +10,6 @@ const sortMap = {
   email: users.email,
   status: users.status,
   enrolledCount: users.enrolledCount,
-  labsCount: users.labsCount,
   avgProgress: users.avgProgress,
   lastActiveAt: users.lastActiveAt,
   createdAt: users.createdAt,
@@ -62,7 +61,14 @@ export async function GET(req: Request) {
       .offset(lq.offset),
     db.select({ total: count() }).from(users).where(where),
   ]);
-  return listOk(rows, total, lq);
+  return listOk(rows.map(stripLabsCount), total, lq);
+}
+
+/** Retained denormalized column — labs data stays in the DB but leaves the API surface. */
+function stripLabsCount<T extends { labsCount: number }>(u: T) {
+  const { labsCount, ...rest } = u;
+  void labsCount;
+  return rest;
 }
 
 const createSchema = z.object({
@@ -92,5 +98,5 @@ export async function POST(req: Request) {
     targetLabel: row.name,
     module: "users",
   });
-  return ok(row, { status: 201 });
+  return ok(stripLabsCount(row), { status: 201 });
 }

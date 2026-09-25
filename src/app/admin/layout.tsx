@@ -1,34 +1,29 @@
-"use client";
+import { asc, eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { db } from "@/lib/db/client";
+import { users } from "@/lib/db/schema";
+import { getCurrentAdmin, getCurrentUser, homeForRole } from "@/lib/me";
+import { AdminShell } from "@/components/layout/admin-shell";
 
-import * as React from "react";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { AppHeader } from "@/components/layout/app-header";
-import { CommandPalette } from "@/components/layout/command-palette";
-import { PageTransition } from "@/components/layout/page-transition";
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [searchOpen, setSearchOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setSearchOpen((v) => !v);
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const me = await getCurrentAdmin();
+  if (!me) {
+    // a valid non-admin session belongs to the learner portal, not /login
+    const u = await getCurrentUser();
+    redirect(u ? homeForRole(u.role) : "/login");
+  }
+  // demo switcher list — stands in for an admin directory while there's no auth
+  const admins = db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(eq(users.role, "admin"))
+    .orderBy(asc(users.id))
+    .all()
+    .slice(0, 8);
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="min-w-0">
-        <AppHeader onOpenSearch={() => setSearchOpen(true)} />
-        <main className="flex-1 p-4 md:p-6"><PageTransition>{children}</PageTransition></main>
-      </SidebarInset>
-      <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
-    </SidebarProvider>
+    <AdminShell key={me.id} me={me} admins={admins}>
+      {children}
+    </AdminShell>
   );
 }

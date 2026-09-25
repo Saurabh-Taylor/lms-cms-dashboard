@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `ui_preferences` text;

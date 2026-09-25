@@ -3,7 +3,7 @@ import {
   FolderTreeIcon, GraduationCapIcon, ImagesIcon, LayoutDashboardIcon,
   AwardIcon, MailIcon, MegaphoneIcon, BellIcon, BarChart3Icon,
   ActivityIcon, FileTextIcon, ScrollTextIcon, SettingsIcon, UsersIcon,
-  UserCogIcon, ShieldIcon, Users2Icon, FlaskConicalIcon, RouteIcon,
+  UserCogIcon, ShieldIcon, Users2Icon, RouteIcon,
   PlugIcon, type LucideIcon,
 } from "lucide-react";
 import type { Permission } from "@/lib/permissions";
@@ -32,7 +32,6 @@ export const NAV: NavGroup[] = [
       { title: "Courses", href: "/admin/courses", icon: BookOpenIcon, permission: "course:view" },
       { title: "Categories", href: "/admin/categories", icon: FolderTreeIcon, permission: "course:view" },
       { title: "Learning Paths", href: "/admin/learning-paths", icon: RouteIcon, permission: "course:view" },
-      { title: "Labs", href: "/admin/labs", icon: FlaskConicalIcon, permission: "lab:view" },
       { title: "Media Library", href: "/admin/media", icon: ImagesIcon, permission: "course:view" },
     ],
   },

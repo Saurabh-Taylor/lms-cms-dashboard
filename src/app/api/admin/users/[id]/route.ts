@@ -7,11 +7,18 @@ import { audit } from "@/lib/api/audit";
 
 type Ctx = RouteContext<"/api/admin/users/[id]">;
 
+/** Retained denormalized column — labs data stays in the DB but leaves the API surface. */
+function stripLabsCount<T extends { labsCount: number }>(u: T) {
+  const { labsCount, ...rest } = u;
+  void labsCount;
+  return rest;
+}
+
 export async function GET(_req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const [row] = await db.select().from(users).where(eq(users.id, Number(id)));
   if (!row) return fail(404, "User not found");
-  return ok(row);
+  return ok(stripLabsCount(row));
 }
 
 const patchSchema = z.object({
@@ -38,5 +45,5 @@ export async function PATCH(req: Request, ctx: Ctx) {
     audit({ action: "reactivated learner", targetType: "learner", targetId: row.id, targetLabel: row.name, module: "learners" });
   else
     audit({ action: "updated user", targetType: "user", targetId: row.id, targetLabel: row.name, module: "learners", details: { changes: parsed.data } });
-  return ok(row);
+  return ok(stripLabsCount(row));
 }

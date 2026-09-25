@@ -79,7 +79,7 @@ export function EnrollmentsTable({
             <Link href={`/admin/learners/${row.original.userId}` as never} className="block truncate font-medium hover:underline" onClick={(e) => e.stopPropagation()}>
               {row.original.userName}
             </Link>
-            <span className="block truncate text-xs text-muted-foreground">{row.original.userEmail}</span>
+            <span className="block truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{row.original.userEmail}</span>
           </div>
         ),
       });

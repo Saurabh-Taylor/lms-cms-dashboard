@@ -146,7 +146,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
           <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
             <div>
               <p className="text-sm font-medium">Certificate on completion</p>
-              <p className="text-xs text-muted-foreground">Issue a certificate when a learner finishes this course</p>
+              <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">Issue a certificate when a learner finishes this course</p>
             </div>
             <Switch checked={form.certificateEnabled} onCheckedChange={(v) => set("certificateEnabled", !!v)} />
           </div>

@@ -268,12 +268,12 @@ export function DataTable<T>({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground tabular-nums">
+        <p className="text-(length:--fs-meta) leading-4 text-muted-foreground tabular-nums">
           {total === 0 ? "0 results" : `${start}–${end} of ${total.toLocaleString()}`}
         </p>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Rows</span>
+            <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">Rows</span>
             <Select
               value={String(pageSize)}
               onValueChange={(v) => onPageSizeChange(Number(v))}

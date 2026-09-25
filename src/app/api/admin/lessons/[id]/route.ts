@@ -16,7 +16,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 const patchSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  type: z.enum(["text", "video", "pdf", "link", "code", "quiz", "lab", "assignment"]).optional(),
+  type: z.enum(["text", "video", "pdf", "link", "code", "quiz", "assignment"]).optional(),
   durationMin: z.number().int().min(0).optional(),
   status: z.enum(["draft", "published"]).optional(),
   blocks: z.array(z.record(z.string(), z.unknown())).optional(),

@@ -31,8 +31,8 @@ export default async function NotificationsPage() {
               <div key={a.id} className="flex items-start justify-between gap-3 border-b pb-3 last:border-0 last:pb-0">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{a.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">{a.body}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{a.body}</p>
+                  <p className="mt-0.5 text-(length:--fs-meta) leading-4 text-muted-foreground">
                     to {a.audience} · {fmtRelative(a.createdAt)}
                   </p>
                 </div>
@@ -51,7 +51,7 @@ export default async function NotificationsPage() {
                   <span className="text-muted-foreground">{e.action}</span>{" "}
                   <span className="font-medium">{e.targetLabel}</span>
                 </p>
-                <span className="shrink-0 text-xs text-muted-foreground">{fmtRelative(e.createdAt)}</span>
+                <span className="shrink-0 text-(length:--fs-meta) leading-4 text-muted-foreground">{fmtRelative(e.createdAt)}</span>
               </div>
             ))}
           </CardContent>

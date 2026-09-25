@@ -1,6 +1,6 @@
 import { and, asc, eq, like, or } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { assessments, categories, courses, groups, labs, users } from "@/lib/db/schema";
+import { assessments, categories, courses, groups, users } from "@/lib/db/schema";
 import { likePattern, ok } from "@/lib/api/helpers";
 
 // Async option source for comboboxes: /api/admin/options?resource=learners&q=
@@ -30,12 +30,6 @@ export async function GET(req: Request) {
         .from(courses)
         .where(q ? like(courses.title, p) : undefined)
         .orderBy(asc(courses.title)).limit(limit));
-    case "labs":
-      return ok(await db
-        .select({ id: labs.id, label: labs.name, sub: labs.type })
-        .from(labs)
-        .where(q ? like(labs.name, p) : undefined)
-        .orderBy(asc(labs.name)).limit(limit));
     case "categories":
       return ok(await db
         .select({ id: categories.id, label: categories.name })

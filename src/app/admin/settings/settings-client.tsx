@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CheckIcon, MinusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { ROLE_PERMISSIONS, type AppRole, type Permission } from "@/lib/permissions";
+import { TypographyCard } from "@/components/shared/typography-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,10 @@ export function SettingsClient() {
         <TabsTrigger value="enrollment">Enrollment rules</TabsTrigger>
         <TabsTrigger value="roles">Roles & permissions</TabsTrigger>
       </TabsList>
-      <TabsContent value="general" className="mt-4"><GeneralForm /></TabsContent>
+      <TabsContent value="general" className="mt-4 flex max-w-2xl flex-col gap-4">
+        <GeneralForm />
+        <TypographyCard description="Text sizing for your admin account only — other administrators keep their own preferences." />
+      </TabsContent>
       <TabsContent value="enrollment" className="mt-4"><RulesForm /></TabsContent>
       <TabsContent value="roles" className="mt-4"><RolesMatrix /></TabsContent>
     </Tabs>
@@ -76,7 +80,7 @@ function GeneralForm() {
 
   if (q.isLoading) return <Skeleton className="h-80 max-w-2xl" />;
   return (
-    <Card className="max-w-2xl">
+    <Card>
       <CardHeader><CardTitle className="text-sm font-medium">Platform</CardTitle></CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
@@ -155,7 +159,7 @@ function RulesForm() {
           <div key={r.key} className="flex items-center justify-between gap-6 border-b py-3 last:border-0">
             <div>
               <p className="text-sm font-medium">{r.label}</p>
-              <p className="text-xs text-muted-foreground">{r.desc}</p>
+              <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">{r.desc}</p>
             </div>
             {r.kind === "switch" ? (
               <Switch checked={f[r.key] as boolean} onCheckedChange={(v) => setF({ ...f, [r.key]: v })} />
@@ -192,7 +196,7 @@ function RolesMatrix() {
       <CardContent className="overflow-x-auto p-0">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b text-left text-xs text-muted-foreground">
+            <tr className="border-b text-left text-(length:--fs-meta) leading-4 text-muted-foreground">
               <th className="px-4 py-2 font-medium">Permission</th>
               {ROLES.map((r) => <th key={r.role} className="px-4 py-2 text-center font-medium">{r.label}</th>)}
             </tr>

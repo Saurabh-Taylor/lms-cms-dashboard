@@ -24,7 +24,7 @@ export function StatCard({
             </p>
           )}
           {sub && !loading && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
+            <p className="mt-0.5 text-(length:--fs-meta) leading-4 text-muted-foreground">{sub}</p>
           )}
         </div>
         {Icon && (

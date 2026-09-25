@@ -9,7 +9,7 @@ type Ctx = RouteContext<"/api/admin/sections/[id]/lessons">;
 
 const schema = z.object({
   title: z.string().min(1).max(200),
-  type: z.enum(["text", "video", "pdf", "link", "code", "quiz", "lab", "assignment"]).default("text"),
+  type: z.enum(["text", "video", "pdf", "link", "code", "quiz", "assignment"]).default("text"),
 });
 
 export async function POST(req: Request, ctx: Ctx) {

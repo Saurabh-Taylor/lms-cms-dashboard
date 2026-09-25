@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { getCurrentUser } from "@/lib/me";
+import { adminShellVars } from "@/lib/ui-preferences";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,12 +20,15 @@ export const metadata: Metadata = {
   description: "Learning management system administration",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // personal typography overrides resolved before first paint — no size flash
+  const admin = await getCurrentUser();
   return (
     <html
       lang="en"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={adminShellVars(admin?.uiPreferences) as React.CSSProperties}
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>

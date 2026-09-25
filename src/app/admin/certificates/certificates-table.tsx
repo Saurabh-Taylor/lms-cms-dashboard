@@ -83,7 +83,7 @@ function IssueDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
           <div className="flex flex-col gap-1.5">
             <Label>Course</Label>
             <AsyncCombobox resource="courses" value={course} onChange={(v) => setCourse(v as OptionItem | null)} placeholder="Search courses…" />
-            <p className="text-xs text-muted-foreground">The learner must have completed the course.</p>
+            <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">The learner must have completed the course.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

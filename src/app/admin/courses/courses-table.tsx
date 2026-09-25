@@ -114,7 +114,7 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
               >
                 {row.original.title}
               </Link>
-              <span className="block truncate text-xs text-muted-foreground">
+              <span className="block truncate text-(length:--fs-meta) leading-4 text-muted-foreground">
                 {row.original.lessonCount} chapters · {row.original.difficulty}
               </span>
             </div>

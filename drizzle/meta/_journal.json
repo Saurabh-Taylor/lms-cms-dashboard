@@ -15,6 +15,13 @@
       "when": 1790317817790,
       "tag": "0001_lethal_echo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790331546970,
+      "tag": "0002_parched_bloodstorm",
+      "breakpoints": true
     }
   ]
 }

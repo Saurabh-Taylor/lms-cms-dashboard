@@ -20,6 +20,8 @@ export const users = sqliteTable(
       .notNull()
       .default("active"),
     title: text("title"),
+    // per-user UI personalization overrides (JSON, sparse — only non-default values)
+    uiPreferences: text("ui_preferences"),
     // denormalized aggregates kept in sync by mutations (mirrors prod strategy)
     enrolledCount: integer("enrolled_count").notNull().default(0),
     labsCount: integer("labs_count").notNull().default(0),

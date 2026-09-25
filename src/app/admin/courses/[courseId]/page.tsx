@@ -50,15 +50,15 @@ export default async function CourseOverviewPage({
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-md border p-3">
               <p className="text-2xl font-semibold tabular-nums">{sectionCount[0]?.n ?? 0}</p>
-              <p className="text-xs text-muted-foreground">Sections</p>
+              <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">Sections</p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-2xl font-semibold tabular-nums">{lessonRows.length}</p>
-              <p className="text-xs text-muted-foreground">Chapters</p>
+              <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">Chapters</p>
             </div>
             <div className="rounded-md border p-3">
               <p className="text-2xl font-semibold tabular-nums">{fmtDuration(totalMin)}</p>
-              <p className="text-xs text-muted-foreground">Content length</p>
+              <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">Content length</p>
             </div>
           </div>
           <div className="divide-y rounded-md border">
@@ -69,13 +69,13 @@ export default async function CourseOverviewPage({
                 className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50"
               >
                 <span className="flex-1 truncate">{l.title}</span>
-                <span className="text-xs text-muted-foreground capitalize">{l.type}</span>
-                <span className="text-xs text-muted-foreground tabular-nums">{l.durationMin}m</span>
+                <span className="text-(length:--fs-meta) leading-4 text-muted-foreground capitalize">{l.type}</span>
+                <span className="text-(length:--fs-meta) leading-4 text-muted-foreground tabular-nums">{l.durationMin}m</span>
                 <StatusBadge value={l.status} />
               </Link>
             ))}
             {lessonRows.length > 10 && (
-              <div className="px-3 py-2 text-xs text-muted-foreground">
+              <div className="px-3 py-2 text-(length:--fs-meta) leading-4 text-muted-foreground">
                 + {lessonRows.length - 10} more — manage in{" "}
                 <Link href={`/admin/courses/${id}/content` as never} className="underline">Content</Link>
               </div>
@@ -92,7 +92,7 @@ export default async function CourseOverviewPage({
             <div className="flex justify-between"><span className="text-muted-foreground">Active</span><span className="tabular-nums">{e?.active ?? 0}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Completed</span><span className="tabular-nums">{e?.completed ?? 0}</span></div>
             <div>
-              <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>Avg progress</span><span>{e?.avgProgress ?? 0}%</span></div>
+              <div className="mb-1 flex justify-between text-(length:--fs-meta) leading-4 text-muted-foreground"><span>Avg progress</span><span>{e?.avgProgress ?? 0}%</span></div>
               <Progress value={e?.avgProgress ?? 0} className="h-1.5" />
             </div>
           </CardContent>
@@ -105,7 +105,7 @@ export default async function CourseOverviewPage({
               {recentEnrollments.map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-2 py-2">
                   <Link href={`/admin/learners/${r.userId}` as never} className="truncate font-medium hover:underline">{r.userName}</Link>
-                  <span className="text-xs text-muted-foreground">{fmtRelative(r.enrolledAt)}</span>
+                  <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">{fmtRelative(r.enrolledAt)}</span>
                 </li>
               ))}
               {!recentEnrollments.length && (

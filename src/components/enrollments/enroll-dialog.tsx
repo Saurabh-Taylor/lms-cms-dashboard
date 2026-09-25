@@ -184,7 +184,7 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
                     <span className="min-w-0 flex-1 truncate">
                       {learnerName(r.userId)} → {courseName(r.courseId)}
                     </span>
-                    {!r.ok && <span className="shrink-0 text-xs text-muted-foreground">{r.reason}</span>}
+                    {!r.ok && <span className="shrink-0 text-(length:--fs-meta) leading-4 text-muted-foreground">{r.reason}</span>}
                   </li>
                 ))}
               </ul>

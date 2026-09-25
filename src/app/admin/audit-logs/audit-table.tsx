@@ -15,7 +15,7 @@ import {
 import { fmtDateTime } from "@/lib/format";
 
 const MODULE_OPTS = [
-  "courses", "learners", "enrollments", "labs", "assessments",
+  "courses", "learners", "enrollments", "assessments",
   "certificates", "announcements", "settings", "users", "categories",
   "groups", "learning-paths", "email-templates", "reports",
 ].map((m) => ({ value: m, label: m.replace(/-/g, " ") }));
@@ -97,10 +97,10 @@ export function AuditTable() {
                 <span className="font-medium">{detail.targetLabel}</span>
               </p>
               <dl className="grid grid-cols-2 gap-3">
-                <div><dt className="text-xs text-muted-foreground">Module</dt><dd className="capitalize">{detail.module}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Target type</dt><dd className="capitalize">{detail.targetType}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Target ID</dt><dd>{detail.targetId ?? "—"}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">IP</dt><dd className="font-mono text-xs">{detail.ip ?? "—"}</dd></div>
+                <div><dt className="text-(length:--fs-meta) leading-4 text-muted-foreground">Module</dt><dd className="capitalize">{detail.module}</dd></div>
+                <div><dt className="text-(length:--fs-meta) leading-4 text-muted-foreground">Target type</dt><dd className="capitalize">{detail.targetType}</dd></div>
+                <div><dt className="text-(length:--fs-meta) leading-4 text-muted-foreground">Target ID</dt><dd>{detail.targetId ?? "—"}</dd></div>
+                <div><dt className="text-(length:--fs-meta) leading-4 text-muted-foreground">IP</dt><dd className="font-mono text-xs">{detail.ip ?? "—"}</dd></div>
               </dl>
               <div>
                 <p className="mb-1 text-xs font-medium text-muted-foreground">Technical details</p>

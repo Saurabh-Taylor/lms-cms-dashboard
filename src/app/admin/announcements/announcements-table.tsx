@@ -42,7 +42,7 @@ export function AnnouncementsTable() {
     { id: "title", accessorKey: "title", header: "Announcement", cell: ({ row }) => (
       <div className="min-w-0 max-w-md">
         <span className="block truncate font-medium">{row.original.title}</span>
-        <span className="block truncate text-xs text-muted-foreground">{row.original.body}</span>
+        <span className="block truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{row.original.body}</span>
       </div>
     ) },
     { id: "audience", accessorKey: "audience", header: "Audience", cell: ({ getValue }) => <span className="text-sm capitalize">{getValue() as string}</span> },

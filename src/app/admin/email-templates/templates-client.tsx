@@ -74,7 +74,7 @@ export function TemplatesClient({ templates }: { templates: EmailTemplateRow[] }
             <div className="flex flex-col gap-1.5">
               <Label>Body</Label>
               <Textarea rows={10} value={body} onChange={(e) => setBody(e.target.value)} className="font-mono text-xs" />
-              <p className="text-xs text-muted-foreground">Variables: {"{{user_name}}"}, {"{{platform_name}}"}, {"{{course_title}}"}</p>
+              <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">Variables: {"{{user_name}}"}, {"{{platform_name}}"}, {"{{course_title}}"}</p>
             </div>
             <div className="flex justify-end">
               <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
