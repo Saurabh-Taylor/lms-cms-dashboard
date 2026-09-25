@@ -93,8 +93,10 @@ export function CurriculumEditor({ courseId }: { courseId: number }) {
   });
 
   const refresh = () => {
-    setTree(null);
-    qc.invalidateQueries({ queryKey: ["curriculum", courseId] });
+    qc.invalidateQueries({ queryKey: ["curriculum", courseId] }).then(() => {
+      const d = qc.getQueryData<Curriculum>(["curriculum", courseId]);
+      if (d) setTree(d.sections);
+    });
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
