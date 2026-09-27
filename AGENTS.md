@@ -26,6 +26,7 @@ Next.js 16 + React 19 admin CMS for an LMS. SQLite (better-sqlite3) + Drizzle OR
 - **Catalog/self-enroll**: `src/lib/learner/catalog.ts` + `/api/learner/catalog` + `/api/learner/courses/[id]/enroll`. Only `status=published AND visibility=public` courses are visible/enrollable — others 404 (existence not leaked). Repeat enroll → 409.
 - **Drizzle**: `orderBy` on sql aliases fails (`no such column`) — order by the expression itself. Column params inside `sql` templates render **unqualified** (`"id"` not `"groups"."id"`) — correlated subqueries must spell out literal table names or the inner table's column silently wins (see `groups`/`categories` count exprs).
 - **DB file**: `data/lms.db` (gitignored); migrations in `drizzle/`; `pnpm tsx scripts/seed.ts` DELETES the file — restart `pnpm dev` after seeding or the server keeps writing to the unlinked inode (requests succeed, data vanishes).
+- **Cutover**: domain data is migrating to the NestJS/Postgres backend — ADR + sequenced plan live at `../cms-lms-test-devin-swe-2-nest-backend/docs/adr/0001-backend-cutover.md` and `../cms-lms-test-devin-swe-2-nest-backend/docs/migration-plan.md`. Flipped modules' routes become `proxy()` one-liners; SQLite tables drop per module.
 
 - TanStack Table is pinned to **v8** — v9 is a breaking rewrite.
 - **CSRF**: `src/proxy.ts` (Next 16 middleware rename) rejects cross-origin mutating `/api/*` requests — `sec-fetch-site: cross-site` or a foreign `Origin` → 403. GET/HEAD unaffected; non-browser clients (no fetch metadata) unaffected.
