@@ -15,18 +15,12 @@ export function homeForRole(role: string): string {
   return role === "admin" ? "/admin/dashboard" : "/learner/dashboard";
 }
 
-/** Backend appRoles that belong to the admin portal (matches backend rbac.ts). */
-const ADMIN_APP_ROLES = new Set(["super_admin", "admin", "content_manager", "support"]);
-
 /**
  * appRole → portal persona ("admin" | "instructor" | "learner"). Single
- * mapping used by me.ts and the login route — must stay in sync with the
- * backend's personaFor() in src/modules/auth/rbac.ts.
+ * mapping used by me.ts and the login route — the implementation is
+ * personaFor() in @learnhub/contracts (backend-owned, single source).
  */
-export function portalRole(appRole: string): string {
-  if (ADMIN_APP_ROLES.has(appRole)) return "admin";
-  return appRole === "instructor" ? "instructor" : "learner";
-}
+export { personaFor as portalRole } from "@learnhub/contracts";
 
 /** Portal role → backend appRole when provisioning (inverse of portalRole). */
 export function appRoleFor(portal: string): string {
