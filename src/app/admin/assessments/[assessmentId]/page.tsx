@@ -5,7 +5,9 @@ import { db } from "@/lib/db/client";
 import { assessments, courses } from "@/lib/db/schema";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AssessmentDetail } from "./detail";
+import { QuestionBank } from "./question-bank";
 import { fmtDate } from "@/lib/format";
 
 export default async function AssessmentDetailPage({
@@ -34,9 +36,20 @@ export default async function AssessmentDetailPage({
           {a.attemptCount.toLocaleString()} attempts · avg {a.avgScore}% · pass rate {a.passRate}%
         </span>
       </div>
-      <Suspense>
-        <AssessmentDetail id={a.id} />
-      </Suspense>
+      <Tabs defaultValue="questions">
+        <TabsList>
+          <TabsTrigger value="questions">Questions</TabsTrigger>
+          <TabsTrigger value="attempts">Attempts</TabsTrigger>
+        </TabsList>
+        <TabsContent value="questions" className="mt-4">
+          <QuestionBank assessmentId={a.id} />
+        </TabsContent>
+        <TabsContent value="attempts" className="mt-4">
+          <Suspense>
+            <AssessmentDetail id={a.id} />
+          </Suspense>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

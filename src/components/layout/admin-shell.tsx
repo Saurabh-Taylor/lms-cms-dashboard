@@ -12,11 +12,9 @@ import { useCommandPalette } from "@/hooks/use-command-palette";
 
 export function AdminShell({
   me,
-  admins,
   children,
 }: {
   me: CurrentAdmin;
-  admins: { id: number; name: string; email: string }[];
   children: React.ReactNode;
 }) {
   const { open, setOpen } = useCommandPalette();
@@ -24,9 +22,9 @@ export function AdminShell({
   return (
     <UiPrefsProvider initial={me.uiPreferences} endpoint="/api/admin/me">
       <SidebarProvider>
-        <AdminSidebar />
+        <AdminSidebar permissions={me.permissions} />
         <SidebarInset className="min-w-0">
-          <AdminHeader me={me} admins={admins} onOpenSearch={() => setOpen(true)} />
+          <AdminHeader me={me} onOpenSearch={() => setOpen(true)} />
           <main className="flex-1 p-4 md:p-6"><PageTransition>{children}</PageTransition></main>
         </SidebarInset>
         <CommandPalette open={open} onOpenChange={setOpen} />

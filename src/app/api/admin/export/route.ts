@@ -3,14 +3,28 @@ import { db } from "@/lib/db/client";
 import { courses, enrollments, users } from "@/lib/db/schema";
 import { fail } from "@/lib/api/helpers";
 import { audit } from "@/lib/api/audit";
+import { requireAdmin } from "@/lib/me";
+import { PERM } from "@/lib/permissions";
 
 const esc = (v: unknown) => {
   const s = v == null ? "" : v instanceof Date ? v.toISOString() : String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
+const RESOURCE_PERMS: Record<string, string> = {
+  learners: PERM.learnerView,
+  enrollments: PERM.enrollmentView,
+  courses: PERM.courseView,
+};
+
 export async function GET(req: Request) {
-  const resource = new URL(req.url).searchParams.get("resource");
+  const me = await requireAdmin();
+  if (me instanceof Response) return me;
+  const resource = new URL(req.url).searchParams.get("resource") ?? "";
+  const perm = RESOURCE_PERMS[resource];
+  if (!perm) return fail(400, "resource must be learners|enrollments|courses");
+  // Per-resource capability — learner:view doesn't cover enrollments/courses exports.
+  if (!me.permissions.includes(perm)) return fail(403, "Forbidden");
   let rows: Record<string, unknown>[];
   let filename: string;
 
@@ -43,7 +57,7 @@ export async function GET(req: Request) {
     return fail(400, "resource must be learners|enrollments|courses");
   }
 
-  audit({ action: `exported ${resource}`, targetType: resource, targetLabel: filename, module: "reports" });
+  await audit(me, { action: `exported ${resource}`, targetType: resource, targetLabel: filename, module: "reports" });
 
   const header = Object.keys(rows[0] ?? { empty: "" }).join(",");
   const body = rows.map((r) => Object.values(r).map(esc).join(",")).join("\n");

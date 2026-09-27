@@ -1,4 +1,5 @@
 import { asc, desc, type SQL, type SQLWrapper } from "drizzle-orm";
+import { DomainError } from "@/lib/domain";
 
 export interface ListQuery {
   sp: URLSearchParams;
@@ -45,6 +46,12 @@ export function ok<T>(data: T, init?: ResponseInit) {
 
 export function fail(status: number, message: string) {
   return Response.json({ error: { message } }, { status });
+}
+
+/** Maps thrown domain failures to fail(); unknown errors rethrow → 500. */
+export function domainFail(e: unknown): Response {
+  if (e instanceof DomainError) return fail(e.status, e.message);
+  throw e;
 }
 
 export function listOk<T>(

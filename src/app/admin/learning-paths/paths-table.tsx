@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LearningPathRow, OptionItem } from "@/lib/types";
 import { ModuleTable } from "@/components/data-table/module-table";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -51,21 +50,17 @@ export function PathActions() {
 }
 
 function CreatePath({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const qc = useQueryClient();
   const [title, setTitle] = React.useState("");
   const [courses, setCourses] = React.useState<OptionItem[]>([]);
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       api("/api/admin/learning-paths", {
         method: "POST",
         body: JSON.stringify({ title, courseIds: courses.map((c) => c.id) }),
       }),
-    onSuccess: () => {
-      toast.success("Learning path created");
-      qc.invalidateQueries({ queryKey: ["/api/admin/learning-paths"] });
-      onOpenChange(false); setTitle(""); setCourses([]);
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/learning-paths"]],
+    successToast: "Learning path created",
+    onSuccess: () => { onOpenChange(false); setTitle(""); setCourses([]); },
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

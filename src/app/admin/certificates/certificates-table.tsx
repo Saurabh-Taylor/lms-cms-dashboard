@@ -2,11 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CertificateRow, OptionItem } from "@/lib/types";
 import { ModuleTable } from "@/components/data-table/module-table";
 import { Button } from "@/components/ui/button";
@@ -55,21 +54,17 @@ export function CertificateActions() {
 }
 
 function IssueDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const qc = useQueryClient();
   const [user, setUser] = React.useState<OptionItem | null>(null);
   const [course, setCourse] = React.useState<OptionItem | null>(null);
-  const issue = useMutation({
+  const issue = useApiMutation({
     mutationFn: () =>
       api("/api/admin/certificates", {
         method: "POST",
         body: JSON.stringify({ userId: user!.id, courseId: course!.id }),
       }),
-    onSuccess: () => {
-      toast.success("Certificate issued");
-      qc.invalidateQueries({ queryKey: ["/api/admin/certificates"] });
-      onOpenChange(false); setUser(null); setCourse(null);
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/certificates"]],
+    successToast: "Certificate issued",
+    onSuccess: () => { onOpenChange(false); setUser(null); setCourse(null); },
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import {
   adminShellVars,
   type TypeSize,
@@ -47,9 +47,10 @@ export function UiPrefsProvider({
     for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
   }, [prefs]);
 
-  const persist = useMutation({
+  const persist = useApiMutation({
     mutationFn: (typography: Record<string, string>) =>
       api(endpoint, { method: "PATCH", body: JSON.stringify({ typography }) }),
+    errorToast: false, // per-call onError below restores state + custom toast
   });
 
   const commit = (next: UiPreferences, revertTo: UiPreferences) => {

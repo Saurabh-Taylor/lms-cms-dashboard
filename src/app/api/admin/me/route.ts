@@ -3,13 +3,13 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { fail, ok } from "@/lib/api/helpers";
-import { getCurrentAdmin } from "@/lib/me";
+import { requireAdmin } from "@/lib/me";
 import { sanitizeTypography } from "@/lib/ui-preferences";
 
 /** Current admin's profile + personal UI preferences. */
 export async function GET() {
-  const me = await getCurrentAdmin();
-  if (!me) return fail(401, "Not signed in");
+  const me = await requireAdmin();
+  if (me instanceof Response) return me;
   return ok(me);
 }
 
@@ -23,8 +23,8 @@ export async function PATCH(req: Request) {
 
   const overrides = sanitizeTypography(parsed.data.typography);
 
-  const me = await getCurrentAdmin();
-  if (!me) return fail(401, "Not signed in");
+  const me = await requireAdmin();
+  if (me instanceof Response) return me;
   db.update(users)
     .set({ uiPreferences: JSON.stringify({ typography: overrides }) })
     .where(eq(users.id, me.id))

@@ -3,12 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CourseRow, OptionItem } from "@/lib/types";
 import { useServerTable } from "@/hooks/use-server-table";
 import { DataTable } from "@/components/data-table/data-table";
@@ -37,7 +36,6 @@ const DIFF_OPTS = [
 
 export function CoursesTable({ openNew }: { openNew: boolean }) {
   const router = useRouter();
-  const qc = useQueryClient();
   const st = useServerTable<CourseRow>("/api/admin/courses", [
     "status", "categoryId", "difficulty", "instructorId",
   ]);
@@ -58,39 +56,34 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
     staleTime: 60_000,
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/admin/courses"] });
-
-  const mut = useMutation({
+  const mut = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       apiClient(`/api/admin/courses/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    onSuccess: (_, v) => {
-      toast.success(v.body.status === "published" ? "Course published" : v.body.status === "archived" ? "Course archived" : "Course updated");
-      invalidate();
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/courses"]],
+    successToast: (_, v) =>
+      v.body.status === "published" ? "Course published" : v.body.status === "archived" ? "Course archived" : "Course updated",
   });
 
-  const duplicate = useMutation({
+  const duplicate = useApiMutation({
     mutationFn: (id: number) => apiClient(`/api/admin/courses/${id}/duplicate`, { method: "POST" }),
-    onSuccess: () => { toast.success("Course duplicated as draft"); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/courses"]],
+    successToast: "Course duplicated as draft",
   });
 
-  const del = useMutation({
+  const del = useApiMutation({
     mutationFn: (id: number) => apiClient(`/api/admin/courses/${id}`, { method: "DELETE" }),
-    onSuccess: () => { toast.success("Course deleted"); setDeleting(null); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/courses"]],
+    successToast: "Course deleted",
+    onSuccess: () => setDeleting(null),
   });
 
-  const bulkDel = useMutation({
+  const bulkDel = useApiMutation({
     mutationFn: async (ids: number[]) => {
       for (const id of ids) await apiClient(`/api/admin/courses/${id}`, { method: "DELETE" });
     },
-    onSuccess: (_, ids) => {
-      toast.success(`${ids.length} course(s) deleted`);
-      setBulkDelete(false); setSelection({}); invalidate();
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/courses"]],
+    successToast: (_, ids) => `${ids.length} course(s) deleted`,
+    onSuccess: () => { setBulkDelete(false); setSelection({}); },
   });
 
   const columns = React.useMemo<ColumnDef<CourseRow, unknown>[]>(

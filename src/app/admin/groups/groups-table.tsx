@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { GroupRow } from "@/lib/types";
 import { ModuleTable } from "@/components/data-table/module-table";
 import { Button } from "@/components/ui/button";
@@ -46,16 +45,12 @@ export function GroupActions() {
 }
 
 function CreateGroup({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const qc = useQueryClient();
   const [name, setName] = React.useState("");
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => api("/api/admin/groups", { method: "POST", body: JSON.stringify({ name }) }),
-    onSuccess: () => {
-      toast.success("Cohort created");
-      qc.invalidateQueries({ queryKey: ["/api/admin/groups"] });
-      onOpenChange(false); setName("");
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/groups"]],
+    successToast: "Cohort created",
+    onSuccess: () => { onOpenChange(false); setName(""); },
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

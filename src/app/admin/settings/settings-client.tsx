@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { CheckIcon, MinusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
-import { ROLE_PERMISSIONS, type AppRole, type Permission } from "@/lib/permissions";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { TypographyCard } from "@/components/shared/typography-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,14 +26,6 @@ interface Rules {
   selfEnrollment: boolean; requireApproval: boolean;
   enrollmentExpirationDays: number; autoCertificate: boolean;
 }
-
-const ROLES: { role: AppRole; label: string }[] = [
-  { role: "super_admin", label: "Super Admin" },
-  { role: "admin", label: "Admin" },
-  { role: "instructor", label: "Instructor" },
-  { role: "content_manager", label: "Content Manager" },
-  { role: "support", label: "Support" },
-];
 
 export function SettingsClient() {
   return (
@@ -62,23 +53,28 @@ function useSettings() {
 }
 
 function GeneralForm() {
-  const qc = useQueryClient();
   const q = useSettings();
-  const saved = (q.data?.general ?? {}) as Partial<General>;
-  const [f, setF] = React.useState<General>({
+  // Mount the form only once data arrives — useState initializers must see the
+  // persisted values, not a loading-time snapshot.
+  if (q.isLoading) return <Skeleton className="h-80 max-w-2xl" />;
+  return <GeneralFormFields saved={(q.data?.general ?? {}) as Partial<General>} />;
+}
+
+function GeneralFormFields({ saved }: { saved: Partial<General> }) {
+  const defaults: General = {
     platformName: "Acme LMS", description: "", timezone: "UTC",
     defaultLocale: "en", supportEmail: "",
     ...saved,
-  });
-  const dirty = JSON.stringify(f) !== JSON.stringify({ platformName: "Acme LMS", description: "", timezone: "UTC", defaultLocale: "en", supportEmail: "", ...saved });
+  };
+  const [f, setF] = React.useState<General>(defaults);
+  const dirty = JSON.stringify(f) !== JSON.stringify(defaults);
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () => api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ general: f }) }),
-    onSuccess: () => { toast.success("Settings saved"); qc.invalidateQueries({ queryKey: ["/api/admin/settings"] }); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/settings"]],
+    successToast: "Settings saved",
   });
 
-  if (q.isLoading) return <Skeleton className="h-80 max-w-2xl" />;
   return (
     <Card>
       <CardHeader><CardTitle className="text-sm font-medium">Platform</CardTitle></CardHeader>
@@ -130,21 +126,23 @@ function GeneralForm() {
 }
 
 function RulesForm() {
-  const qc = useQueryClient();
   const q = useSettings();
-  const saved = (q.data?.enrollmentRules ?? {}) as Partial<Rules>;
+  if (q.isLoading) return <Skeleton className="h-64 max-w-2xl" />;
+  return <RulesFormFields saved={(q.data?.enrollmentRules ?? {}) as Partial<Rules>} />;
+}
+
+function RulesFormFields({ saved }: { saved: Partial<Rules> }) {
   const [f, setF] = React.useState<Rules>({
     selfEnrollment: true, requireApproval: false,
     enrollmentExpirationDays: 0, autoCertificate: true,
     ...saved,
   });
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () => api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ enrollmentRules: f }) }),
-    onSuccess: () => { toast.success("Rules saved"); qc.invalidateQueries({ queryKey: ["/api/admin/settings"] }); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/settings"]],
+    successToast: "Rules saved",
   });
 
-  if (q.isLoading) return <Skeleton className="h-64 max-w-2xl" />;
   const rows: { key: keyof Rules; label: string; desc: string; kind: "switch" | "number" }[] = [
     { key: "selfEnrollment", label: "Self enrollment", desc: "Learners can enroll into published courses themselves", kind: "switch" },
     { key: "requireApproval", label: "Require approval", desc: "Enrollment requests must be approved by an admin", kind: "switch" },
@@ -179,16 +177,25 @@ function RulesForm() {
   );
 }
 
+interface RbacRole { key: string; label: string; permissions: string[] }
+
 function RolesMatrix() {
-  const allPerms = ROLE_PERMISSIONS.super_admin;
+  // The matrix is served from the backend's enforced RBAC tables — never a local copy.
+  const { data, isLoading } = useQuery<{ roles: RbacRole[] }>({
+    queryKey: ["/api/admin/rbac"],
+    queryFn: () => api("/api/admin/rbac"),
+  });
+  const roles = React.useMemo(() => data?.roles ?? [], [data]);
   const grouped = React.useMemo(() => {
-    const m = new Map<string, Permission[]>();
-    for (const p of allPerms) {
+    const m = new Map<string, string[]>();
+    for (const p of [...new Set(roles.flatMap((r) => r.permissions))].sort()) {
       const [res] = p.split(":");
       m.set(res, [...(m.get(res) ?? []), p]);
     }
     return [...m.entries()];
-  }, [allPerms]);
+  }, [roles]);
+
+  if (isLoading) return <Skeleton className="h-64 w-full" />;
 
   return (
     <Card>
@@ -198,21 +205,21 @@ function RolesMatrix() {
           <thead>
             <tr className="border-b text-left text-(length:--fs-meta) leading-4 text-muted-foreground">
               <th className="px-4 py-2 font-medium">Permission</th>
-              {ROLES.map((r) => <th key={r.role} className="px-4 py-2 text-center font-medium">{r.label}</th>)}
+              {roles.map((r) => <th key={r.key} className="px-4 py-2 text-center font-medium">{r.label}</th>)}
             </tr>
           </thead>
           <tbody>
             {grouped.map(([res, perms]) => (
               <React.Fragment key={res}>
                 <tr className="bg-muted/50">
-                  <td colSpan={6} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{res}</td>
+                  <td colSpan={roles.length + 1} className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{res}</td>
                 </tr>
                 {perms.map((p) => (
                   <tr key={p} className="border-b last:border-0">
                     <td className="px-4 py-2 pl-8 font-mono text-xs">{p}</td>
-                    {ROLES.map((r) => (
-                      <td key={r.role} className="px-4 py-2 text-center">
-                        {ROLE_PERMISSIONS[r.role].includes(p)
+                    {roles.map((r) => (
+                      <td key={r.key} className="px-4 py-2 text-center">
+                        {r.permissions.includes(p)
                           ? <CheckIcon className="mx-auto size-4 text-emerald-600" />
                           : <MinusIcon className="mx-auto size-4 text-muted-foreground/30" />}
                       </td>

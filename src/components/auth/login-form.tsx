@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 export function LoginForm({ next }: { next?: string }) {
   const router = useRouter();
   const passwordRef = React.useRef<HTMLInputElement>(null);
-  const [identifier, setIdentifier] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [pending, setPending] = React.useState(false);
@@ -21,8 +21,8 @@ export function LoginForm({ next }: { next?: string }) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pending) return;
-    if (!identifier.trim() || !password) {
-      setError("Enter your username and password.");
+    if (!email.trim() || !password) {
+      setError("Enter your email and password.");
       return;
     }
     setError(null);
@@ -30,14 +30,14 @@ export function LoginForm({ next }: { next?: string }) {
     try {
       const res = await api<{ role: string; redirectTo: string }>("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ identifier: identifier.trim(), password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
       // honor ?next= only when it targets the signed-in role's own portal
       const portal = res.redirectTo?.split("/")[1];
       router.push(next && portal && next.startsWith(`/${portal}`) ? next : (res.redirectTo ?? "/"));
       router.refresh();
     } catch (err) {
-      setError((err as Error).message || "Invalid username or password.");
+      setError((err as Error).message || "Invalid email or password.");
       setPassword("");
       setPending(false);
       passwordRef.current?.focus();
@@ -55,16 +55,17 @@ export function LoginForm({ next }: { next?: string }) {
 
       <form onSubmit={submit} className="mt-7 flex flex-col gap-4" noValidate={false}>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="identifier">Email or username</Label>
+          <Label htmlFor="email">Email</Label>
           <Input
-            id="identifier"
-            name="username"
-            autoComplete="username"
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
             autoFocus
             required
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="admin"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
           />
         </div>
 

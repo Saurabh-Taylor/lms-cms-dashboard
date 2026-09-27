@@ -2,9 +2,12 @@ import { and, asc, eq, like, or } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { assessments, categories, courses, groups, users } from "@/lib/db/schema";
 import { likePattern, ok } from "@/lib/api/helpers";
+import { requireAdmin } from "@/lib/me";
 
 // Async option source for comboboxes: /api/admin/options?resource=learners&q=
 export async function GET(req: Request) {
+  const me = await requireAdmin();
+  if (me instanceof Response) return me;
   const sp = new URL(req.url).searchParams;
   const resource = sp.get("resource") ?? "";
   const q = (sp.get("q") ?? "").trim();

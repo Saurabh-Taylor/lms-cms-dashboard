@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CategoryRow } from "@/lib/types";
 import { ModuleTable } from "@/components/data-table/module-table";
 import { RowActions } from "@/components/data-table/row-actions";
@@ -19,14 +18,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { fmtDate } from "@/lib/format";
 
 export function CategoriesTable() {
-  const qc = useQueryClient();
   const [edit, setEdit] = React.useState<CategoryRow | null>(null);
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/admin/categories"] });
 
-  const del = useMutation({
+  const del = useApiMutation({
     mutationFn: (id: number) => api(`/api/admin/categories/${id}`, { method: "DELETE" }),
-    onSuccess: () => { toast.success("Category deleted"); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/categories"]],
+    successToast: "Category deleted",
   });
 
   const columns = React.useMemo<ColumnDef<CategoryRow, unknown>[]>(() => [
@@ -69,7 +66,6 @@ export function CategoryActions() {
 }
 
 function CategoryDialog({ open, onOpenChange, edit }: { open: boolean; onOpenChange: (v: boolean) => void; edit?: CategoryRow | null }) {
-  const qc = useQueryClient();
   const [name, setName] = React.useState("");
   const [description, setDescription] = React.useState("");
 
@@ -80,17 +76,14 @@ function CategoryDialog({ open, onOpenChange, edit }: { open: boolean; onOpenCha
     if (open) { setName(edit?.name ?? ""); setDescription(edit?.description ?? ""); }
   }
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () =>
       edit
         ? api(`/api/admin/categories/${edit.id}`, { method: "PATCH", body: JSON.stringify({ name, description }) })
         : api("/api/admin/categories", { method: "POST", body: JSON.stringify({ name, description }) }),
-    onSuccess: () => {
-      toast.success(edit ? "Category updated" : "Category created");
-      qc.invalidateQueries({ queryKey: ["/api/admin/categories"] });
-      onOpenChange(false);
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/categories"]],
+    successToast: () => (edit ? "Category updated" : "Category created"),
+    onSuccess: () => onOpenChange(false),
   });
 
   return (

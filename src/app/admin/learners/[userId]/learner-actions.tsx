@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,17 +20,13 @@ import { EllipsisIcon } from "lucide-react";
 interface EnrollResultResponse { succeeded: number; results: EnrollResult[] }
 
 export function LearnerActions({ user }: { user: { id: number; name: string; email: string; status: string } }) {
-  const qc = useQueryClient();
   const [assignOpen, setAssignOpen] = React.useState(false);
 
-  const patch = useMutation({
+  const patch = useApiMutation({
     mutationFn: (body: Record<string, unknown>) =>
       api(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    onSuccess: () => {
-      toast.success("User updated");
-      qc.invalidateQueries();
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: "all",
+    successToast: "User updated",
   });
 
   return (
@@ -67,18 +63,16 @@ function AssignDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const qc = useQueryClient();
   const [item, setItem] = React.useState<OptionItem | null>(null);
-  const assign = useMutation({
+  const assign = useApiMutation({
     mutationFn: () =>
       api<EnrollResultResponse>("/api/admin/enrollments", { method: "POST", body: JSON.stringify({ userId: user.id, courseId: item!.id }) }),
+    invalidate: "all",
     onSuccess: (r) => {
       if (r.succeeded) toast.success(`Assigned to ${user.name}`);
       else toast.warning(r.results?.[0]?.reason ?? "Not assigned");
-      qc.invalidateQueries();
       onOpenChange(false); setItem(null);
     },
-    onError: (e) => toast.error(e.message),
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

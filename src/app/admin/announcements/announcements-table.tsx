@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { MegaphoneIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { AnnouncementRow } from "@/lib/types";
 import { ModuleTable } from "@/components/data-table/module-table";
 import { RowActions } from "@/components/data-table/row-actions";
@@ -23,19 +22,16 @@ import {
 import { fmtDate, fmtRelative } from "@/lib/format";
 
 export function AnnouncementsTable() {
-  const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
-
-  const patch = useMutation({
+  const patch = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       api(`/api/admin/announcements/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    onSuccess: () => { toast.success("Updated"); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/announcements"]],
+    successToast: "Updated",
   });
-  const del = useMutation({
+  const del = useApiMutation({
     mutationFn: (id: number) => api(`/api/admin/announcements/${id}`, { method: "DELETE" }),
-    onSuccess: () => { toast.success("Deleted"); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/announcements"]],
+    successToast: "Deleted",
   });
 
   const columns = React.useMemo<ColumnDef<AnnouncementRow, unknown>[]>(() => [
@@ -83,17 +79,15 @@ export function AnnouncementActions() {
 }
 
 function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const qc = useQueryClient();
   const [f, setF] = React.useState({ title: "", body: "", audience: "all", status: "draft" });
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => api("/api/admin/announcements", { method: "POST", body: JSON.stringify(f) }),
+    invalidate: [["/api/admin/announcements"]],
+    successToast: () => (f.status === "sent" ? "Announcement sent" : "Draft saved"),
     onSuccess: () => {
-      toast.success(f.status === "sent" ? "Announcement sent" : "Draft saved");
-      qc.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
       onOpenChange(false);
       setF({ title: "", body: "", audience: "all", status: "draft" });
     },
-    onError: (e) => toast.error(e.message),
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

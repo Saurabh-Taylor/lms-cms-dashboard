@@ -1,10 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { EmailTemplateRow } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,13 +28,13 @@ export function TemplatesClient({ templates }: { templates: EmailTemplateRow[] }
     setBody(t?.body ?? "");
   }
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () =>
       api(`/api/admin/email-templates/${sel}`, {
         method: "PATCH", body: JSON.stringify({ subject, body }),
       }),
-    onSuccess: () => { toast.success("Template saved"); router.refresh(); },
-    onError: (e) => toast.error(e.message),
+    successToast: "Template saved",
+    onSuccess: () => router.refresh(),
   });
 
   return (

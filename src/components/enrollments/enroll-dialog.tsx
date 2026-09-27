@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircleIcon, XCircleIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -21,12 +21,11 @@ export interface EnrollResult {
 }
 
 export function SingleEnrollDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const qc = useQueryClient();
   const [user, setUser] = React.useState<OptionItem | null>(null);
   const [course, setCourse] = React.useState<OptionItem | null>(null);
   const [expiry, setExpiry] = React.useState("");
 
-  const mut = useMutation({
+  const mut = useApiMutation({
     mutationFn: () =>
       api<{ succeeded: number; results: EnrollResult[] }>("/api/admin/enrollments", {
         method: "POST",
@@ -35,12 +34,11 @@ export function SingleEnrollDialog({ open, onOpenChange }: { open: boolean; onOp
           expiresAt: expiry ? new Date(expiry).getTime() : undefined,
         }),
       }),
+    invalidate: [["/api/admin/enrollments"]],
     onSuccess: (r) => {
       if (r.succeeded) { toast.success("Enrollment created"); onOpenChange(false); }
       else toast.warning(r.results[0]?.reason ?? "Not enrolled");
-      qc.invalidateQueries({ queryKey: ["/api/admin/enrollments"] });
     },
-    onError: (e) => toast.error(e.message),
   });
 
   return (
@@ -78,7 +76,6 @@ export function SingleEnrollDialog({ open, onOpenChange }: { open: boolean; onOp
 type BulkPhase = "select" | "processing" | "done";
 
 export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const qc = useQueryClient();
   const [learners, setLearners] = React.useState<OptionItem[]>([]);
   const [courses, setCourses] = React.useState<OptionItem[]>([]);
   const [phase, setPhase] = React.useState<BulkPhase>("select");
@@ -94,12 +91,13 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
     [courses]
   );
 
-  const run = useMutation({
+  const run = useApiMutation({
     mutationFn: (userIds: number[]) =>
       api<{ succeeded: number; failed: number; results: EnrollResult[] }>("/api/admin/enrollments", {
         method: "POST",
         body: JSON.stringify({ userIds, courseIds: courses.map((c) => c.id) }),
       }),
+    invalidate: [["/api/admin/enrollments"]],
     onSuccess: (r, userIds) => {
       setResults((prev) => {
         // merge retry results back over previous failures
@@ -109,11 +107,10 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
         return [...byUser.values()];
       });
       setPhase("done");
-      qc.invalidateQueries({ queryKey: ["/api/admin/enrollments"] });
       if (!r.failed) toast.success(`${r.succeeded} enrollment(s) created`);
       else toast.warning(`${r.succeeded} created, ${r.failed} failed`);
     },
-    onError: (e) => { toast.error(e.message); setPhase("select"); },
+    onError: () => setPhase("select"),
   });
 
   const failed = results.filter((r) => !r.ok);

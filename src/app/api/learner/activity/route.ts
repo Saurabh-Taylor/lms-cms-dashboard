@@ -3,14 +3,14 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { activityEvents, enrollments, users } from "@/lib/db/schema";
 import { fail, ok } from "@/lib/api/helpers";
-import { getCurrentLearner } from "@/lib/me";
+import { requireLearner } from "@/lib/me";
 
 const ALLOWED = new Set(["logged_in", "course_opened", "lesson_viewed", "resource_downloaded"]);
 
 /** Records a learner activity event (powers continue-learning ordering). */
 export async function POST(req: Request) {
-  const me = await getCurrentLearner();
-  if (!me) return fail(401, "Not signed in");
+  const me = await requireLearner();
+  if (me instanceof Response) return me;
 
   const parsed = z
     .object({ type: z.string(), courseId: z.number().int().positive().optional() })

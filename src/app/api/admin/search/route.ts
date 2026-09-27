@@ -2,8 +2,11 @@ import { like, or } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { assessments, courses, users } from "@/lib/db/schema";
 import { likePattern, ok } from "@/lib/api/helpers";
+import { requireAdmin } from "@/lib/me";
 
 export async function GET(req: Request) {
+  const me = await requireAdmin();
+  if (me instanceof Response) return me;
   const q = (new URL(req.url).searchParams.get("q") ?? "").trim();
   if (q.length < 2) return ok({ learners: [], courses: [], assessments: [] });
   const p = likePattern(q);

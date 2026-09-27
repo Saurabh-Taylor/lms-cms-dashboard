@@ -31,7 +31,10 @@ const RANGES = [
 const ACTIVITY_LABEL: Record<string, string> = {
   logged_in: "logged in",
   course_opened: "opened course",
+  lesson_viewed: "viewed a chapter in",
   chapter_completed: "completed a chapter in",
+  course_completed: "completed course",
+  certificate_earned: "earned a certificate for",
   lab_started: "started lab",
   lab_completed: "completed lab",
   assignment_submitted: "submitted an assignment for",

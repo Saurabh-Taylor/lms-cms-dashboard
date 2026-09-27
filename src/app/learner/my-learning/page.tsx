@@ -14,12 +14,12 @@ import { LearningCard } from "@/components/learner/learning-card";
 export default function MyLearningPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["/api/learner/courses"],
-    queryFn: () => api<LearnerCourse[]>("/api/learner/courses"),
+    queryFn: () => api<{ data: LearnerCourse[] }>("/api/learner/courses"),
   });
   const [tab, setTab] = React.useState("active");
 
   const courses = React.useMemo(() => {
-    const all = data ?? [];
+    const all = data?.data ?? [];
     if (tab === "active") return all.filter((c) => c.enrollment.status === "active");
     if (tab === "completed") return all.filter((c) => c.enrollment.status === "completed");
     return all;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { ClipboardCheckIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
 import type { LearnerAssessment } from "@/lib/learner-types";
@@ -63,7 +64,11 @@ export function AssessmentList({
           <tbody>
             {data.map((a) => (
               <tr key={a.id} className="border-b last:border-0">
-                <td className="px-4 py-2.5 font-medium">{a.title}</td>
+                <td className="px-4 py-2.5 font-medium">
+                  <Link href={`/learner/assessments/${a.id}` as never} className="hover:underline">
+                    {a.title}
+                  </Link>
+                </td>
                 <td className="px-4 py-2.5 text-muted-foreground">{a.courseTitle ?? "—"}</td>
                 <td className="px-4 py-2.5"><Badge variant="secondary" className="capitalize">{a.kind}</Badge></td>
                 <td className="px-4 py-2.5 text-right tabular-nums">{a.questionCount}</td>

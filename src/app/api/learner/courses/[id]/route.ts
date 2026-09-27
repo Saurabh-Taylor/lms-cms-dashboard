@@ -1,10 +1,10 @@
 import { fail, ok } from "@/lib/api/helpers";
-import { getCurrentLearner } from "@/lib/me";
+import { requireLearner } from "@/lib/me";
 import { getCourseDetail } from "@/lib/learner/data";
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/learner/courses/[id]">) {
-  const me = await getCurrentLearner();
-  if (!me) return fail(401, "Not signed in");
+  const me = await requireLearner();
+  if (me instanceof Response) return me;
 
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id)) return fail(400, "Invalid course id");

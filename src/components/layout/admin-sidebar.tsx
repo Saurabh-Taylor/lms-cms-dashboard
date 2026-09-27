@@ -2,14 +2,13 @@
 
 import { AppSidebar } from "@/components/shared/app-shell/app-sidebar";
 import { NAV } from "@/lib/nav";
-import { can, CURRENT_ROLE } from "@/lib/permissions";
 
-/** Admin nav — permissions filtered at the wrapper, shell stays generic. */
-export function AdminSidebar() {
+/** Admin nav — filtered by the session's server-resolved RBAC permissions. */
+export function AdminSidebar({ permissions }: { permissions: string[] }) {
   const nav = NAV.map((group) => ({
     ...group,
     items: group.items.filter(
-      (i) => !i.permission || can(CURRENT_ROLE, i.permission)
+      (i) => !i.permission || permissions.includes(i.permission)
     ),
   })).filter((g) => g.items.length > 0);
 

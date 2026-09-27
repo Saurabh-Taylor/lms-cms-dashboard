@@ -3,11 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem, Role, UserRow } from "@/lib/types";
 import { useServerTable } from "@/hooks/use-server-table";
 import { DataTable } from "@/components/data-table/data-table";
@@ -38,7 +39,6 @@ const ACTIVITY_OPTS = [
 
 export function UsersTable({ role }: { role: Role }) {
   const router = useRouter();
-  const qc = useQueryClient();
   const st = useServerTable<UserRow>("/api/admin/users", [
     "status", "cohortId", "activeWithinDays", "courseId",
   ], { role });
@@ -58,13 +58,11 @@ export function UsersTable({ role }: { role: Role }) {
     enabled: role === "learner",
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
-
-  const patch = useMutation({
+  const patch = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    onSuccess: () => { toast.success("User updated"); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/users"]],
+    successToast: "User updated",
   });
 
   // force the role filter into every request
@@ -209,17 +207,13 @@ export function UsersTableActions({ role }: { role: Role }) {
 }
 
 function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenChange: (v: boolean) => void; role: Role }) {
-  const qc = useQueryClient();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () => api("/api/admin/users", { method: "POST", body: JSON.stringify({ name, email, role }) }),
-    onSuccess: () => {
-      toast.success(`${name} invited`);
-      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      onOpenChange(false); setName(""); setEmail("");
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/users"]],
+    successToast: () => `${name} invited`,
+    onSuccess: () => { onOpenChange(false); setName(""); setEmail(""); },
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -239,22 +233,19 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
 }
 
 function AssignCourseDialog({ user, onClose }: { user: UserRow | null; onClose: () => void }) {
-  const qc = useQueryClient();
   const [course, setCourse] = React.useState<OptionItem | null>(null);
-  const assign = useMutation({
+  const assign = useApiMutation({
     mutationFn: () =>
       api<{ succeeded: number; results: { reason?: string }[] }>("/api/admin/enrollments", {
         method: "POST",
         body: JSON.stringify({ userId: user!.id, courseId: course!.id }),
       }),
+    invalidate: [["/api/admin/enrollments"], ["/api/admin/users"]],
     onSuccess: (r) => {
       if (r.succeeded) toast.success(`Enrolled ${user!.name}`);
       else toast.warning(r.results?.[0]?.reason ?? "Not enrolled");
-      qc.invalidateQueries({ queryKey: ["/api/admin/enrollments"] });
-      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
       onClose(); setCourse(null);
     },
-    onError: (e) => toast.error(e.message),
   });
   return (
     <Dialog open={!!user} onOpenChange={(v) => !v && onClose()}>

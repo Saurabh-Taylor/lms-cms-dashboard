@@ -4,10 +4,14 @@ import { db } from "@/lib/db/client";
 import { courses, lessons, sections } from "@/lib/db/schema";
 import { fail, ok } from "@/lib/api/helpers";
 import { audit } from "@/lib/api/audit";
+import { requirePermission } from "@/lib/me";
+import { PERM } from "@/lib/permissions";
 
 type Ctx = RouteContext<"/api/admin/courses/[id]/curriculum">;
 
 export async function GET(_req: Request, ctx: Ctx) {
+  const me = await requirePermission(PERM.courseView);
+  if (me instanceof Response) return me;
   const { id } = await ctx.params;
   const courseId = Number(id);
   const [course] = await db.select().from(courses).where(eq(courses.id, courseId));
@@ -48,6 +52,8 @@ const putSchema = z.object({
 });
 
 export async function PUT(req: Request, ctx: Ctx) {
+  const me = await requirePermission(PERM.courseUpdate);
+  if (me instanceof Response) return me;
   const { id } = await ctx.params;
   const courseId = Number(id);
   const parsed = putSchema.safeParse(await req.json().catch(() => ({})));
@@ -69,6 +75,6 @@ export async function PUT(req: Request, ctx: Ctx) {
       }
     }
   });
-  audit({ action: "reordered curriculum", targetType: "course", targetId: courseId, targetLabel: String(courseId), module: "courses" });
+  await audit(me, { action: "reordered curriculum", targetType: "course", targetId: courseId, targetLabel: String(courseId), module: "courses" });
   return ok({ updated: true });
 }

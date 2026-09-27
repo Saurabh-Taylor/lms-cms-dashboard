@@ -1,9 +1,10 @@
-import { fail, ok } from "@/lib/api/helpers";
-import { getCurrentLearner } from "@/lib/me";
+import { listOk } from "@/lib/api/helpers";
+import { requireLearner } from "@/lib/me";
 import { listMyCourses } from "@/lib/learner/data";
 
 export async function GET() {
-  const me = await getCurrentLearner();
-  if (!me) return fail(401, "Not signed in");
-  return ok(listMyCourses(me.id));
+  const me = await requireLearner();
+  if (me instanceof Response) return me;
+  const courses = listMyCourses(me.id);
+  return listOk(courses, courses.length, { page: 1, pageSize: courses.length });
 }

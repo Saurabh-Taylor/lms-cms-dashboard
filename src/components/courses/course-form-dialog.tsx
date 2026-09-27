@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -25,7 +24,6 @@ export function CourseFormDialog({
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: number) => void;
 }) {
-  const qc = useQueryClient();
   const [title, setTitle] = React.useState("");
   const [slug, setSlug] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -38,7 +36,7 @@ export function CourseFormDialog({
     if (open) api<OptionItem[]>("/api/admin/options?resource=categories").then(setCategories).catch(() => {});
   }, [open]);
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       api<{ id: number }>("/api/admin/courses", {
         method: "POST",
@@ -47,14 +45,13 @@ export function CourseFormDialog({
           difficulty, categoryId, instructorId: instructor?.id ?? undefined,
         }),
       }),
+    invalidate: [["/api/admin/courses"]],
+    successToast: "Course created",
     onSuccess: (r) => {
-      toast.success("Course created");
-      qc.invalidateQueries({ queryKey: ["/api/admin/courses"] });
       onOpenChange(false);
       setTitle(""); setSlug(""); setDescription("");
       onCreated?.(r.id);
     },
-    onError: (e) => toast.error(e.message),
   });
 
   return (

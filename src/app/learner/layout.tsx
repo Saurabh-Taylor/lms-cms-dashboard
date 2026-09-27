@@ -9,5 +9,5 @@ export default async function LearnerLayout({ children }: { children: React.Reac
     const u = await getCurrentUser();
     redirect(u ? homeForRole(u.role) : "/login");
   }
-  return <LearnerShell key={me.id} me={me}>{children}</LearnerShell>;
+  return <LearnerShell key={me.email} me={me}>{children}</LearnerShell>;
 }

@@ -3,10 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { EnrollmentRow } from "@/lib/types";
 import { useTableParams } from "@/hooks/use-table-params";
 import { useList } from "@/hooks/use-list";
@@ -36,7 +35,6 @@ export function EnrollmentsTable({
   compact?: boolean;
 }) {
   const router = useRouter();
-  const qc = useQueryClient();
   const tp = useTableParams();
   const [selection, setSelection] = React.useState<RowSelectionState>({});
   const [prevParams, setPrevParams] = React.useState(tp.params);
@@ -57,15 +55,12 @@ export function EnrollmentsTable({
     cohortId: tp.params.cohortId,
   });
 
-  const bulk = useMutation({
+  const bulk = useApiMutation({
     mutationFn: ({ ids, action }: { ids: number[]; action: string }) =>
       api("/api/admin/enrollments", { method: "PATCH", body: JSON.stringify({ ids, action }) }),
-    onSuccess: (_, v) => {
-      toast.success(`Updated ${v.ids.length} enrollment(s)`);
-      setSelection({});
-      qc.invalidateQueries({ queryKey: ["/api/admin/enrollments"] });
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/enrollments"]],
+    successToast: (_, v) => `Updated ${v.ids.length} enrollment(s)`,
+    onSuccess: () => setSelection({}),
   });
 
   const columns = React.useMemo<ColumnDef<EnrollmentRow, unknown>[]>(() => {

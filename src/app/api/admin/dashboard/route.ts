@@ -4,8 +4,12 @@ import {
   activityEvents, certificates, courses, enrollments, users,
 } from "@/lib/db/schema";
 import { ok } from "@/lib/api/helpers";
+import { requirePermission } from "@/lib/me";
+import { PERM } from "@/lib/permissions";
 
 export async function GET(req: Request) {
+  const me = await requirePermission(PERM.analyticsView);
+  if (me instanceof Response) return me;
   const sp = new URL(req.url).searchParams;
   const rangeDays = Math.min(365, Math.max(7, Number(sp.get("range")) || 30));
   const since = new Date(Date.now() - rangeDays * 86400000);

@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, like, max, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   announcements, assessmentAttempts, assessments, categories, certificates,
-  courses, enrollments, lessons, sections, users,
+  courses, enrollments, lessonProgress, lessons, sections, users,
   activityEvents,
 } from "@/lib/db/schema";
 import { likePattern } from "@/lib/api/helpers";
@@ -123,6 +123,15 @@ export function getCourseDetail(userId: number, courseId: number): LearnerCourse
     bySection.set(l.lessons.sectionId, arr);
   }
 
+  const completed = new Map(
+    db
+      .select({ lessonId: lessonProgress.lessonId, completedAt: lessonProgress.completedAt })
+      .from(lessonProgress)
+      .where(eq(lessonProgress.enrollmentId, row.enrollment.id))
+      .all()
+      .map((r) => [r.lessonId, r.completedAt.getTime()])
+  );
+
   return {
     course: { ...row },
     enrollment: mapEnrollment(row.enrollment),
@@ -132,7 +141,10 @@ export function getCourseDetail(userId: number, courseId: number): LearnerCourse
         courseId: s.courseId,
         title: s.title,
         position: s.position,
-        lessons: (bySection.get(s.id) ?? []).map((l) => l.lessons),
+        lessons: (bySection.get(s.id) ?? []).map((l) => ({
+          ...l.lessons,
+          completedAt: completed.get(l.lessons.id) ?? null,
+        })),
       }))
       .filter((s) => s.lessons.length > 0),
   };
@@ -186,9 +198,9 @@ export function listMyAssessments(
     .select({
       assessmentId: assessmentAttempts.assessmentId,
       used: sql<number>`count(*)`,
-      best: sql<number | null>`max(${assessmentAttempts.score})`,
-      passed: sql<number>`max(${assessmentAttempts.passed})`,
-      last: max(assessmentAttempts.submittedAt),
+      best: sql<number | null>`max(case when ${assessmentAttempts.status} != 'in_progress' then ${assessmentAttempts.score} end)`,
+      passed: sql<number>`max(case when ${assessmentAttempts.status} != 'in_progress' then ${assessmentAttempts.passed} else 0 end)`,
+      last: sql<number | null>`max(case when ${assessmentAttempts.status} != 'in_progress' then ${assessmentAttempts.submittedAt} end)`,
     })
     .from(assessmentAttempts)
     .where(

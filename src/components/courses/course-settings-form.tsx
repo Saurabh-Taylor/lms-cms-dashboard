@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CourseRow, OptionItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import { XIcon } from "lucide-react";
 
 export function CourseSettingsForm({ courseId }: { courseId: number }) {
   const router = useRouter();
-  const qc = useQueryClient();
   const { data: course, isLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: () => api<CourseRow>(`/api/admin/courses/${courseId}`),
@@ -52,19 +51,15 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
     api<OptionItem[]>("/api/admin/options?resource=categories").then(setCategories).catch(() => {});
   }, []);
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () =>
       api(`/api/admin/courses/${courseId}`, {
         method: "PATCH",
         body: JSON.stringify({ ...form, instructorId: instructor?.id ?? null }),
       }),
-    onSuccess: () => {
-      toast.success("Settings saved");
-      qc.invalidateQueries({ queryKey: ["course", courseId] });
-      qc.invalidateQueries({ queryKey: ["/api/admin/courses"] });
-      router.refresh();
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["course", courseId], ["/api/admin/courses"]],
+    successToast: "Settings saved",
+    onSuccess: () => router.refresh(),
   });
 
   if (isLoading || !form)

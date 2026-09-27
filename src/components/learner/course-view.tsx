@@ -9,6 +9,8 @@ import {
   ClipboardListIcon, type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { toast } from "sonner";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LearnerCourseDetail } from "@/lib/learner-types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -86,7 +88,9 @@ export function CourseView({ courseId }: { courseId: number }) {
     [data]
   );
 
-  const selectedId = Number(searchParams.get("lesson")) || flat[0]?.id;
+  // Resume point: explicit ?lesson= wins, else first incomplete lesson.
+  const selectedId =
+    Number(searchParams.get("lesson")) || flat.find((l) => !l.completedAt)?.id || flat[0]?.id;
   const idx = flat.findIndex((l) => l.id === selectedId);
   const lesson = idx >= 0 ? flat[idx] : flat[0];
   const lessonIdx = idx >= 0 ? idx : 0;
@@ -94,6 +98,24 @@ export function CourseView({ courseId }: { courseId: number }) {
   const selectLesson = (id: number) => {
     router.replace(`${pathname}?lesson=${id}` as never, { scroll: false });
   };
+
+  const completeMut = useApiMutation({
+    mutationFn: ({ id, done }: { id: number; done: boolean }) =>
+      api<{ progress: number; status: string; certificate: { serial: string } | null }>(
+        `/api/learner/lessons/${id}/complete`,
+        { method: done ? "DELETE" : "POST" }
+      ),
+    invalidate: [["/api/learner/courses"], ["/api/learner/dashboard"], ["/api/learner/certificates"]],
+    onSuccess: (res, vars) => {
+      if (res.certificate)
+        toast.success(`Course completed — certificate ${res.certificate.serial} earned`);
+      if (!vars.done) {
+        const i = flat.findIndex((l) => l.id === vars.id);
+        const next = flat[i + 1];
+        if (next && !next.completedAt) selectLesson(next.id);
+      }
+    },
+  });
 
   // activity ping — powers continue-learning ordering on the dashboard
   React.useEffect(() => {
@@ -188,16 +210,33 @@ export function CourseView({ courseId }: { courseId: number }) {
               <p className="text-sm text-muted-foreground">This course has no published lessons yet.</p>
             )}
           </CardContent>
-          <div className="flex items-center justify-between border-t px-4 py-3">
+          <div className="flex items-center justify-between gap-2 border-t px-4 py-3">
             <Button
               variant="ghost" size="sm" disabled={lessonIdx <= 0}
               onClick={() => selectLesson(flat[lessonIdx - 1].id)}
             >
               <ArrowLeftIcon /> Previous
             </Button>
-            <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">
-              {flat.length ? `${lessonIdx + 1} of ${flat.length}` : ""}
-            </span>
+            {lesson && (
+              lesson.completedAt ? (
+                <Button
+                  variant="ghost" size="sm"
+                  className="text-emerald-700 dark:text-emerald-400"
+                  disabled={completeMut.isPending}
+                  onClick={() => completeMut.mutate({ id: lesson.id, done: true })}
+                >
+                  <CheckCircle2Icon /> Completed — undo
+                </Button>
+              ) : (
+                <Button
+                  size="sm" disabled={completeMut.isPending}
+                  onClick={() => completeMut.mutate({ id: lesson.id, done: false })}
+                >
+                  <CheckCircle2Icon />
+                  {lessonIdx < flat.length - 1 ? "Mark complete & continue" : "Mark complete"}
+                </Button>
+              )
+            )}
             <Button
               variant="ghost" size="sm" disabled={lessonIdx >= flat.length - 1}
               onClick={() => selectLesson(flat[lessonIdx + 1].id)}
@@ -220,7 +259,7 @@ export function CourseView({ courseId }: { courseId: number }) {
                 </p>
                 <ul>
                   {s.lessons.map((l) => {
-                    const Icon = LESSON_ICONS[l.type] ?? FileTextIcon;
+                    const Icon = l.completedAt ? CheckCircle2Icon : (LESSON_ICONS[l.type] ?? FileTextIcon);
                     const active = l.id === lesson?.id;
                     return (
                       <li key={l.id}>
@@ -233,7 +272,16 @@ export function CourseView({ courseId }: { courseId: number }) {
                           )}
                           aria-current={active ? "true" : undefined}
                         >
-                          <Icon className={cn("size-3.5 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                          <Icon
+                            className={cn(
+                              "size-3.5 shrink-0",
+                              l.completedAt
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : active
+                                  ? "text-primary"
+                                  : "text-muted-foreground"
+                            )}
+                          />
                           <span className="min-w-0 flex-1 truncate">{l.title}</span>
                           <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
                             {fmtDuration(l.durationMin)}

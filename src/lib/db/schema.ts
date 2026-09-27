@@ -20,16 +20,18 @@ export const users = sqliteTable(
       .notNull()
       .default("active"),
     title: text("title"),
+    /** Better Auth account id on the NestJS API — the bridge between the local CMS row and the sign-in account. Null = never provisioned (seeded). */
+    authUserId: integer("auth_user_id"),
     // per-user UI personalization overrides (JSON, sparse — only non-default values)
     uiPreferences: text("ui_preferences"),
     // denormalized aggregates kept in sync by mutations (mirrors prod strategy)
     enrolledCount: integer("enrolled_count").notNull().default(0),
-    labsCount: integer("labs_count").notNull().default(0),
     avgProgress: integer("avg_progress").notNull().default(0),
     lastActiveAt: integer("last_active_at", { mode: "timestamp_ms" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
   (t) => [
+    uniqueIndex("users_auth_user_uniq").on(t.authUserId),
     index("users_role_idx").on(t.role),
     index("users_status_idx").on(t.status),
     index("users_last_active_idx").on(t.lastActiveAt),
@@ -183,6 +185,26 @@ export const enrollments = sqliteTable(
   ]
 );
 
+// Per-lesson completion for an enrollment — the source rows that derive
+// enrollments.progress (see refreshEnrollmentProgress in lib/db/aggregates.ts).
+export const lessonProgress = sqliteTable(
+  "lesson_progress",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    enrollmentId: integer("enrollment_id")
+      .notNull()
+      .references(() => enrollments.id, { onDelete: "cascade" }),
+    lessonId: integer("lesson_id")
+      .notNull()
+      .references(() => lessons.id, { onDelete: "cascade" }),
+    completedAt: integer("completed_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("lesson_progress_uniq").on(t.enrollmentId, t.lessonId),
+    index("lesson_progress_lesson_idx").on(t.lessonId),
+  ]
+);
+
 // ---------- Labs ----------
 export const labs = sqliteTable(
   "labs",
@@ -207,7 +229,6 @@ export const labs = sqliteTable(
     status: text("status", { enum: ["active", "disabled", "archived"] })
       .notNull()
       .default("active"),
-    assignedCount: integer("assigned_count").notNull().default(0),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   },
   (t) => [index("labs_status_idx").on(t.status)]
@@ -276,6 +297,25 @@ export const assessments = sqliteTable(
   ]
 );
 
+export const assessmentQuestions = sqliteTable(
+  "assessment_questions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    assessmentId: integer("assessment_id")
+      .notNull()
+      .references(() => assessments.id, { onDelete: "cascade" }),
+    position: integer("position").notNull().default(0),
+    prompt: text("prompt").notNull(),
+    type: text("type", { enum: ["single", "multi", "tf"] })
+      .notNull()
+      .default("single"),
+    options: text("options").notNull().default("[]"), // JSON string[]
+    correct: text("correct").notNull().default("[]"), // JSON option indices
+    points: integer("points").notNull().default(1),
+  },
+  (t) => [index("assessment_questions_assessment_idx").on(t.assessmentId)]
+);
+
 export const assessmentAttempts = sqliteTable(
   "assessment_attempts",
   {
@@ -287,13 +327,45 @@ export const assessmentAttempts = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     attemptNo: integer("attempt_no").notNull().default(1),
-    score: integer("score").notNull(),
-    passed: integer("passed", { mode: "boolean" }).notNull(),
-    submittedAt: integer("submitted_at", { mode: "timestamp_ms" }).notNull(),
+    status: text("status", {
+      enum: ["in_progress", "submitted", "expired"],
+    })
+      .notNull()
+      .default("submitted"),
+    startedAt: integer("started_at", { mode: "timestamp_ms" }),
+    questionIds: text("question_ids"), // JSON number[] — served order (resume/shuffle)
+    score: integer("score").notNull().default(0),
+    passed: integer("passed", { mode: "boolean" }).notNull().default(false),
+    submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),
+    // assignment-kind fields — quiz/exam leave these null
+    submission: text("submission"),
+    feedback: text("feedback"),
+    gradedAt: integer("graded_at", { mode: "timestamp_ms" }),
+    gradedBy: integer("graded_by").references(() => users.id),
   },
   (t) => [
     index("attempts_assessment_idx").on(t.assessmentId),
     index("attempts_user_idx").on(t.userId),
+  ]
+);
+
+export const assessmentAttemptAnswers = sqliteTable(
+  "assessment_attempt_answers",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    attemptId: integer("attempt_id")
+      .notNull()
+      .references(() => assessmentAttempts.id, { onDelete: "cascade" }),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => assessmentQuestions.id, { onDelete: "cascade" }),
+    selected: text("selected").notNull().default("[]"), // JSON option indices
+    correct: integer("correct", { mode: "boolean" }).notNull().default(false),
+    points: integer("points").notNull().default(0), // points earned
+  },
+  (t) => [
+    uniqueIndex("attempt_answers_uniq").on(t.attemptId, t.questionId),
+    index("attempt_answers_question_idx").on(t.questionId),
   ]
 );
 
@@ -312,6 +384,7 @@ export const certificates = sqliteTable(
     issuedAt: integer("issued_at", { mode: "timestamp_ms" }).notNull(),
   },
   (t) => [
+    uniqueIndex("certs_user_course_uniq").on(t.userId, t.courseId),
     index("certs_user_idx").on(t.userId),
     index("certs_course_idx").on(t.courseId),
   ]

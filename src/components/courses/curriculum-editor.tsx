@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext, DragOverlay, PointerSensor, closestCenter,
   useSensor, useSensors, type DragEndEvent, type DragStartEvent,
@@ -18,6 +18,7 @@ import {
   CodeIcon, ClipboardListIcon, FlaskConicalIcon, FileIcon, FolderIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CourseRow, LessonNode, SectionNode } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +71,7 @@ export function CurriculumEditor({ courseId }: { courseId: number }) {
 
   if (data && tree === null) setTree(data.sections);
 
-  const persist = useMutation({
+  const persist = useApiMutation({
     mutationFn: (sections: SectionNode[]) =>
       api(`/api/admin/courses/${courseId}/curriculum`, {
         method: "PUT",
@@ -81,15 +82,14 @@ export function CurriculumEditor({ courseId }: { courseId: number }) {
           })),
         }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["curriculum", courseId] }),
-    onError: (e) => toast.error(`Failed to save order: ${e.message}`),
+    invalidate: [["curriculum", courseId]],
+    errorToast: (e) => `Failed to save order: ${e.message}`,
   });
 
-  const sectionMut = useMutation({
+  const sectionMut = useApiMutation({
     mutationFn: ({ id, title }: { id: number; title: string }) =>
       api(`/api/admin/sections/${id}`, { method: "PATCH", body: JSON.stringify({ title }) }),
-    onSuccess: () => toast.success("Section renamed"),
-    onError: (e) => toast.error(e.message),
+    successToast: "Section renamed",
   });
 
   const refresh = () => {

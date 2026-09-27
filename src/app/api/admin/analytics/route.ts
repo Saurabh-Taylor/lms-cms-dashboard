@@ -5,8 +5,12 @@ import {
   courses, enrollments, users,
 } from "@/lib/db/schema";
 import { ok } from "@/lib/api/helpers";
+import { requirePermission } from "@/lib/me";
+import { PERM } from "@/lib/permissions";
 
 export async function GET(req: Request) {
+  const me = await requirePermission(PERM.analyticsView);
+  if (me instanceof Response) return me;
   const sp = new URL(req.url).searchParams;
   const rangeDays = Math.min(365, Math.max(7, Number(sp.get("range")) || 30));
   const courseId = sp.get("courseId") ? Number(sp.get("courseId")) : null;
@@ -63,12 +67,14 @@ export async function GET(req: Request) {
     .groupBy(categories.name)
     .orderBy(desc(sql`COUNT(${courses.id})`));
 
-  // --- assessments ---
+  // --- assessments (finalized only; assignments count once graded) ---
   const [aAgg] = await db.select({
     avgScore: sql<number>`COALESCE(CAST(AVG(${assessmentAttempts.score}) AS INT),0)`,
     passRate: sql<number>`COALESCE(CAST(100.0*SUM(${assessmentAttempts.passed})/COUNT(*) AS INT),0)`,
     attempts: sql<number>`COUNT(*)`,
-  }).from(assessmentAttempts);
+  }).from(assessmentAttempts)
+    .innerJoin(assessments, eq(assessmentAttempts.assessmentId, assessments.id))
+    .where(sql`${assessmentAttempts.status} != 'in_progress' AND (${assessments.kind} != 'assignment' OR ${assessmentAttempts.gradedAt} IS NOT NULL)`);
   const hardest = await db
     .select({
       id: assessments.id, title: assessments.title,

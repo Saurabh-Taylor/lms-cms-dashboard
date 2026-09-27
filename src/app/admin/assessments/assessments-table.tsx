@@ -3,11 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { AssessmentRow } from "@/lib/types";
 import { ModuleTable, type FilterDef } from "@/components/data-table/module-table";
 import { RowActions } from "@/components/data-table/row-actions";
@@ -38,20 +37,18 @@ const STATUS = [
 
 export function AssessmentsTable({ fixedKind }: { fixedKind?: string }) {
   const router = useRouter();
-  const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
 
-  const patch = useMutation({
+  const patch = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       api(`/api/admin/assessments/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    onSuccess: () => { toast.success("Updated"); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/assessments"]],
+    successToast: "Updated",
   });
 
-  const del = useMutation({
+  const del = useApiMutation({
     mutationFn: (id: number) => api(`/api/admin/assessments/${id}`, { method: "DELETE" }),
-    onSuccess: () => { toast.success("Deleted"); invalidate(); },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["/api/admin/assessments"]],
+    successToast: "Deleted",
   });
 
   const columns = React.useMemo<ColumnDef<AssessmentRow, unknown>[]>(() => [
@@ -129,7 +126,6 @@ export function AssessmentActions({ defaultKind }: { defaultKind?: string }) {
 }
 
 function CreateDialog({ open, onOpenChange, defaultKind }: { open: boolean; onOpenChange: (v: boolean) => void; defaultKind: string }) {
-  const qc = useQueryClient();
   const [f, setF] = React.useState({
     title: "", kind: defaultKind, passingScore: 70, maxAttempts: 1,
     timeLimitMin: 30, shuffleQuestions: false, showResults: true,
@@ -142,20 +138,19 @@ function CreateDialog({ open, onOpenChange, defaultKind }: { open: boolean; onOp
     setF((p) => ({ ...p, kind: defaultKind }));
   }
 
-  const create = useMutation({
+  const create = useApiMutation({
     mutationFn: () =>
       api("/api/admin/assessments", {
         method: "POST",
         body: JSON.stringify({ ...f, courseId: course?.id }),
       }),
+    invalidate: [["/api/admin/assessments"]],
+    successToast: () => `${f.kind} created as draft`,
     onSuccess: () => {
-      toast.success(`${f.kind} created as draft`);
-      qc.invalidateQueries({ queryKey: ["/api/admin/assessments"] });
       onOpenChange(false);
       setF({ title: "", kind: defaultKind, passingScore: 70, maxAttempts: 1, timeLimitMin: 30, shuffleQuestions: false, showResults: true });
       setCourse(null);
     },
-    onError: (e) => toast.error(e.message),
   });
 
   return (

@@ -1,20 +1,20 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   DndContext, PointerSensor, closestCenter, useSensor, useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { toast } from "sonner";
 import {
   CodeIcon, FileIcon, FlaskConicalIcon, GripVerticalIcon,
   ImageIcon, LinkIcon, PackageIcon, ClipboardListIcon, Trash2Icon,
   TypeIcon, VideoIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LessonNode, OptionItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +57,6 @@ let uid = 0;
 const nextId = () => `blk-${Date.now()}-${uid++}`;
 
 export function LessonEditor({ lessonId }: { lessonId: number }) {
-  const qc = useQueryClient();
   const { data: lesson, isLoading } = useQuery({
     queryKey: ["lesson", lessonId],
     queryFn: () => api<LessonNode>(`/api/admin/lessons/${lessonId}`),
@@ -72,29 +71,22 @@ export function LessonEditor({ lessonId }: { lessonId: number }) {
     setBlocks(JSON.parse(lesson.blocks || "[]"));
   }
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () =>
       api(`/api/admin/lessons/${lessonId}`, {
         method: "PATCH",
         body: JSON.stringify({ ...meta, blocks }),
       }),
-    onSuccess: () => {
-      toast.success("Chapter saved");
-      setDirty(false);
-      qc.invalidateQueries({ queryKey: ["lesson", lessonId] });
-      qc.invalidateQueries({ queryKey: ["curriculum"] });
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["lesson", lessonId], ["curriculum"]],
+    successToast: "Chapter saved",
+    onSuccess: () => setDirty(false),
   });
 
-  const setStatus = useMutation({
+  const setStatus = useApiMutation({
     mutationFn: (status: string) =>
       api(`/api/admin/lessons/${lessonId}`, { method: "PATCH", body: JSON.stringify({ status }) }),
-    onSuccess: () => {
-      toast.success("Status updated");
-      qc.invalidateQueries({ queryKey: ["lesson", lessonId] });
-    },
-    onError: (e) => toast.error(e.message),
+    invalidate: [["lesson", lessonId]],
+    successToast: "Status updated",
   });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));

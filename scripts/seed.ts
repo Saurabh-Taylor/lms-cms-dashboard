@@ -11,6 +11,7 @@ import { faker } from "@faker-js/faker";
 import path from "node:path";
 import fs from "node:fs";
 import * as s from "../src/lib/db/schema";
+import { ASSESSMENT_COUNTERS_SET, COURSE_COUNTERS_SET, PROGRESS_EXPR, USER_COUNTERS_SET } from "../src/lib/db/aggregates";
 import { sql, type InferInsertModel } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 
@@ -216,7 +217,79 @@ sqlite.transaction(() => {
     });
   }
   batch(s.assessments, assessments, 1000);
-  console.log("labs+assessments ✓");
+  // full rows (defaults applied) — index i ↔ id i+1 on a fresh table
+  const assessmentRows = db.select().from(s.assessments).orderBy(s.assessments.id).all();
+
+  // Assessment question bank — quiz/exam are auto-scored; assignments are
+  // submission-based and carry no questions (question_count derives to 0).
+  const questionRows: InferInsertModel<typeof s.assessmentQuestions>[] = [];
+  assessmentRows.forEach((a, i) => {
+    if (a.kind === "assignment") return;
+    for (let pos = 0; pos < a.questionCount; pos++) {
+      const type = faker.helpers.weightedArrayElement([
+        { value: "single" as const, weight: 60 },
+        { value: "multi" as const, weight: 15 },
+        { value: "tf" as const, weight: 25 },
+      ]);
+      const options =
+        type === "tf"
+          ? ["True", "False"]
+          : Array.from({ length: 4 }, () => faker.lorem.words({ min: 2, max: 6 }));
+      const correct =
+        type === "multi"
+          ? faker.helpers.arrayElements([0, 1, 2, 3], 2)
+          : [faker.number.int({ min: 0, max: options.length - 1 })];
+      questionRows.push({
+        assessmentId: i + 1, // sequential ids — fresh table, insertion order
+        position: pos,
+        prompt: `${faker.lorem.sentence({ min: 5, max: 11 }).replace(/\.$/, "")}?`,
+        type,
+        options: JSON.stringify(options),
+        correct: JSON.stringify(correct),
+        points: faker.number.int({ min: 1, max: 2 }),
+      });
+    }
+  });
+  batch(s.assessmentQuestions, questionRows, 2000);
+  console.log(`labs+assessments+${questionRows.length} questions ✓`);
+
+  // question ids per assessment — attempt answers join on these
+  const qsByAssessment = new Map<
+    number, { id: number; correct: number[]; optionCount: number; points: number }[]
+  >();
+  for (const r of db
+    .select({
+      id: s.assessmentQuestions.id,
+      assessmentId: s.assessmentQuestions.assessmentId,
+      options: s.assessmentQuestions.options,
+      correct: s.assessmentQuestions.correct,
+      points: s.assessmentQuestions.points,
+    })
+    .from(s.assessmentQuestions)
+    .orderBy(s.assessmentQuestions.assessmentId, s.assessmentQuestions.position)
+    .all()) {
+    const arr = qsByAssessment.get(r.assessmentId) ?? [];
+    arr.push({
+      id: r.id, correct: JSON.parse(r.correct),
+      optionCount: JSON.parse(r.options).length, points: r.points,
+    });
+    qsByAssessment.set(r.assessmentId, arr);
+  }
+
+  // Published lessons per course — drives lesson_progress generation, which
+  // in turn derives enrollments.progress (same formula as runtime).
+  const pubByCourse = new Map<number, number[]>();
+  for (const r of db
+    .select({ courseId: s.sections.courseId, id: s.lessons.id })
+    .from(s.lessons)
+    .innerJoin(s.sections, sql`${s.lessons.sectionId} = ${s.sections.id}`)
+    .where(sql`${s.lessons.status} = 'published'`)
+    .orderBy(s.sections.courseId, s.sections.position, s.lessons.position)
+    .all()) {
+    const arr = pubByCourse.get(r.courseId) ?? [];
+    arr.push(r.id);
+    pubByCourse.set(r.courseId, arr);
+  }
 
   // ---------- enrollments ----------
   const enrolRows: InferInsertModel<typeof s.enrollments>[] = [];
@@ -227,23 +300,54 @@ sqlite.transaction(() => {
     const k = `${u}:${c}`;
     if (enrolPairs.has(k)) continue;
     enrolPairs.add(k);
-    const progress = faker.number.int({ min: 0, max: 100 });
-    const status = progress >= 100 ? "completed" : faker.helpers.weightedArrayElement([
+    const lessonTotal = pubByCourse.get(c)?.length ?? 0;
+    let status = faker.helpers.weightedArrayElement([
       { value: "active" as const, weight: 85 },
       { value: "expired" as const, weight: 8 },
       { value: "suspended" as const, weight: 2 },
       { value: "completed" as const, weight: 5 },
     ]);
+    // completed requires all published lessons done — impossible on an empty course
+    if (status === "completed" && lessonTotal === 0) status = "active";
     const enrolled = ago(365, 0.7);
     enrolRows.push({
-      userId: u, courseId: c, status, progress: status === "completed" ? 100 : progress,
+      userId: u, courseId: c, status, progress: 0, // derived below from lesson_progress
       enrolledAt: d(enrolled),
       expiresAt: faker.number.float() > 0.7 ? d(enrolled - 365 * DAY) : null,
       completedAt: status === "completed" ? d(Math.max(0, enrolled - ago(200))) : null,
     });
   }
   batch(s.enrollments, enrolRows, 2000);
-  console.log("enrollments ✓");
+
+  // lesson_progress: completed rows → all lessons; others → a random prefix
+  // (non-completed can never reach 100%, so cap at n-1).
+  const enrols = db
+    .select({
+      id: s.enrollments.id, courseId: s.enrollments.courseId, status: s.enrollments.status,
+      enrolledAt: s.enrollments.enrolledAt, completedAt: s.enrollments.completedAt,
+    })
+    .from(s.enrollments)
+    .all();
+  const lpRows: InferInsertModel<typeof s.lessonProgress>[] = [];
+  for (const e of enrols) {
+    const ids = pubByCourse.get(e.courseId) ?? [];
+    const n = ids.length;
+    if (!n) continue;
+    const done = e.status === "completed" ? n : faker.number.int({ min: 0, max: n - 1 });
+    const end = e.completedAt?.getTime() ?? NOW;
+    const span = Math.max(1, end - e.enrolledAt.getTime());
+    for (let i = 0; i < done; i++) {
+      lpRows.push({
+        enrollmentId: e.id,
+        lessonId: ids[i],
+        completedAt: new Date(e.enrolledAt.getTime() + faker.number.int({ min: 0, max: span })),
+      });
+    }
+  }
+  batch(s.lessonProgress, lpRows, 2000);
+  // progress is derived — same expression the runtime refreshes use
+  db.run(sql.raw(`UPDATE enrollments SET progress = ${PROGRESS_EXPR}`));
+  console.log(`enrollments + ${lpRows.length} lesson_progress ✓`);
 
   // ---------- lab assignments ----------
   const labRows: InferInsertModel<typeof s.labAssignments>[] = [];
@@ -264,25 +368,92 @@ sqlite.transaction(() => {
   }
   batch(s.labAssignments, labRows, 2000);
 
-  // ---------- assessment attempts ----------
+  // ---------- assessment attempts (+ per-question answers) ----------
+  // Attempts only exist on scorable assessments; per-pair attempt numbers
+  // respect max_attempts; ~6% expired (abandoned, score 0, no answers).
+  // score is derived from generated answers — same math as runtime scoring.
+  const scorable = assessmentRows
+    .map((a, i) => ({ a, id: i + 1 }))
+    .filter((x) => x.a.kind !== "assignment" && x.a.questionCount > 0);
   const attemptRows: InferInsertModel<typeof s.assessmentAttempts>[] = [];
-  for (let i = 0; i < 28_000; i++) {
-    const score = faker.number.int({ min: 10, max: 100 });
+  const attemptMeta: { assessmentId: number; expired: boolean }[] = [];
+  const pairCount = new Map<string, number>();
+  while (attemptRows.length < 28_000) {
+    const { a, id: assessmentId } = faker.helpers.arrayElement(scorable);
+    const u = faker.number.int({ min: 401, max: 10_000 });
+    const key = `${assessmentId}:${u}`;
+    const no = pairCount.get(key) ?? 0;
+    if (no >= a.maxAttempts) continue;
+    pairCount.set(key, no + 1);
+    const expired = faker.number.float() < 0.06;
+    const submittedAt = d(ago(240, 0.9));
     attemptRows.push({
-      assessmentId: faker.number.int({ min: 1, max: 380 }),
-      userId: faker.number.int({ min: 401, max: 10_000 }),
-      attemptNo: faker.number.int({ min: 1, max: 3 }),
-      score,
-      passed: score >= 70,
-      submittedAt: d(ago(240, 0.9)),
+      assessmentId,
+      userId: u,
+      attemptNo: no + 1,
+      status: expired ? "expired" : "submitted",
+      startedAt: new Date(
+        submittedAt.getTime() - faker.number.int({ min: 1, max: a.timeLimitMin }) * 60_000
+      ),
+      score: 0, // derived below from answers
+      passed: false,
+      submittedAt,
     });
+    attemptMeta.push({ assessmentId, expired });
   }
   batch(s.assessmentAttempts, attemptRows, 2000);
-  console.log("labs+attempts ✓");
 
-  // ---------- certificates (from completed enrollments) ----------
-  const completed = db.select({ userId: s.enrollments.userId, courseId: s.enrollments.courseId, completedAt: s.enrollments.completedAt })
-    .from(s.enrollments).where(sql`status = 'completed'`).limit(12_000).all();
+  // derive per-question answers + score from them (attempt ids are sequential)
+  const answerRows: InferInsertModel<typeof s.assessmentAttemptAnswers>[] = [];
+  const scoreUpdates: { id: number; score: number; passed: boolean }[] = [];
+  attemptMeta.forEach((m, i) => {
+    const attemptId = i + 1;
+    if (m.expired) {
+      scoreUpdates.push({ id: attemptId, score: 0, passed: false });
+      return;
+    }
+    const qs = qsByAssessment.get(m.assessmentId) ?? [];
+    const n = qs.length;
+    const a = assessmentRows[m.assessmentId - 1];
+    const k = Math.round(n * faker.number.float({ min: 0.15, max: 1 }));
+    let earned = 0;
+    let total = 0;
+    for (let qi = 0; qi < n; qi++) {
+      const q = qs[qi];
+      const correct = qi < k;
+      total += q.points;
+      if (correct) earned += q.points;
+      answerRows.push({
+        attemptId,
+        questionId: q.id,
+        selected: JSON.stringify(
+          correct ? q.correct : [(q.correct[0] + 1) % q.optionCount]
+        ),
+        correct,
+        points: correct ? q.points : 0,
+      });
+    }
+    const score = total ? Math.round((100 * earned) / total) : 0;
+    scoreUpdates.push({ id: attemptId, score, passed: score >= a.passingScore });
+  });
+  batch(s.assessmentAttemptAnswers, answerRows, 2000);
+  for (const u of scoreUpdates) {
+    db.run(sql`UPDATE assessment_attempts SET score = ${u.score}, passed = ${u.passed ? 1 : 0} WHERE id = ${u.id}`);
+  }
+  console.log(`labs+attempts+${answerRows.length} answers ✓`);
+
+  // ---------- certificates (completed enrollments on cert-enabled courses —
+  //   same rule the runtime auto-issuance applies) ----------
+  const completed = db
+    .select({
+      userId: s.enrollments.userId,
+      courseId: s.enrollments.courseId,
+      completedAt: s.enrollments.completedAt,
+    })
+    .from(s.enrollments)
+    .innerJoin(s.courses, sql`${s.enrollments.courseId} = ${s.courses.id}`)
+    .where(sql`${s.enrollments.status} = 'completed' AND ${s.courses.certificateEnabled} = 1`)
+    .all();
   batch(s.certificates, completed.map((e, i) => ({
     serial: `CERT-${String(100000 + i)}`,
     userId: e.userId, courseId: e.courseId,
@@ -377,21 +548,9 @@ sqlite.transaction(() => {
 // ---------- denormalized aggregates ----------
 console.time("aggregates");
 sqlite.exec(`
-  UPDATE courses SET
-    enrollment_count = (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = courses.id),
-    avg_progress = COALESCE((SELECT CAST(AVG(e.progress) AS INT) FROM enrollments e WHERE e.course_id = courses.id), 0),
-    completion_rate = COALESCE((SELECT CAST(100.0 * SUM(e.status='completed') / COUNT(*) AS INT) FROM enrollments e WHERE e.course_id = courses.id), 0),
-    lesson_count = (SELECT COUNT(*) FROM lessons l JOIN sections s2 ON l.section_id = s2.id WHERE s2.course_id = courses.id);
-  UPDATE users SET
-    enrolled_count = (SELECT COUNT(*) FROM enrollments e WHERE e.user_id = users.id),
-    labs_count = (SELECT COUNT(*) FROM lab_assignments la WHERE la.user_id = users.id),
-    avg_progress = COALESCE((SELECT CAST(AVG(e.progress) AS INT) FROM enrollments e WHERE e.user_id = users.id), 0);
-  UPDATE assessments SET
-    attempt_count = (SELECT COUNT(*) FROM assessment_attempts a WHERE a.assessment_id = assessments.id),
-    avg_score = COALESCE((SELECT CAST(AVG(a.score) AS INT) FROM assessment_attempts a WHERE a.assessment_id = assessments.id), 0),
-    pass_rate = COALESCE((SELECT CAST(100.0 * SUM(a.passed) / COUNT(*) AS INT) FROM assessment_attempts a WHERE a.assessment_id = assessments.id), 0);
-  UPDATE labs SET
-    assigned_count = (SELECT COUNT(*) FROM lab_assignments la WHERE la.lab_id = labs.id);
+  UPDATE courses SET ${COURSE_COUNTERS_SET};
+  UPDATE users SET ${USER_COUNTERS_SET};
+  UPDATE assessments SET ${ASSESSMENT_COUNTERS_SET};
 `);
 console.timeEnd("aggregates");
 

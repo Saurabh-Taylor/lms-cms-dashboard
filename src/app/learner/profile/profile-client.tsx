@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,12 +24,11 @@ export function ProfileClient({
   const [name, setName] = React.useState(me.name);
   const dirty = name.trim() !== me.name;
 
-  const save = useMutation({
+  const save = useApiMutation({
     mutationFn: () => api("/api/learner/me", { method: "PATCH", body: JSON.stringify({ name: name.trim() }) }),
-    onSuccess: () => {
-      toast.success("Profile updated");
-      router.refresh();
-    },
+    successToast: "Profile updated",
+    onSuccess: () => router.refresh(),
+    errorToast: false,
     onError: (e) => toast.error("Couldn't save profile", { description: e.message }),
   });
 

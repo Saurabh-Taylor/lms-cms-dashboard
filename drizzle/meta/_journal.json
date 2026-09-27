@@ -22,6 +22,48 @@
       "when": 1790331546970,
       "tag": "0002_parched_bloodstorm",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790417188312,
+      "tag": "0003_wooden_stature",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1790420597703,
+      "tag": "0004_lesson_progress",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790422166494,
+      "tag": "0005_certs_user_course_uniq",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790422868746,
+      "tag": "0006_assessment_questions_answers",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790431801988,
+      "tag": "0007_sour_purifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790502120271,
+      "tag": "0008_purple_veda",
+      "breakpoints": true
     }
   ]
 }
