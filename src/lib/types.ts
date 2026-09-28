@@ -163,8 +163,14 @@ export interface MediaRow {
   name: string;
   type: "image" | "video" | "document" | "archive";
   sizeKb: number;
+  source: "vimeo" | "external";
+  status: "uploading" | "processing" | "ready" | "error";
+  /** Vimeo rows: "/videos/{id}"; external rows: null */
+  storageKey: string | null;
+  /** external-link rows only */
+  url: string | null;
   uploadedByName: string | null;
-  createdAt: number;
+  createdAt: number | string;
 }
 
 export interface EmailTemplateRow {

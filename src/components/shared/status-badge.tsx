@@ -19,6 +19,10 @@ const STYLES: Record<string, string> = {
   assigned: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
   "in progress": "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
   "pending-grade": "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  uploading: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  processing: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  // success — media ready
+  ready: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
   // danger / red
   suspended: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
   failed: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
