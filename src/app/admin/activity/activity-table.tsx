@@ -55,7 +55,7 @@ export function ActivityTable() {
         : <span className="text-sm text-muted-foreground">—</span>
     ) },
     { id: "meta", accessorKey: "meta", header: "Device", cell: ({ getValue }) => (
-      <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">{safeMeta(getValue() as string)}</span>
+      <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">{(getValue() as { device?: string } | null)?.device ?? "—"}</span>
     ) },
     { id: "createdAt", accessorKey: "createdAt", header: "When", meta: { sortKey: "createdAt" }, cell: ({ getValue }) => (
       <span className="text-sm text-muted-foreground">{fmtDateTime(getValue() as number)}</span>
@@ -94,8 +94,4 @@ export function ActivityTable() {
       }
     />
   );
-}
-
-function safeMeta(meta: string) {
-  try { return JSON.parse(meta).device ?? "—"; } catch { return "—"; }
 }

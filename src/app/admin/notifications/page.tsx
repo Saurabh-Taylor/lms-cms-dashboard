@@ -1,26 +1,26 @@
-import { desc } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { auditLogs, users } from "@/lib/db/schema";
 import { apiServer } from "@/lib/api-server";
-import { eq } from "drizzle-orm";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { fmtRelative } from "@/lib/format";
 
+interface AuditEvent {
+  id: number;
+  actorName: string;
+  action: string;
+  targetLabel: string;
+  module: string;
+  createdAt: string;
+}
+
 export default async function NotificationsPage() {
   const [annRes, events] = await Promise.all([
-    // announcements flipped to the backend in module 1 — defaults: desc createdAt, 20/page.
     apiServer<{ data: { id: number; title: string; body: string; audience: string; status: string; createdAt: string }[] }>(
       "/api/v1/admin/announcements?pageSize=20&sort=createdAt&order=desc",
     ).then((r) => r.data),
-    db.select({
-      id: auditLogs.id, actorName: users.name, action: auditLogs.action,
-      targetLabel: auditLogs.targetLabel, module: auditLogs.module,
-      createdAt: auditLogs.createdAt,
-    }).from(auditLogs)
-      .innerJoin(users, eq(auditLogs.actorId, users.id))
-      .orderBy(desc(auditLogs.createdAt)).limit(20),
+    apiServer<{ data: AuditEvent[] }>(
+      "/api/v1/admin/audit-logs?pageSize=20&sort=createdAt&order=desc",
+    ).then((r) => r.data),
   ]);
 
   return (

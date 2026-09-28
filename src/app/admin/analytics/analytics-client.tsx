@@ -11,7 +11,6 @@ import { api } from "@/lib/api-client";
 import type { OptionItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/stat-card";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { AsyncCombobox } from "@/components/async-combobox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,

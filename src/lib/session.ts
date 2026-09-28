@@ -21,9 +21,3 @@ export function homeForRole(role: string): string {
  * personaFor() in @learnhub/contracts (backend-owned, single source).
  */
 export { personaFor as portalRole } from "@learnhub/contracts";
-
-/** Portal role → backend appRole when provisioning (inverse of portalRole). */
-export function appRoleFor(portal: string): string {
-  if (portal === "admin") return "admin";
-  return portal === "instructor" ? "instructor" : "learner";
-}

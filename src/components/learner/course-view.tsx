@@ -38,11 +38,8 @@ interface LessonBlockData {
   text?: string;
 }
 
-function LessonBlocks({ blocks }: { blocks: string }) {
-  let parsed: LessonBlockData[] = [];
-  try {
-    parsed = JSON.parse(blocks);
-  } catch { /* malformed content renders empty */ }
+function LessonBlocks({ blocks }: { blocks: LessonBlockData[] }) {
+  const parsed = Array.isArray(blocks) ? blocks : [];
   if (!parsed.length)
     return <p className="text-sm text-muted-foreground">This lesson has no content yet.</p>;
   return (

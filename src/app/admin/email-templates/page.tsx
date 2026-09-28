@@ -1,11 +1,10 @@
-import { asc } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { emailTemplates } from "@/lib/db/schema";
+import { apiServer } from "@/lib/api-server";
 import { PageHeader } from "@/components/shared/page-header";
+import type { EmailTemplateRow } from "@/lib/types";
 import { TemplatesClient } from "./templates-client";
 
 export default async function EmailTemplatesPage() {
-  const rows = await db.select().from(emailTemplates).orderBy(asc(emailTemplates.name));
+  const { data: rows } = await apiServer<{ data: EmailTemplateRow[] }>("/api/v1/admin/email-templates");
   return (
     <div className="flex flex-col gap-5">
       <PageHeader title="Email Templates" description="Transactional emails sent by the platform" />

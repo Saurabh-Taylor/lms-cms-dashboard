@@ -1,14 +1,25 @@
-import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { db } from "@/lib/db/client";
-import { groupMembers, groups, users } from "@/lib/db/schema";
+import { apiServer } from "@/lib/api-server";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { LearnerProfileTabs } from "./profile-tabs";
 import { LearnerActions } from "./learner-actions";
 import { fmtDate, fmtRelative, initials } from "@/lib/format";
+
+interface AdminUserDetail {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  enrolledCount: number;
+  avgProgress: number;
+  lastActiveAt: string | null;
+  createdAt: string;
+  groups: string[];
+}
 
 export default async function LearnerProfilePage({
   params,
@@ -17,14 +28,8 @@ export default async function LearnerProfilePage({
 }) {
   const { userId } = await params;
   const id = Number(userId);
-  const [u] = await db.select().from(users).where(eq(users.id, id));
+  const u = await apiServer<AdminUserDetail>(`/api/v1/admin/users/${id}`).catch(() => null);
   if (!u) notFound();
-
-  const cohorts = await db
-    .select({ name: groups.name })
-    .from(groupMembers)
-    .innerJoin(groups, eq(groupMembers.groupId, groups.id))
-    .where(eq(groupMembers.userId, id));
 
   return (
     <div className="flex flex-col gap-5">
@@ -41,9 +46,9 @@ export default async function LearnerProfilePage({
           <p className="text-sm text-muted-foreground">
             {u.email} · joined {fmtDate(u.createdAt)} · last active {fmtRelative(u.lastActiveAt)}
           </p>
-          {cohorts.length > 0 && (
+          {u.groups.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1">
-              {cohorts.map((c) => <Badge key={c.name} variant="outline" className="text-[10px]">{c.name}</Badge>)}
+              {u.groups.map((name) => <Badge key={name} variant="outline" className="text-[10px]">{name}</Badge>)}
             </div>
           )}
         </div>

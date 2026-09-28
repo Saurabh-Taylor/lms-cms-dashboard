@@ -68,7 +68,7 @@ export function LessonEditor({ lessonId }: { lessonId: number }) {
 
   if (lesson && meta === null) {
     setMeta({ title: lesson.title, durationMin: lesson.durationMin });
-    setBlocks(JSON.parse(lesson.blocks || "[]"));
+    setBlocks((lesson.blocks ?? []) as Block[]);
   }
 
   const save = useApiMutation({

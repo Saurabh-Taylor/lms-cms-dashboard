@@ -4,10 +4,13 @@
 // ZodValidationPipe is the only validator; this layer never parses the body
 // and never touches the envelope — by construction there is no hook to.
 import type { AppRouteHandlerRoutes } from "../../../.next/types/routes.js";
-import { requirePermission } from "@/lib/me";
+import { requirePermission, type SessionUser } from "@/lib/me";
 import { fail } from "@/lib/api/helpers";
 import { apiServerRaw, forwardClientHeaders, forwardSetCookies } from "@/lib/api-server";
-import type { Gate } from "@/lib/api/verb";
+import type { Perm } from "@/lib/permissions";
+
+/** Capability gate — a Perm (all-of via requirePermission) or a persona gate fn like requireLearner. */
+export type Gate = Perm | Perm[] | (() => Promise<SessionUser | Response>);
 
 /** Hop-by-hop / encoding headers that must not survive a forwarded body. */
 const DROP_RESPONSE_HEADERS = [

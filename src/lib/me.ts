@@ -1,7 +1,4 @@
 import { cache } from "react";
-import { eq } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
 import { apiServer } from "@/lib/api-server";
 import { fail } from "@/lib/api/helpers";
 import { homeForRole, SESSION_COOKIE } from "@/lib/session";
@@ -11,7 +8,7 @@ import type { UiPreferences } from "@/lib/ui-preferences";
 export { SESSION_COOKIE, homeForRole };
 
 export interface SessionUser {
-  /** Local users.id — bridged from the auth account via users.authUserId (always real: the row is created on first sign-in when missing). */
+  /** Postgres users.id — the Better Auth account id (single users table backend-side). */
   id: number;
   name: string;
   email: string;
@@ -37,19 +34,15 @@ interface MeResponse {
   status: string;
   title?: string | null;
   permissions: string[];
+  uiPreferences: UiPreferences | null;
 }
 
 /**
  * Session resolution — validates the Better Auth session cookie against the
- * backend's /v1/me (identity + persona + permissions in one call), then bridges
- * to the local users row via authUserId (falling back to email once and
- * lazy-linking). A valid session with no local row gets one created on the
- * spot — a signable account is a user, and me.id must never be a phantom
- * foreign key. The local row's persona/status/name/title self-heal on every
- * resolution so the display columns can't drift from backend-side changes.
- * Returns null for missing/suspended sessions. Cached per request (React
- * cache) — layouts and route handlers can call it freely without extra API
- * round-trips.
+ * backend's /v1/me (identity + persona + permissions + preferences in one
+ * call). Returns null for missing/suspended sessions. Cached per request
+ * (React cache) — layouts and route handlers can call it freely without extra
+ * API round-trips.
  */
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   let auth: MeResponse | null;
@@ -60,66 +53,14 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   }
   if (!auth || auth.status !== "active") return null;
 
-  const role = auth.persona;
-
-  // Bridge to the local CMS row: authUserId hit → email hit + lazy-link → create.
-  let local = db.select().from(users).where(eq(users.authUserId, auth.id)).all()[0];
-  if (!local) {
-    const byEmail = db.select().from(users).where(eq(users.email, auth.email)).all()[0];
-    if (byEmail) {
-      if (byEmail.authUserId !== auth.id)
-        db.update(users).set({ authUserId: auth.id }).where(eq(users.id, byEmail.id)).run();
-      local = { ...byEmail, authUserId: auth.id };
-    } else {
-      try {
-        local = db.insert(users).values({
-          authUserId: auth.id,
-          name: auth.name,
-          email: auth.email,
-          role: role as "admin" | "instructor" | "learner",
-          status: auth.status as "active" | "suspended" | "invited",
-          title: auth.title ?? null,
-          createdAt: new Date(),
-        }).returning().all()[0];
-      } catch {
-        // Concurrent first-sign-in race — the other request already created it.
-        local = db.select().from(users).where(eq(users.authUserId, auth.id)).all()[0];
-      }
-    }
-  }
-  if (!local) return null;
-
-  // The local persona/status/name/title columns are a maintained projection of
-  // the auth account — resync when the backend is the one that changed.
-  const synced = {
-    role: role as "admin" | "instructor" | "learner",
-    status: auth.status as "active" | "suspended" | "invited",
-    name: auth.name,
-    title: auth.title ?? null,
-  };
-  if (
-    local.role !== synced.role ||
-    local.status !== synced.status ||
-    local.name !== synced.name ||
-    (local.title ?? null) !== synced.title
-  ) {
-    db.update(users).set(synced).where(eq(users.id, local.id)).run();
-    local = { ...local, ...synced };
-  }
-
-  let uiPreferences: UiPreferences = {};
-  if (local.uiPreferences) {
-    try { uiPreferences = JSON.parse(local.uiPreferences); } catch { /* corrupted → defaults */ }
-  }
-
   return {
-    id: local.id,
+    id: auth.id,
     name: auth.name,
     email: auth.email,
-    role,
+    role: auth.persona,
     appRole: auth.appRole,
     permissions: auth.permissions ?? [],
-    uiPreferences,
+    uiPreferences: auth.uiPreferences ?? {},
   };
 });
 

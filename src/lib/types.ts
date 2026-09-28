@@ -24,7 +24,7 @@ export interface CourseRow {
   status: CourseStatus;
   visibility: "public" | "private" | "unlisted";
   estimatedMinutes: number;
-  tags: string; // JSON
+  tags: string[];
   thumbnailColor: string;
   certificateEnabled: boolean;
   enrollmentCount: number;
@@ -44,8 +44,8 @@ export interface UserRow {
   title: string | null;
   enrolledCount: number;
   avgProgress: number;
-  lastActiveAt: number | null;
-  createdAt: number;
+  lastActiveAt: number | string | null;
+  createdAt: number | string;
 }
 
 export interface SectionNode {
@@ -64,7 +64,17 @@ export interface LessonNode {
   durationMin: number;
   status: string;
   position: number;
-  blocks: string;
+  blocks: LessonBlock[];
+}
+
+/** Lesson content block — Postgres jsonb, served as a real array. */
+export interface LessonBlock {
+  id: string;
+  type: string;
+  text?: string;
+  url?: string;
+  language?: string;
+  refId?: number;
 }
 
 export interface EnrollmentRow {
@@ -162,7 +172,7 @@ export interface EmailTemplateRow {
   name: string;
   subject: string;
   body: string;
-  updatedAt: Date;
+  updatedAt: Date | string;
 }
 
 export interface ActivityRow {
@@ -172,8 +182,8 @@ export interface ActivityRow {
   type: string;
   courseId: number | null;
   courseTitle: string | null;
-  meta: string;
-  createdAt: number;
+  meta: { device?: string } & Record<string, unknown>;
+  createdAt: number | string;
 }
 
 export interface AuditRow {
@@ -185,9 +195,9 @@ export interface AuditRow {
   targetId: number | null;
   targetLabel: string;
   module: string;
-  details: string;
+  details: Record<string, unknown>;
   ip: string | null;
-  createdAt: number;
+  createdAt: number | string;
 }
 
 export interface OptionItem {

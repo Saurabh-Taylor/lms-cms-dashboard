@@ -41,7 +41,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
       title: course.title, slug: course.slug, description: course.description ?? "",
       categoryId: course.categoryId, difficulty: course.difficulty,
       visibility: course.visibility, estimatedMinutes: course.estimatedMinutes,
-      tags: JSON.parse(course.tags || "[]"), certificateEnabled: course.certificateEnabled,
+      tags: course.tags ?? [], certificateEnabled: course.certificateEnabled,
     });
     if (course.instructorId)
       setInstructor({ id: course.instructorId, label: course.instructorName ?? "" });

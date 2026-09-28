@@ -105,7 +105,7 @@ export function AuditTable() {
               <div>
                 <p className="mb-1 text-xs font-medium text-muted-foreground">Technical details</p>
                 <pre className="max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs">
-                  {JSON.stringify(safeParse(detail.details), null, 2)}
+                  {JSON.stringify(detail.details, null, 2)}
                 </pre>
               </div>
             </div>
@@ -114,8 +114,4 @@ export function AuditTable() {
       </Sheet>
     </>
   );
-}
-
-function safeParse(s: string) {
-  try { return JSON.parse(s); } catch { return s; }
 }

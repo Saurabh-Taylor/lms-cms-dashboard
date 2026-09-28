@@ -1,28 +1,26 @@
-import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { db } from "@/lib/db/client";
-import { categories, courses, users } from "@/lib/db/schema";
+import { apiServer } from "@/lib/api-server";
 import { CourseTabs } from "./course-tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { initials, fmtRelative } from "@/lib/format";
+
+interface CourseDetail {
+  id: number;
+  title: string;
+  status: string;
+  thumbnailColor: string;
+  categoryName: string | null;
+  instructorName: string | null;
+  updatedAt: string;
+}
 
 export default async function CourseLayout({
   children,
   params,
 }: LayoutProps<"/admin/courses/[courseId]">) {
   const { courseId } = await params;
-  const [row] = await db
-    .select({
-      course: courses,
-      categoryName: categories.name,
-      instructorName: users.name,
-    })
-    .from(courses)
-    .leftJoin(categories, eq(courses.categoryId, categories.id))
-    .leftJoin(users, eq(courses.instructorId, users.id))
-    .where(eq(courses.id, Number(courseId)));
-  if (!row) notFound();
-  const c = row.course;
+  const c = await apiServer<CourseDetail>(`/api/v1/admin/courses/${Number(courseId)}`).catch(() => null);
+  if (!c) notFound();
 
   return (
     <div className="flex flex-col gap-4">
@@ -39,7 +37,7 @@ export default async function CourseLayout({
             <StatusBadge value={c.status} />
           </div>
           <p className="text-sm text-muted-foreground">
-            {row.categoryName ?? "Uncategorized"} · {row.instructorName ?? "No instructor"} ·
+            {c.categoryName ?? "Uncategorized"} · {c.instructorName ?? "No instructor"} ·
             updated {fmtRelative(c.updatedAt)}
           </p>
         </div>
