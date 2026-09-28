@@ -28,12 +28,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AsyncCombobox } from "@/components/async-combobox";
 import { cn } from "@/lib/utils";
 
+// Mirrors contracts LessonBlockSchema (passthrough catchall makes Omit<>
+// unusable) — id/type/text/url/mediaId are the shared write fields.
 interface Block {
   id: string;
   type: "text" | "video" | "image" | "pdf" | "link" | "code" | "resource" | "quiz" | "lab";
   text?: string;
   url?: string;
   mediaId?: number;
+  /** pick-time status hint — display only; learners get the live value */
+  mediaStatus?: string;
   language?: string;
   refId?: number;
 }
@@ -226,10 +230,25 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
             value={block.mediaId ? { id: block.mediaId, label: block.text ?? `Media #${block.mediaId}` } : null}
             onChange={(v) => {
               const o = v as OptionItem | null;
-              onChange(block.id, { mediaId: o?.id, text: o?.label, url: o ? undefined : block.url });
+              onChange(block.id, {
+                mediaId: o?.id,
+                text: o?.label,
+                mediaStatus: o?.sub?.split(" · ")[0],
+                url: o ? undefined : block.url,
+              });
             }}
             placeholder="Pick from media library…"
           />
+          {block.mediaId && (
+            <div className="flex items-center gap-2">
+              <StatusBadge value={block.mediaStatus ?? "ready"} />
+              {block.mediaStatus === "processing" && (
+                <span className="text-xs text-amber-600 dark:text-amber-400">
+                  Still processing — learners see a pending state until it&apos;s ready.
+                </span>
+              )}
+            </div>
+          )}
           {!block.mediaId && (
             <Input
               placeholder="or paste an external video URL"

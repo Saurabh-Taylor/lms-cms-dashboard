@@ -1,6 +1,6 @@
 // DTO shapes returned by /api/admin/* routes.
 
-import type { UserStatus } from "@learnhub/contracts";
+import type { LessonBlock as LessonBlockWrite, UserStatus } from "@learnhub/contracts";
 
 export type { UserStatus };
 
@@ -72,20 +72,17 @@ export interface LessonNode {
 
 /**
  * Lesson content block — Postgres jsonb, served as a real array.
- * `mediaId` links to media_assets; `embedUrl`/`mediaStatus` are resolved
- * server-side at read time (learner routes only — never raw storage keys).
+ * Write shape comes from @learnhub/contracts (LessonBlockSchema); the fields
+ * below are resolved server-side at read time on learner routes — never raw
+ * storage keys. mediaStatus null = linked asset gone.
  */
-export interface LessonBlock {
-  id: string;
-  type: string;
-  text?: string;
-  url?: string;
-  mediaId?: number;
+export interface LessonBlock extends LessonBlockWrite {
   embedUrl?: string | null;
-  mediaStatus?: string;
+  mediaStatus?: string | null;
   /** source pixel dims of the linked asset — sizes the player container */
   width?: number | null;
   height?: number | null;
+  durationSec?: number | null;
   language?: string;
   refId?: number;
 }
@@ -182,6 +179,9 @@ export interface MediaRow {
   storageKey: string | null;
   /** external-link rows only */
   url: string | null;
+  /** player.vimeo.com embed for ready vimeo rows — derived server-side */
+  embedUrl?: string | null;
+  durationSec?: number | null;
   uploadedByName: string | null;
   createdAt: number | string;
 }

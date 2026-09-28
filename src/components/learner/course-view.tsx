@@ -49,6 +49,9 @@ function VideoBlock({ b }: { b: LessonBlock }) {
         />
       </div>
     );
+  // mediaStatus null = linked asset deleted — "unavailable" beats a stale url
+  if (b.mediaId && b.mediaStatus == null)
+    return <VideoUnavailableCard text="This video is no longer available." />;
   if (b.url)
     return (
       <a
@@ -67,18 +70,26 @@ function VideoBlock({ b }: { b: LessonBlock }) {
     );
   if (b.mediaId)
     return (
-      <div className="flex items-center gap-3 rounded-md border border-dashed bg-muted/30 p-3">
-        <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
-          <CirclePlayIcon className="size-4" />
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {b.mediaStatus === "uploading" || b.mediaStatus === "processing"
+      <VideoUnavailableCard
+        text={
+          b.mediaStatus === "uploading" || b.mediaStatus === "processing"
             ? "Video is still processing — check back shortly."
-            : "This video is no longer available."}
-        </p>
-      </div>
+            : "This video is no longer available."
+        }
+      />
     );
   return null;
+}
+
+function VideoUnavailableCard({ text }: { text: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-dashed bg-muted/30 p-3">
+      <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+        <CirclePlayIcon className="size-4" />
+      </div>
+      <p className="text-sm text-muted-foreground">{text}</p>
+    </div>
+  );
 }
 
 function LessonBlocks({ blocks }: { blocks: LessonBlock[] }) {

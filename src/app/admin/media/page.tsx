@@ -20,7 +20,8 @@ import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { fmtBytes, fmtRelative } from "@/lib/format";
-import { MEDIA_VIDEO_EXTS, PERM } from "@learnhub/contracts";
+import { MEDIA_VIDEO_EXTS } from "@learnhub/contracts";
+import { PERM } from "@/lib/permissions";
 import {
   FileTextIcon, FileArchiveIcon, VideoIcon, ImageIcon, LinkIcon, TriangleAlertIcon, UploadIcon,
 } from "lucide-react";
@@ -34,8 +35,8 @@ const TYPE_ICONS = {
   archive: <FileArchiveIcon className="size-4 text-muted-foreground" />,
 };
 
-/** Mirrors the backend's MEDIA_MAX_UPLOAD_BYTES default (5 GiB). */
-const MAX_BYTES = 5 * 1024 ** 3;
+/** Fallback only — the quota endpoint serves the server's real cap. */
+const DEFAULT_MAX_BYTES = 5 * 1024 ** 3;
 const ACCEPT = MEDIA_VIDEO_EXTS.map((e) => `.${e}`).join(",");
 
 function buildCols(canDelete: boolean): ColumnDef<MediaRow, unknown>[] {
@@ -72,7 +73,9 @@ export default function MediaPage() {
   const quota = useQuery({
     queryKey: ["media-quota"],
     queryFn: () =>
-      api<{ configured: boolean; percent?: number; warning?: boolean }>("/api/admin/media/quota"),
+      api<{ configured: boolean; percent?: number; warning?: boolean; maxUploadBytes?: number }>(
+        "/api/admin/media/quota",
+      ),
     staleTime: 60_000,
   });
 
@@ -81,7 +84,7 @@ export default function MediaPage() {
       <PageHeader
         title="Media Library"
         description="Video assets hosted on Vimeo"
-        actions={canUpload ? <MediaActions /> : undefined}
+        actions={canUpload ? <MediaActions maxBytes={quota.data?.maxUploadBytes ?? DEFAULT_MAX_BYTES} /> : undefined}
       />
       {quota.data?.configured && quota.data.warning && (
         <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
@@ -106,12 +109,12 @@ export default function MediaPage() {
   );
 }
 
-function MediaActions() {
+function MediaActions({ maxBytes }: { maxBytes: number }) {
   const [open, setOpen] = React.useState(false);
   return (
     <>
       <Button size="sm" onClick={() => setOpen(true)}><UploadIcon className="group-hover/button:translate-x-0.5" /> Upload video</Button>
-      {open && <UploadDialog onClose={() => setOpen(false)} />}
+      {open && <UploadDialog maxBytes={maxBytes} onClose={() => setOpen(false)} />}
     </>
   );
 }
@@ -151,14 +154,13 @@ function MediaRowActions({ row, canDelete }: { row: MediaRow; canDelete: boolean
 }
 
 function PreviewDialog({ row, onClose }: { row: MediaRow; onClose: () => void }) {
-  const videoId = row.storageKey?.split("/").pop();
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader><DialogTitle>{row.name}</DialogTitle></DialogHeader>
         <div className="aspect-video w-full overflow-hidden rounded-md bg-black">
           <iframe
-            src={`https://player.vimeo.com/video/${videoId}`}
+            src={row.embedUrl ?? ""}
             className="h-full w-full"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
@@ -171,7 +173,7 @@ function PreviewDialog({ row, onClose }: { row: MediaRow; onClose: () => void })
 }
 
 /** Pick a video → mint ticket → tus direct-to-Vimeo → complete → row appears. */
-function UploadDialog({ onClose }: { onClose: () => void }) {
+function UploadDialog({ maxBytes, onClose }: { maxBytes: number; onClose: () => void }) {
   const qc = useQueryClient();
   const [file, setFile] = React.useState<File | null>(null);
   const [pct, setPct] = React.useState(0);
@@ -181,8 +183,8 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
   const error = file
     ? !MEDIA_VIDEO_EXTS.includes(file.name.split(".").pop()?.toLowerCase() as never)
       ? "Unsupported file type — video files only"
-      : file.size > MAX_BYTES
-        ? `File exceeds the ${(MAX_BYTES / 1024 ** 3).toFixed(0)} GB limit`
+      : file.size > maxBytes
+        ? `File exceeds the ${(maxBytes / 1024 ** 3).toFixed(0)} GB limit`
         : null
     : null;
 
@@ -243,7 +245,7 @@ function UploadDialog({ onClose }: { onClose: () => void }) {
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
             <p className="text-(length:--fs-meta) text-muted-foreground">
-              {MEDIA_VIDEO_EXTS.slice(0, 6).join(", ")}… · up to {(MAX_BYTES / 1024 ** 3).toFixed(0)} GB
+              {MEDIA_VIDEO_EXTS.slice(0, 6).join(", ")}… · up to {(maxBytes / 1024 ** 3).toFixed(0)} GB
             </p>
             {file && <p className="text-sm">{file.name} — {fmtBytes(Math.ceil(file.size / 1024))}</p>}
             {error && <p className="text-sm text-destructive">{error}</p>}
