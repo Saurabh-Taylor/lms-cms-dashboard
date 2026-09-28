@@ -8,7 +8,7 @@ export interface ListResponse<T> {
 }
 
 export type CourseStatus = "draft" | "published" | "archived";
-export type UserStatus = "active" | "suspended" | "invited";
+export type UserStatus = "active" | "suspended" | "invited" | "deleted";
 export type Role = "learner" | "instructor" | "admin";
 
 export interface CourseRow {

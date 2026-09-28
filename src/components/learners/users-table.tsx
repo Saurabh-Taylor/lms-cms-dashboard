@@ -16,6 +16,7 @@ import { SearchInput, TableToolbar } from "@/components/data-table/table-toolbar
 import { FilterSelect } from "@/components/data-table/filter-select";
 import { RowActions } from "@/components/data-table/row-actions";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ const STATUS_OPTS = [
   { value: "active", label: "Active" },
   { value: "suspended", label: "Suspended" },
   { value: "invited", label: "Invited" },
+  { value: "deleted", label: "Deleted" },
 ];
 const ACTIVITY_OPTS = [
   { value: "7", label: "Active ≤7d" },
@@ -45,6 +47,7 @@ export function UsersTable({ role }: { role: Role }) {
   const [selection, setSelection] = React.useState<RowSelectionState>({});
   const [createOpen, setCreateOpen] = React.useState(false);
   const [assignTarget, setAssignTarget] = React.useState<UserRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<UserRow | null>(null);
   const [prevParams, setPrevParams] = React.useState(st.params);
   if (prevParams !== st.params) {
     setPrevParams(st.params);
@@ -63,6 +66,13 @@ export function UsersTable({ role }: { role: Role }) {
       api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
     invalidate: [["/api/admin/users"]],
     successToast: "User updated",
+  });
+
+  const del = useApiMutation({
+    mutationFn: (id: number) => api(`/api/admin/users/${id}`, { method: "DELETE" }),
+    invalidate: "all",
+    successToast: "User deleted",
+    onSuccess: () => setDeleteTarget(null),
   });
 
   // force the role filter into every request
@@ -131,14 +141,19 @@ export function UsersTable({ role }: { role: Role }) {
           const u = row.original;
           return (
             <RowActions
-              items={[
-                { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
-                ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
-                { label: "Reset password", onClick: () => toast.success(`Password reset sent to ${u.email}`) },
-                u.status === "suspended"
-                  ? { label: "Reactivate", onClick: () => patch.mutate({ id: u.id, body: { status: "active" } }), separatorAbove: true }
-                  : { label: "Suspend", destructive: true, separatorAbove: true, onClick: () => patch.mutate({ id: u.id, body: { status: "suspended" } }) },
-              ]}
+              items={
+                u.status === "deleted"
+                  ? [{ label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) }]
+                  : [
+                      { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
+                      ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
+                      { label: "Reset password", onClick: () => toast.success(`Password reset sent to ${u.email}`) },
+                      u.status === "suspended"
+                        ? { label: "Reactivate", onClick: () => patch.mutate({ id: u.id, body: { status: "active" } }), separatorAbove: true }
+                        : { label: "Suspend", destructive: true, separatorAbove: true, onClick: () => patch.mutate({ id: u.id, body: { status: "suspended" } }) },
+                      { label: "Delete user…", destructive: true, onClick: () => setDeleteTarget(u) },
+                    ]
+              }
             />
           );
         },
@@ -190,6 +205,16 @@ export function UsersTable({ role }: { role: Role }) {
 
       <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} role={role} />
       <AssignCourseDialog user={assignTarget} onClose={() => setAssignTarget(null)} />
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => !v && setDeleteTarget(null)}
+        title={`Delete ${deleteTarget?.name}?`}
+        description="Their sign-in stops immediately and active enrollments are suspended. The account stays for audit history — this cannot be undone from the UI."
+        confirmLabel="Delete user"
+        destructive
+        loading={del.isPending}
+        onConfirm={() => deleteTarget && del.mutate(deleteTarget.id)}
+      />
     </>
   );
 }

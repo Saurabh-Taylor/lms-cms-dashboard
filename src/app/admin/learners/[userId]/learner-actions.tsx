@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -14,13 +15,17 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { AsyncCombobox } from "@/components/async-combobox";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import type { EnrollResult } from "@/components/enrollments/enroll-dialog";
 import { EllipsisIcon } from "lucide-react";
 
 interface EnrollResultResponse { succeeded: number; results: EnrollResult[] }
 
 export function LearnerActions({ user }: { user: { id: number; name: string; email: string; status: string } }) {
+  const router = useRouter();
   const [assignOpen, setAssignOpen] = React.useState(false);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const deleted = user.status === "deleted";
 
   const patch = useApiMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -29,29 +34,55 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
     successToast: "User updated",
   });
 
+  const del = useApiMutation({
+    mutationFn: () => api(`/api/admin/users/${user.id}`, { method: "DELETE" }),
+    invalidate: "all",
+    successToast: "User deleted",
+    onSuccess: () => router.push("/admin/learners"),
+  });
+
   return (
     <div className="flex items-center gap-2">
-      <Button size="sm" variant="outline" onClick={() => setAssignOpen(true)}>Assign course</Button>
+      {!deleted && (
+        <Button size="sm" variant="outline" onClick={() => setAssignOpen(true)}>Assign course</Button>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" />}>
           <EllipsisIcon />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => toast.success(`Password reset sent to ${user.email}`)}>
-            Reset password
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {user.status === "suspended" ? (
-            <DropdownMenuItem onClick={() => patch.mutate({ status: "active" })}>Reactivate account</DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem variant="destructive" onClick={() => patch.mutate({ status: "suspended" })}>
-              Suspend account
-            </DropdownMenuItem>
+          {!deleted && (
+            <>
+              <DropdownMenuItem onClick={() => toast.success(`Password reset sent to ${user.email}`)}>
+                Reset password
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {user.status === "suspended" ? (
+                <DropdownMenuItem onClick={() => patch.mutate({ status: "active" })}>Reactivate account</DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem variant="destructive" onClick={() => patch.mutate({ status: "suspended" })}>
+                  Suspend account
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+                Delete user…
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
 
       <AssignDialog user={user} open={assignOpen} onOpenChange={setAssignOpen} />
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Delete ${user.name}?`}
+        description="Their sign-in stops immediately and active enrollments are suspended. The account stays for audit history — this cannot be undone from the UI."
+        confirmLabel="Delete user"
+        destructive
+        loading={del.isPending}
+        onConfirm={() => del.mutate()}
+      />
     </div>
   );
 }
