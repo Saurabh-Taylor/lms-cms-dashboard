@@ -1,7 +1,7 @@
-import { verb } from "@/lib/api/verb";
-import { write } from "@/lib/admin/sections";
+import { proxy } from "@/lib/api/proxy";
 import { PERM } from "@/lib/permissions";
 
-export const POST = verb<"/api/admin/courses/[id]/sections">(PERM.courseUpdate, write.create, {
-  status: 201,
-});
+export const POST = proxy<"/api/admin/courses/[id]/sections">(
+  "/api/v1/admin/courses/[id]/sections",
+  PERM.courseUpdate,
+);
