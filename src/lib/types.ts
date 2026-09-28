@@ -1,5 +1,9 @@
 // DTO shapes returned by /api/admin/* routes.
 
+import type { UserStatus } from "@learnhub/contracts";
+
+export type { UserStatus };
+
 export interface ListResponse<T> {
   data: T[];
   total: number;
@@ -8,7 +12,6 @@ export interface ListResponse<T> {
 }
 
 export type CourseStatus = "draft" | "published" | "archived";
-export type UserStatus = "active" | "suspended" | "invited" | "deleted";
 export type Role = "learner" | "instructor" | "admin";
 
 export interface CourseRow {
