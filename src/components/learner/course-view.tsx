@@ -12,6 +12,7 @@ import { api } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LearnerCourseDetail } from "@/lib/learner-types";
+import type { LessonBlock } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,13 +33,52 @@ const LESSON_ICONS: Record<string, LucideIcon> = {
   assignment: ClipboardListIcon,
 };
 
-interface LessonBlockData {
-  id: string;
-  type: string;
-  text?: string;
+function VideoBlock({ b }: { b: LessonBlock }) {
+  if (b.embedUrl)
+    return (
+      <div className="aspect-video w-full overflow-hidden rounded-md border bg-black">
+        <iframe
+          src={b.embedUrl}
+          className="size-full"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+          title={b.text ?? "Lesson video"}
+        />
+      </div>
+    );
+  if (b.url)
+    return (
+      <a
+        href={b.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 rounded-md border bg-muted/30 p-3 transition-colors hover:bg-muted/60"
+      >
+        <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+          <LinkIcon className="size-4" />
+        </div>
+        <span className="min-w-0 truncate text-sm text-primary underline-offset-4 hover:underline">
+          {b.url}
+        </span>
+      </a>
+    );
+  if (b.mediaId)
+    return (
+      <div className="flex items-center gap-3 rounded-md border border-dashed bg-muted/30 p-3">
+        <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+          <CirclePlayIcon className="size-4" />
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {b.mediaStatus === "uploading" || b.mediaStatus === "processing"
+            ? "Video is still processing — check back shortly."
+            : "This video is no longer available."}
+        </p>
+      </div>
+    );
+  return null;
 }
 
-function LessonBlocks({ blocks }: { blocks: LessonBlockData[] }) {
+function LessonBlocks({ blocks }: { blocks: LessonBlock[] }) {
   const parsed = Array.isArray(blocks) ? blocks : [];
   if (!parsed.length)
     return <p className="text-sm text-muted-foreground">This lesson has no content yet.</p>;
@@ -53,6 +93,7 @@ function LessonBlocks({ blocks }: { blocks: LessonBlockData[] }) {
               {b.text}
             </pre>
           );
+        if (b.type === "video") return <VideoBlock key={b.id} b={b} />;
         const Icon = LESSON_ICONS[b.type] ?? BookOpenIcon;
         return (
           <div key={b.id} className="flex items-center gap-3 rounded-md border border-dashed bg-muted/30 p-3">

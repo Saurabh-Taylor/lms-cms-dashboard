@@ -33,6 +33,7 @@ interface Block {
   type: "text" | "video" | "image" | "pdf" | "link" | "code" | "resource" | "quiz" | "lab";
   text?: string;
   url?: string;
+  mediaId?: number;
   language?: string;
   refId?: number;
 }
@@ -218,12 +219,32 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
         />
       );
     case "video":
+      return (
+        <div className="flex flex-col gap-2">
+          <AsyncCombobox
+            resource="media"
+            value={block.mediaId ? { id: block.mediaId, label: block.text ?? `Media #${block.mediaId}` } : null}
+            onChange={(v) => {
+              const o = v as OptionItem | null;
+              onChange(block.id, { mediaId: o?.id, text: o?.label, url: o ? undefined : block.url });
+            }}
+            placeholder="Pick from media library…"
+          />
+          {!block.mediaId && (
+            <Input
+              placeholder="or paste an external video URL"
+              value={block.url ?? ""}
+              onChange={(e) => onChange(block.id, { url: e.target.value })}
+            />
+          )}
+        </div>
+      );
     case "pdf":
     case "image":
     case "resource":
       return (
         <Input
-          placeholder={`${block.type === "video" ? "Video" : block.type === "pdf" ? "PDF" : block.type === "image" ? "Image" : "Resource"} URL`}
+          placeholder={`${block.type === "pdf" ? "PDF" : block.type === "image" ? "Image" : "Resource"} URL`}
           value={block.url ?? ""}
           onChange={(e) => onChange(block.id, { url: e.target.value })}
         />

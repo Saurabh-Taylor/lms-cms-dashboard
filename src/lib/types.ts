@@ -70,12 +70,19 @@ export interface LessonNode {
   blocks: LessonBlock[];
 }
 
-/** Lesson content block — Postgres jsonb, served as a real array. */
+/**
+ * Lesson content block — Postgres jsonb, served as a real array.
+ * `mediaId` links to media_assets; `embedUrl`/`mediaStatus` are resolved
+ * server-side at read time (learner routes only — never raw storage keys).
+ */
 export interface LessonBlock {
   id: string;
   type: string;
   text?: string;
   url?: string;
+  mediaId?: number;
+  embedUrl?: string | null;
+  mediaStatus?: string;
   language?: string;
   refId?: number;
 }
