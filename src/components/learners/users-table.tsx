@@ -16,7 +16,7 @@ import { SearchInput, TableToolbar } from "@/components/data-table/table-toolbar
 import { FilterSelect } from "@/components/data-table/filter-select";
 import { RowActions } from "@/components/data-table/row-actions";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { DeleteUserDialog } from "@/components/learners/delete-user-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,13 +66,6 @@ export function UsersTable({ role }: { role: Role }) {
       api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
     invalidate: [["/api/admin/users"]],
     successToast: "User updated",
-  });
-
-  const del = useApiMutation({
-    mutationFn: (id: number) => api(`/api/admin/users/${id}`, { method: "DELETE" }),
-    invalidate: "all",
-    successToast: "User deleted",
-    onSuccess: () => setDeleteTarget(null),
   });
 
   // force the role filter into every request
@@ -205,15 +198,10 @@ export function UsersTable({ role }: { role: Role }) {
 
       <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} role={role} />
       <AssignCourseDialog user={assignTarget} onClose={() => setAssignTarget(null)} />
-      <ConfirmDialog
+      <DeleteUserDialog
+        user={deleteTarget}
         open={!!deleteTarget}
         onOpenChange={(v) => !v && setDeleteTarget(null)}
-        title={`Delete ${deleteTarget?.name}?`}
-        description="Their sign-in stops immediately and active enrollments are suspended. The account stays for audit history — this cannot be undone from the UI."
-        confirmLabel="Delete user"
-        destructive
-        loading={del.isPending}
-        onConfirm={() => deleteTarget && del.mutate(deleteTarget.id)}
       />
     </>
   );

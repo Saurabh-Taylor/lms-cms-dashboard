@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { AsyncCombobox } from "@/components/async-combobox";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { DeleteUserDialog } from "@/components/learners/delete-user-dialog";
 import type { EnrollResult } from "@/components/enrollments/enroll-dialog";
 import { EllipsisIcon } from "lucide-react";
 
@@ -32,13 +32,6 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
       api(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify(body) }),
     invalidate: "all",
     successToast: "User updated",
-  });
-
-  const del = useApiMutation({
-    mutationFn: () => api(`/api/admin/users/${user.id}`, { method: "DELETE" }),
-    invalidate: "all",
-    successToast: "User deleted",
-    onSuccess: () => router.push("/admin/learners"),
   });
 
   return (
@@ -73,15 +66,11 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
       </DropdownMenu>
 
       <AssignDialog user={user} open={assignOpen} onOpenChange={setAssignOpen} />
-      <ConfirmDialog
+      <DeleteUserDialog
+        user={user}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        title={`Delete ${user.name}?`}
-        description="Their sign-in stops immediately and active enrollments are suspended. The account stays for audit history — this cannot be undone from the UI."
-        confirmLabel="Delete user"
-        destructive
-        loading={del.isPending}
-        onConfirm={() => del.mutate()}
+        onDeleted={() => router.push("/admin/learners")}
       />
     </div>
   );
