@@ -3,13 +3,13 @@
 import { and, desc, eq, inArray, like, max, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
-  announcements, assessmentAttempts, assessments, categories, certificates,
+  assessmentAttempts, assessments, categories, certificates,
   courses, enrollments, lessonProgress, lessons, sections, users,
   activityEvents,
 } from "@/lib/db/schema";
 import { likePattern } from "@/lib/api/helpers";
 import type {
-  LearnerAnnouncement, LearnerAssessment, LearnerCertificate,
+  LearnerAssessment, LearnerCertificate,
   LearnerCourse, LearnerCourseDetail,
 } from "@/lib/learner-types";
 
@@ -242,30 +242,7 @@ export function listMyCertificates(userId: number): LearnerCertificate[] {
     .map((r) => ({ ...r, issuedAt: msReq(r.issuedAt) }));
 }
 
-/** Learner-visible announcements: sent, audience "all" or matching the role. */
-export function listMyAnnouncements(role: string): LearnerAnnouncement[] {
-  const audience = role === "instructor" ? "instructors" : "learners";
-  return db
-    .select({
-      id: announcements.id,
-      title: announcements.title,
-      body: announcements.body,
-      createdAt: announcements.createdAt,
-    })
-    .from(announcements)
-    .where(
-      and(
-        eq(announcements.status, "sent"),
-        inArray(announcements.audience, ["all", audience])
-      )
-    )
-    .orderBy(desc(announcements.createdAt))
-    .limit(50)
-    .all()
-    .map((r) => ({ ...r, createdAt: msReq(r.createdAt) }));
-}
-
-export function learnerDashboard(userId: number, role: string) {
+export function learnerDashboard(userId: number) {
   const myCourses = listMyCourses(userId);
   const myCerts = listMyCertificates(userId);
 
@@ -291,7 +268,8 @@ export function learnerDashboard(userId: number, role: string) {
     .sort((a, b) => a.expiresAt - b.expiresAt)
     .slice(0, 6);
 
-  return { stats, continueLearning, dueSoon, announcements: listMyAnnouncements(role).slice(0, 3) };
+  // announcements come from the backend — merged by the dashboard route (module 1).
+  return { stats, continueLearning, dueSoon };
 }
 
 /** Learner-scoped search — enrolled courses and visible assessments. */

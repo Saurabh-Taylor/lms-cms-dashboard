@@ -460,15 +460,8 @@ sqlite.transaction(() => {
     issuedAt: e.completedAt ?? d(ago(90)),
   })), 2000);
 
-  // ---------- announcements / templates / media / paths ----------
-  batch(s.announcements, Array.from({ length: 24 }, () => ({
-    title: faker.lorem.sentence({ min: 3, max: 7 }),
-    body: faker.lorem.paragraphs(2),
-    audience: faker.helpers.arrayElement(["all", "learners", "instructors", "admins"] as const),
-    status: faker.helpers.arrayElement(["sent", "sent", "scheduled", "draft"] as const),
-    scheduledAt: faker.number.float() > 0.7 ? d(-ago(14)) : null,
-    createdAt: d(ago(200)),
-  })));
+  // ---------- templates / media / paths ----------
+  // announcements migrated to backend Postgres in module 1 — not seeded here.
   batch(s.emailTemplates, ["Welcome", "Enrollment Confirmation", "Password Reset", "Course Completed", "Certificate Issued", "Lab Assigned", "Weekly Digest", "Payment Receipt"].map((n) => ({
     name: n, subject: `${n} — {{platform_name}}`,
     body: `Hi {{user_name}},\n\n${faker.lorem.paragraphs(2)}\n\n— The Team`,

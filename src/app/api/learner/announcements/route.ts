@@ -1,9 +1,4 @@
-import { ok } from "@/lib/api/helpers";
+import { proxy } from "@/lib/api/proxy";
 import { requireLearner } from "@/lib/me";
-import { listMyAnnouncements } from "@/lib/learner/data";
 
-export async function GET() {
-  const me = await requireLearner();
-  if (me instanceof Response) return me;
-  return ok(listMyAnnouncements(me.role));
-}
+export const GET = proxy<"/api/learner/announcements">("/api/v1/learner/announcements", requireLearner);

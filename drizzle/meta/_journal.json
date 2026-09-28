@@ -64,6 +64,13 @@
       "when": 1790502120271,
       "tag": "0008_purple_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790577130280,
+      "tag": "0009_drop-announcements",
+      "breakpoints": true
     }
   ]
 }

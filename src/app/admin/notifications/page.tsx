@@ -1,6 +1,7 @@
 import { desc } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { announcements, auditLogs, users } from "@/lib/db/schema";
+import { auditLogs, users } from "@/lib/db/schema";
+import { apiServer } from "@/lib/api-server";
 import { eq } from "drizzle-orm";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +9,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { fmtRelative } from "@/lib/format";
 
 export default async function NotificationsPage() {
-  const [announce, events] = await Promise.all([
-    db.select().from(announcements).orderBy(desc(announcements.createdAt)).limit(20),
+  const [annRes, events] = await Promise.all([
+    // announcements flipped to the backend in module 1 — defaults: desc createdAt, 20/page.
+    apiServer<{ data: { id: number; title: string; body: string; audience: string; status: string; createdAt: string }[] }>(
+      "/api/v1/admin/announcements?pageSize=20&sort=createdAt&order=desc",
+    ).then((r) => r.data),
     db.select({
       id: auditLogs.id, actorName: users.name, action: auditLogs.action,
       targetLabel: auditLogs.targetLabel, module: auditLogs.module,
@@ -26,8 +30,8 @@ export default async function NotificationsPage() {
         <Card>
           <CardHeader><CardTitle className="text-sm font-medium">Announcements</CardTitle></CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {announce.length === 0 && <p className="text-sm text-muted-foreground">No announcements yet.</p>}
-            {announce.map((a) => (
+            {annRes.length === 0 && <p className="text-sm text-muted-foreground">No announcements yet.</p>}
+            {annRes.map((a) => (
               <div key={a.id} className="flex items-start justify-between gap-3 border-b pb-3 last:border-0 last:pb-0">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{a.title}</p>

@@ -172,7 +172,8 @@ export interface LearnerAnnouncement {
   id: number;
   title: string;
   body: string;
-  createdAt: number;
+  /** ms epoch from legacy SQLite rows; ISO string from backend endpoints. */
+  createdAt: number | string;
 }
 
 export interface LearnerDashboard {

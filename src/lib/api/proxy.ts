@@ -39,11 +39,12 @@ export function proxy<P extends AppRouteHandlerRoutes>(
       path = path.replaceAll(`[${k}]`, v);
     }
 
+    const contentType = req.headers.get("content-type");
     const res = await apiServerRaw(`${path}${new URL(req.url).search}`, {
       method: req.method,
       body: ["GET", "HEAD"].includes(req.method) ? undefined : req.body,
       headers: {
-        "content-type": req.headers.get("content-type") ?? "application/json",
+        ...(contentType ? { "content-type": contentType } : {}),
         ...forwardClientHeaders(req),
       },
       // undici requires duplex for streamed request bodies

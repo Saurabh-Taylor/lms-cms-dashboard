@@ -1,16 +1,16 @@
 import { format, formatDistanceToNow } from "date-fns";
 
-export function fmtDate(v: number | Date | null | undefined, pattern = "MMM d, yyyy") {
+export function fmtDate(v: number | string | Date | null | undefined, pattern = "MMM d, yyyy") {
   if (v == null) return "—";
   return format(new Date(v), pattern);
 }
 
-export function fmtRelative(v: number | Date | null | undefined) {
+export function fmtRelative(v: number | string | Date | null | undefined) {
   if (v == null) return "—";
   return formatDistanceToNow(new Date(v), { addSuffix: true });
 }
 
-export function fmtDateTime(v: number | Date | null | undefined) {
+export function fmtDateTime(v: number | string | Date | null | undefined) {
   if (v == null) return "—";
   return format(new Date(v), "MMM d, yyyy · HH:mm");
 }

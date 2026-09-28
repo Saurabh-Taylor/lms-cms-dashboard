@@ -391,21 +391,7 @@ export const certificates = sqliteTable(
 );
 
 // ---------- Communication ----------
-export const announcements = sqliteTable("announcements", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title").notNull(),
-  body: text("body").notNull(),
-  audience: text("audience", {
-    enum: ["all", "learners", "instructors", "admins"],
-  })
-    .notNull()
-    .default("all"),
-  status: text("status", { enum: ["draft", "scheduled", "sent"] })
-    .notNull()
-    .default("draft"),
-  scheduledAt: integer("scheduled_at", { mode: "timestamp_ms" }),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-});
+// announcements migrated to backend Postgres in module 1 of the cutover.
 
 export const emailTemplates = sqliteTable("email_templates", {
   id: integer("id").primaryKey({ autoIncrement: true }),
