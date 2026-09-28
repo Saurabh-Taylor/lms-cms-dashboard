@@ -4,9 +4,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { categories, courses, enrollments, users } from "@/lib/db/schema";
-import { refreshCourseCounters, refreshUserCounters } from "@/lib/db/aggregates";
 import { likePattern } from "@/lib/api/helpers";
-import { DomainError } from "@/lib/domain";
 import type { LearnerCatalogCourse } from "@/lib/learner-types";
 
 const cols = {
@@ -83,40 +81,4 @@ export function listCatalog(
         : null,
     })),
   };
-}
-
-/**
- * Self-enroll: published + public only — the 404 keeps unlisted/private
- * courses invisible. Existing enrollment (any status) → 409 rather than a
- * silent re-activation.
- */
-export function selfEnroll(userId: number, courseId: number) {
-  return db.transaction((tx) => {
-    const course = tx
-      .select({ id: courses.id, title: courses.title })
-      .from(courses)
-      .where(
-        and(
-          eq(courses.id, courseId),
-          eq(courses.status, "published"),
-          eq(courses.visibility, "public")
-        )
-      )
-      .all()[0];
-    if (!course) throw new DomainError(404, "Course not found");
-    const existing = tx
-      .select({ id: enrollments.id })
-      .from(enrollments)
-      .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId)))
-      .all()[0];
-    if (existing) throw new DomainError(409, "Already enrolled");
-    const [row] = tx
-      .insert(enrollments)
-      .values({ userId, courseId, status: "active", progress: 0, enrolledAt: new Date() })
-      .returning()
-      .all();
-    refreshCourseCounters(tx, [courseId]);
-    refreshUserCounters(tx, [userId]);
-    return row;
-  });
 }
