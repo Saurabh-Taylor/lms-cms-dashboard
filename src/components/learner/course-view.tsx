@@ -36,7 +36,10 @@ const LESSON_ICONS: Record<string, LucideIcon> = {
 function VideoBlock({ b }: { b: LessonBlock }) {
   if (b.embedUrl)
     return (
-      <div className="aspect-video w-full overflow-hidden rounded-md border bg-black">
+      <div
+        className="w-full overflow-hidden rounded-md border bg-black"
+        style={{ aspectRatio: b.width && b.height ? `${b.width} / ${b.height}` : "16 / 9" }}
+      >
         <iframe
           src={b.embedUrl}
           className="size-full"

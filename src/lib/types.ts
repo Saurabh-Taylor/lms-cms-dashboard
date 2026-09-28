@@ -83,6 +83,9 @@ export interface LessonBlock {
   mediaId?: number;
   embedUrl?: string | null;
   mediaStatus?: string;
+  /** source pixel dims of the linked asset — sizes the player container */
+  width?: number | null;
+  height?: number | null;
   language?: string;
   refId?: number;
 }
