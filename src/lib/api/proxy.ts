@@ -42,17 +42,19 @@ export function proxy<P extends AppRouteHandlerRoutes>(
       path = path.replaceAll(`[${k}]`, v);
     }
 
-    const contentType = req.headers.get("content-type");
+    // Buffer the body: req.body is a non-null *empty* stream for DELETE, and
+    // Fastify 400s on `content-type: application/json` with no bytes. Admin
+    // payloads are small JSON — large uploads bypass this proxy (tus→Vimeo).
+    const body = ["GET", "HEAD"].includes(req.method) ? "" : await req.text();
+    const contentType = body ? req.headers.get("content-type") : null;
     const res = await apiServerRaw(`${path}${new URL(req.url).search}`, {
       method: req.method,
-      body: ["GET", "HEAD"].includes(req.method) ? undefined : req.body,
+      body: body || undefined,
       headers: {
         ...(contentType ? { "content-type": contentType } : {}),
         ...forwardClientHeaders(req),
       },
-      // undici requires duplex for streamed request bodies
-      ...{ duplex: "half" },
-    } as RequestInit);
+    });
 
     const headers = new Headers(res.headers);
     for (const h of DROP_RESPONSE_HEADERS) headers.delete(h);

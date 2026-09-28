@@ -9,7 +9,9 @@ export class ApiError extends Error {
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
+    // only when there's a body — a bare json content-type makes the API
+    // reject empty-body verbs (DELETE) with a Fastify parse error
+    ...(init?.body ? { headers: { "Content-Type": "application/json" } } : {}),
     ...init,
   });
   if (!res.ok) {
