@@ -1,31 +1,24 @@
-import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
-import { fail, ok } from "@/lib/api/helpers";
+import { apiServerRaw, forwardClientHeaders } from "@/lib/api-server";
+import { fail } from "@/lib/api/helpers";
 
 /**
- * Access request, not self-registration: creates a non-privileged account with
- * status "invited". CMS sign-in stays admin-only until an existing admin
- * promotes the account — public signup can never grant admin access.
+ * Access request, not self-registration — thin public forward to the backend's
+ * invited-request endpoint. The response is identical whether the account
+ * exists or not (no account-existence disclosure); backend zod owns validation.
  */
 export async function POST(req: Request) {
-  const parsed = z
-    .object({
-      name: z.string().trim().min(1, "Name is required"),
-      email: z.string().trim().email("Enter a valid email"),
-    })
-    .safeParse(await req.json().catch(() => ({})));
-  if (!parsed.success)
-    return fail(400, parsed.error.issues[0]?.message ?? "Invalid request");
-
-  const { name, email } = parsed.data;
-  const existing = db.select().from(users).where(eq(users.email, email)).all()[0];
-  if (!existing) {
-    db.insert(users).values({
-      name, email, role: "learner", status: "invited", createdAt: new Date(),
-    }).run();
+  try {
+    return await apiServerRaw("/api/v1/auth/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...forwardClientHeaders(req),
+      },
+      body: req.body,
+      // undici requires duplex for streamed request bodies
+      ...{ duplex: "half" },
+    } as RequestInit);
+  } catch {
+    return fail(503, "Request service unavailable");
   }
-  // same response either way — no account-existence disclosure
-  return ok({ requested: true });
 }

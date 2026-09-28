@@ -1,34 +1,5 @@
-import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { users } from "@/lib/db/schema";
-import { fail, ok } from "@/lib/api/helpers";
+import { proxy } from "@/lib/api/proxy";
 import { requireAdmin } from "@/lib/me";
-import { sanitizeTypography } from "@/lib/ui-preferences";
 
-/** Current admin's profile + personal UI preferences. */
-export async function GET() {
-  const me = await requireAdmin();
-  if (me instanceof Response) return me;
-  return ok(me);
-}
-
-const patchSchema = z.object({
-  typography: z.record(z.string(), z.string()),
-});
-
-export async function PATCH(req: Request) {
-  const parsed = patchSchema.safeParse(await req.json().catch(() => ({})));
-  if (!parsed.success) return fail(400, "Invalid preferences payload");
-
-  const overrides = sanitizeTypography(parsed.data.typography);
-
-  const me = await requireAdmin();
-  if (me instanceof Response) return me;
-  db.update(users)
-    .set({ uiPreferences: JSON.stringify({ typography: overrides }) })
-    .where(eq(users.id, me.id))
-    .run();
-
-  return ok({ saved: true, uiPreferences: { typography: overrides } });
-}
+export const GET = proxy<"/api/admin/me">("/api/v1/admin/me", requireAdmin);
+export const PATCH = proxy<"/api/admin/me">("/api/v1/admin/me", requireAdmin);

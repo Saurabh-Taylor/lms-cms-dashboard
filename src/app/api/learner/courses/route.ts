@@ -1,10 +1,7 @@
-import { listOk } from "@/lib/api/helpers";
+import { proxy } from "@/lib/api/proxy";
 import { requireLearner } from "@/lib/me";
-import { listMyCourses } from "@/lib/learner/data";
 
-export async function GET() {
-  const me = await requireLearner();
-  if (me instanceof Response) return me;
-  const courses = listMyCourses(me.id);
-  return listOk(courses, courses.length, { page: 1, pageSize: courses.length });
-}
+export const GET = proxy<"/api/learner/courses">(
+  "/api/v1/learner/courses",
+  requireLearner,
+);
