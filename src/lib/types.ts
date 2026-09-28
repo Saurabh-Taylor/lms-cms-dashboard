@@ -153,7 +153,7 @@ export interface LearningPathRow {
   slug: string;
   description: string | null;
   status: CourseStatus;
-  courseIds: string;
+  courseIds: number[];
   courseCount: number;
   createdAt: number;
 }
