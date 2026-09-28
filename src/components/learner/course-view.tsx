@@ -5,8 +5,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeftIcon, ArrowRightIcon, BookOpenIcon, CheckCircle2Icon,
-  CodeIcon, FileTextIcon, FlaskConicalIcon, LinkIcon, CirclePlayIcon,
-  ClipboardListIcon, type LucideIcon,
+  CodeIcon, DownloadIcon, FileTextIcon, FlaskConicalIcon, ImageIcon,
+  LinkIcon, CirclePlayIcon, PackageIcon, ClipboardListIcon,
+  type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -26,6 +27,8 @@ const LESSON_ICONS: Record<string, LucideIcon> = {
   video: CirclePlayIcon,
   text: FileTextIcon,
   pdf: FileTextIcon,
+  image: ImageIcon,
+  resource: PackageIcon,
   link: LinkIcon,
   code: CodeIcon,
   quiz: ClipboardListIcon,
@@ -33,59 +36,90 @@ const LESSON_ICONS: Record<string, LucideIcon> = {
   assignment: ClipboardListIcon,
 };
 
-function VideoBlock({ b }: { b: LessonBlock }) {
+/**
+ * media-linked block renderer — embedUrl (vimeo) / url (external link or an
+ * r2 presigned GET minted server-side) / pending & deleted states. Order
+ * matters: mediaStatus null = linked asset gone — "unavailable" beats a
+ * stale url that may still sit on the block.
+ */
+function MediaBlock({ b }: { b: LessonBlock }) {
   if (b.embedUrl)
     return (
       <div
-        className="w-full overflow-hidden rounded-md border bg-black"
+        className="w-full overflow-hidden rounded-md bg-black"
         style={{ aspectRatio: b.width && b.height ? `${b.width} / ${b.height}` : "16 / 9" }}
       >
         <iframe
           src={b.embedUrl}
-          className="size-full"
+          className="block size-full"
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen
           title={b.text ?? "Lesson video"}
         />
       </div>
     );
-  // mediaStatus null = linked asset deleted — "unavailable" beats a stale url
   if (b.mediaId && b.mediaStatus == null)
-    return <VideoUnavailableCard text="This video is no longer available." />;
-  if (b.url)
-    return (
-      <a
-        href={b.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 rounded-md border bg-muted/30 p-3 transition-colors hover:bg-muted/60"
-      >
-        <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
-          <LinkIcon className="size-4" />
+    return <UnavailableCard icon={LESSON_ICONS[b.type] ?? LinkIcon} text="This content is no longer available." />;
+  if (b.url) {
+    if (b.mime?.startsWith("image/"))
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={b.url} alt={b.text ?? "Lesson image"} className="w-full rounded-md border" />
+      );
+    if (b.mime === "application/pdf")
+      return (
+        <div className="flex flex-col gap-2">
+          <iframe src={b.url} className="h-[70vh] w-full rounded-md border" title={b.text ?? "PDF"} />
+          <a
+            href={b.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline-offset-4 hover:underline"
+          >
+            Open in a new tab ↗
+          </a>
         </div>
-        <span className="min-w-0 truncate text-sm text-primary underline-offset-4 hover:underline">
-          {b.url}
-        </span>
-      </a>
-    );
+      );
+    return <LinkCard url={b.url} text={b.text} download={!!b.mediaId} />;
+  }
   if (b.mediaId)
     return (
-      <VideoUnavailableCard
+      <UnavailableCard
+        icon={LESSON_ICONS[b.type] ?? LinkIcon}
         text={
           b.mediaStatus === "uploading" || b.mediaStatus === "processing"
-            ? "Video is still processing — check back shortly."
-            : "This video is no longer available."
+            ? "Content is still processing — check back shortly."
+            : "This content is no longer available."
         }
       />
     );
   return null;
 }
 
-function VideoUnavailableCard({ text }: { text: string }) {
+/** url-bearing block — external link or r2 presigned download. */
+function LinkCard({ url, text, download }: { url: string; text?: string; download?: boolean }) {
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-md border bg-muted/30 p-3 transition-colors hover:bg-muted/60"
+    >
+      <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+        {download ? <DownloadIcon className="size-4" /> : <LinkIcon className="size-4" />}
+      </div>
+      <span className="min-w-0 truncate text-sm text-primary underline-offset-4 hover:underline">
+        {text ?? url}
+      </span>
+    </a>
+  );
+}
+
+function UnavailableCard({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
   return (
     <div className="flex items-center gap-3 rounded-md border border-dashed bg-muted/30 p-3">
       <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
-        <CirclePlayIcon className="size-4" />
+        <Icon className="size-4" />
       </div>
       <p className="text-sm text-muted-foreground">{text}</p>
     </div>
@@ -107,7 +141,8 @@ function LessonBlocks({ blocks }: { blocks: LessonBlock[] }) {
               {b.text}
             </pre>
           );
-        if (b.type === "video") return <VideoBlock key={b.id} b={b} />;
+        if (["video", "image", "pdf", "resource"].includes(b.type))
+          return <MediaBlock key={b.id} b={b} />;
         const Icon = LESSON_ICONS[b.type] ?? BookOpenIcon;
         return (
           <div key={b.id} className="flex items-center gap-3 rounded-md border border-dashed bg-muted/30 p-3">

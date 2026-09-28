@@ -4,7 +4,15 @@
       "Exec(ls)",
       "Exec(node)",
       "Exec(pnpm create)",
-      "Exec(mv)"
+      "Exec(mv)",
+      "Exec(grep)",
+      "Exec(cat)",
+      "Exec(gh label)",
+      "Exec(gh auth)",
+      "Exec(git remote)",
+      "Exec(sed)",
+      "Exec(GH_TOKEN=$TOKEN gh issue)",
+      "Exec(GH_TOKEN=$TOKEN gh label)"
     ]
   }
 }

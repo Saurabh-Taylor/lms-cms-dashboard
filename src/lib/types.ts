@@ -79,6 +79,8 @@ export interface LessonNode {
 export interface LessonBlock extends LessonBlockWrite {
   embedUrl?: string | null;
   mediaStatus?: string | null;
+  /** r2-backed assets — drives viewer-vs-download rendering */
+  mime?: string | null;
   /** source pixel dims of the linked asset — sizes the player container */
   width?: number | null;
   height?: number | null;
@@ -173,10 +175,12 @@ export interface MediaRow {
   name: string;
   type: "image" | "video" | "document" | "archive";
   sizeKb: number;
-  source: "vimeo" | "external";
+  source: "vimeo" | "external" | "r2";
   status: "uploading" | "processing" | "ready" | "error";
-  /** Vimeo rows: "/videos/{id}"; external rows: null */
+  /** Vimeo rows: "/videos/{id}"; r2 rows: object key; external rows: null */
   storageKey: string | null;
+  /** r2 rows: server-derived MIME — drives preview + learner rendering */
+  mime?: string | null;
   /** external-link rows only */
   url: string | null;
   /** player.vimeo.com embed for ready vimeo rows — derived server-side */

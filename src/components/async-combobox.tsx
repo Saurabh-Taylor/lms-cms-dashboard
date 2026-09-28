@@ -24,6 +24,8 @@ interface AsyncComboboxProps {
   mode?: "single" | "multi";
   value: OptionItem[] | OptionItem | null;
   onChange: (v: OptionItem[] | OptionItem | null) => void;
+  /** Extra query params on the options call (e.g. mediaType for media picks). */
+  params?: Record<string, string>;
   placeholder?: string;
   emptyText?: string;
   className?: string;
@@ -31,15 +33,16 @@ interface AsyncComboboxProps {
 
 export function AsyncCombobox({
   resource, mode = "single", value, onChange,
-  placeholder = "Select…", emptyText = "No results", className,
+  params, placeholder = "Select…", emptyText = "No results", className,
 }: AsyncComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const debounced = useDebounce(search, 250);
+  const extra = new URLSearchParams(params).toString();
 
   const q = useQuery({
-    queryKey: ["options", resource, debounced],
-    queryFn: () => api<OptionItem[]>(`/api/admin/options?resource=${resource}&q=${encodeURIComponent(debounced)}`),
+    queryKey: ["options", resource, extra, debounced],
+    queryFn: () => api<OptionItem[]>(`/api/admin/options?resource=${resource}&q=${encodeURIComponent(debounced)}${extra ? `&${extra}` : ""}`),
     enabled: open,
     staleTime: 30_000,
     placeholderData: (prev) => prev,

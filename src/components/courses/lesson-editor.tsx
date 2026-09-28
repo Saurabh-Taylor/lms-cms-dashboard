@@ -223,51 +223,10 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
         />
       );
     case "video":
-      return (
-        <div className="flex flex-col gap-2">
-          <AsyncCombobox
-            resource="media"
-            value={block.mediaId ? { id: block.mediaId, label: block.text ?? `Media #${block.mediaId}` } : null}
-            onChange={(v) => {
-              const o = v as OptionItem | null;
-              onChange(block.id, {
-                mediaId: o?.id,
-                text: o?.label,
-                mediaStatus: o?.sub?.split(" · ")[0],
-                url: o ? undefined : block.url,
-              });
-            }}
-            placeholder="Pick from media library…"
-          />
-          {block.mediaId && (
-            <div className="flex items-center gap-2">
-              <StatusBadge value={block.mediaStatus ?? "ready"} />
-              {block.mediaStatus === "processing" && (
-                <span className="text-xs text-amber-600 dark:text-amber-400">
-                  Still processing — learners see a pending state until it&apos;s ready.
-                </span>
-              )}
-            </div>
-          )}
-          {!block.mediaId && (
-            <Input
-              placeholder="or paste an external video URL"
-              value={block.url ?? ""}
-              onChange={(e) => onChange(block.id, { url: e.target.value })}
-            />
-          )}
-        </div>
-      );
     case "pdf":
     case "image":
     case "resource":
-      return (
-        <Input
-          placeholder={`${block.type === "pdf" ? "PDF" : block.type === "image" ? "Image" : "Resource"} URL`}
-          value={block.url ?? ""}
-          onChange={(e) => onChange(block.id, { url: e.target.value })}
-        />
-      );
+      return <MediaPick block={block} onChange={onChange} />;
     case "link":
       return (
         <div className="flex flex-col gap-2">
@@ -311,4 +270,48 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
     default:
       return null;
   }
+}
+
+/**
+ * Shared media picker for video/pdf/image/resource blocks — the `mediaType`
+ * param filters the library to the matching asset kind. Blocks keep the
+ * external-URL fallback when nothing's picked.
+ */
+function MediaPick({ block, onChange }: { block: Block; onChange: (id: string, p: Partial<Block>) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <AsyncCombobox
+        resource="media"
+        params={{ mediaType: block.type }}
+        value={block.mediaId ? { id: block.mediaId, label: block.text ?? `Media #${block.mediaId}` } : null}
+        onChange={(v) => {
+          const o = v as OptionItem | null;
+          onChange(block.id, {
+            mediaId: o?.id,
+            text: o?.label,
+            mediaStatus: o?.sub?.split(" · ")[0],
+            url: o ? undefined : block.url,
+          });
+        }}
+        placeholder="Pick from media library…"
+      />
+      {block.mediaId && (
+        <div className="flex items-center gap-2">
+          <StatusBadge value={block.mediaStatus ?? "ready"} />
+          {block.mediaStatus === "processing" && (
+            <span className="text-xs text-amber-600 dark:text-amber-400">
+              Still processing — learners see a pending state until it&apos;s ready.
+            </span>
+          )}
+        </div>
+      )}
+      {!block.mediaId && (
+        <Input
+          placeholder={`or paste an external ${block.type === "pdf" ? "PDF" : block.type === "image" ? "image" : block.type === "resource" ? "resource" : "video"} URL`}
+          value={block.url ?? ""}
+          onChange={(e) => onChange(block.id, { url: e.target.value })}
+        />
+      )}
+    </div>
+  );
 }
