@@ -87,9 +87,10 @@ export function UsersTable({ role }: { role: Role }) {
 
   const approveRequest = useApiMutation({
     mutationFn: (u: UserRow) =>
-      api(`/api/admin/users/${u.id}/approve-request`, { method: "POST" }),
+      api<{ sent: boolean }>(`/api/admin/users/${u.id}/approve-request`, { method: "POST" }),
     invalidate: [["/api/admin/users"]],
-    successToast: (d, u) => `${u.name} approved — invite sent`,
+    successToast: (d, u) =>
+      d.sent ? `${u.name} approved — invite sent` : `${u.name} approved — mail not configured, invite not sent`,
   });
 
   const rejectRequest = useApiMutation({
@@ -280,9 +281,11 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const create = useApiMutation({
-    mutationFn: () => api("/api/admin/users", { method: "POST", body: JSON.stringify({ name, email, role }) }),
+    mutationFn: () =>
+      api<{ sent: boolean }>("/api/admin/users", { method: "POST", body: JSON.stringify({ name, email, role }) }),
     invalidate: [["/api/admin/users"]],
-    successToast: () => `${name} invited`,
+    successToast: (d) =>
+      d.sent ? `${name} invited` : `${name} invited — mail not configured, no email sent`,
     onSuccess: () => { onOpenChange(false); setName(""); setEmail(""); },
   });
   return (

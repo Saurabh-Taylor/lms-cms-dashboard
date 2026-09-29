@@ -48,9 +48,10 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
   });
 
   const approveRequest = useApiMutation({
-    mutationFn: () => api(`/api/admin/users/${user.id}/approve-request`, { method: "POST" }),
+    mutationFn: () => api<{ sent: boolean }>(`/api/admin/users/${user.id}/approve-request`, { method: "POST" }),
     invalidate: "all",
-    successToast: `${user.name} approved — invite sent`,
+    successToast: (d) =>
+      d.sent ? `${user.name} approved — invite sent` : `${user.name} approved — mail not configured, invite not sent`,
   });
 
   const rejectRequest = useApiMutation({
