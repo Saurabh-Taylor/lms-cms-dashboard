@@ -83,7 +83,11 @@ export function CourseFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              <Select value={categoryId ? String(categoryId) : ""} onValueChange={(v) => setCategoryId(Number(v))}>
+              <Select
+                value={categoryId ? String(categoryId) : ""}
+                onValueChange={(v) => setCategoryId(Number(v))}
+                items={Object.fromEntries(categories.map((c) => [String(c.id), c.label]))}
+              >
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.label}</SelectItem>)}

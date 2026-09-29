@@ -14,7 +14,8 @@
       "Exec(GH_TOKEN=$TOKEN gh issue)",
       "Exec(GH_TOKEN=$TOKEN gh label)",
       "Exec(awk)",
-      "Exec(read loc)"
+      "Exec(read loc)",
+      "Exec(find)"
     ]
   }
 }

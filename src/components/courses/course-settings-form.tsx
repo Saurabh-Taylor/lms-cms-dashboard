@@ -88,7 +88,11 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              <Select value={form.categoryId ? String(form.categoryId) : ""} onValueChange={(v) => set("categoryId", Number(v))}>
+              <Select
+                value={form.categoryId ? String(form.categoryId) : ""}
+                onValueChange={(v) => set("categoryId", Number(v))}
+                items={Object.fromEntries(categories.map((c) => [String(c.id), c.label]))}
+              >
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.label}</SelectItem>)}
