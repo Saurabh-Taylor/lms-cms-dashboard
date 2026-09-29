@@ -14,7 +14,7 @@ interface SignInUser {
 /**
  * Sign-in — proxies Better Auth on the NestJS API. The session cookie is
  * forwarded from the API response onto this origin (same-site, HttpOnly), so
- * the browser only ever holds the learnhub.session_token cookie here.
+ * the browser only ever holds the microshala.session_token cookie here.
  */
 export async function POST(req: Request) {
   const parsed = z

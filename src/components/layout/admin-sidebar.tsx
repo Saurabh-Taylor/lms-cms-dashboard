@@ -12,5 +12,5 @@ export function AdminSidebar({ permissions }: { permissions: string[] }) {
     ),
   })).filter((g) => g.items.length > 0);
 
-  return <AppSidebar nav={nav} brand={{ title: "LearnHub CMS", href: "/admin/dashboard" }} />;
+  return <AppSidebar nav={nav} brand={{ title: "Microshala CMS", href: "/admin/dashboard" }} />;
 }

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AssessmentRunner } from "@/components/learner/assessment-runner";
 
-export const metadata = { title: "Assessment · LearnHub" };
+export const metadata = { title: "Assessment · Microshala" };
 
 export default async function LearnerAssessmentPage({
   params,

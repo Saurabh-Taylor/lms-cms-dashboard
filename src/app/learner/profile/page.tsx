@@ -1,7 +1,7 @@
 import { getCurrentLearner } from "@/lib/me";
 import { ProfileClient } from "./profile-client";
 
-export const metadata = { title: "Profile · LearnHub" };
+export const metadata = { title: "Profile · Microshala" };
 
 export default async function LearnerProfilePage() {
   const me = await getCurrentLearner();

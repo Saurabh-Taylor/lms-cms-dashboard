@@ -63,7 +63,7 @@ export function SignupForm() {
         Create your account
       </h1>
       <p className="mt-1 text-(length:--fs-page-desc) text-muted-foreground">
-        Request access to LearnHub — an administrator enables sign-in.
+        Request access to Microshala — an administrator enables sign-in.
       </p>
 
       <form onSubmit={submit} className="mt-7 flex flex-col gap-4">

@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AsyncCombobox } from "@/components/async-combobox";
 import { fmtRelative, initials } from "@/lib/format";
-import { USER_PERMANENT_DELETE_STATUSES } from "@learnhub/contracts";
+import { USER_PERMANENT_DELETE_STATUSES } from "@microshala/contracts";
 
 const STATUS_OPTS = [
   { value: "active", label: "Active" },

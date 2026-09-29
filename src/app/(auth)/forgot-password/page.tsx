@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, homeForRole } from "@/lib/me";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
-export const metadata = { title: "Forgot password · LearnHub" };
+export const metadata = { title: "Forgot password · Microshala" };
 
 export default async function ForgotPasswordPage() {
   const user = await getCurrentUser();

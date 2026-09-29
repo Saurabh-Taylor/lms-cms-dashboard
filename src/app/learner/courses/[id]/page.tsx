@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseView } from "@/components/learner/course-view";
 
-export const metadata = { title: "Course · LearnHub" };
+export const metadata = { title: "Course · Microshala" };
 
 export default async function LearnerCoursePage({
   params,

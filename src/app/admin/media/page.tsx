@@ -20,7 +20,7 @@ import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { fmtBytes, fmtRelative } from "@/lib/format";
-import { MEDIA_FILE_EXTS, MEDIA_VIDEO_EXTS, mediaTypeForExt } from "@learnhub/contracts";
+import { MEDIA_FILE_EXTS, MEDIA_VIDEO_EXTS, mediaTypeForExt } from "@microshala/contracts";
 import { PERM } from "@/lib/permissions";
 import {
   FileTextIcon, FileArchiveIcon, VideoIcon, ImageIcon, LinkIcon, TriangleAlertIcon, UploadIcon,

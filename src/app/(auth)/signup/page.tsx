@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, homeForRole } from "@/lib/me";
 import { SignupForm } from "@/components/auth/signup-form";
 
-export const metadata = { title: "Create account · LearnHub" };
+export const metadata = { title: "Create account · Microshala" };
 
 export default async function SignupPage() {
   const user = await getCurrentUser();

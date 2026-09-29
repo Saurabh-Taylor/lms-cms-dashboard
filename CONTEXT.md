@@ -1,4 +1,4 @@
-# LearnHub — Domain Glossary
+# Microshala — Domain Glossary
 
 Ubiquitous language for the LMS. Pure vocabulary — no implementation details.
 

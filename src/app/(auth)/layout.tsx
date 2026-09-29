@@ -14,7 +14,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
             <GraduationCapIcon className="size-4" />
           </span>
-          <span translate="no" className="text-[15px] font-semibold tracking-tight">LearnHub</span>
+          <span translate="no" className="text-[15px] font-semibold tracking-tight">Microshala</span>
         </Link>
 
         <main className="flex flex-1 items-center py-10">

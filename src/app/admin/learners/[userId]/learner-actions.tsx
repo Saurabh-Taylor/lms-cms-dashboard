@@ -19,7 +19,7 @@ import { DeleteUserDialog } from "@/components/learners/delete-user-dialog";
 import type { EnrollResult } from "@/components/enrollments/enroll-dialog";
 import { EllipsisIcon } from "lucide-react";
 
-import { USER_PERMANENT_DELETE_STATUSES, type UserStatus } from "@learnhub/contracts";
+import { USER_PERMANENT_DELETE_STATUSES, type UserStatus } from "@microshala/contracts";
 
 interface EnrollResultResponse { succeeded: number; results: EnrollResult[] }
 

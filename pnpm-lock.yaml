@@ -20,7 +20,7 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.8)
-      '@learnhub/contracts':
+      '@microshala/contracts':
         specifier: link:../cms-lms-test-devin-swe-2-nest-backend/src/contracts
         version: link:../cms-lms-test-devin-swe-2-nest-backend/src/contracts
       '@tanstack/react-query':

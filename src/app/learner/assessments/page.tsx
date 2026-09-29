@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { AssessmentList } from "@/components/learner/assessment-list";
 
-export const metadata = { title: "Assessments · LearnHub" };
+export const metadata = { title: "Assessments · Microshala" };
 
 export default function LearnerAssessmentsPage() {
   return (

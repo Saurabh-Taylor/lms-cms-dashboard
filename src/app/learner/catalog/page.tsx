@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { CatalogBrowser } from "./catalog-browser";
 
-export const metadata = { title: "Catalog · LearnHub" };
+export const metadata = { title: "Catalog · Microshala" };
 
 export default function CatalogPage() {
   return (

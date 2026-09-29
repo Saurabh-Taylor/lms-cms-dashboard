@@ -117,7 +117,7 @@ function EmailFormFields({ saved }: { saved: SmtpConfig | null }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>From name</Label>
-            <Input value={f.fromName} onChange={(e) => setF({ ...f, fromName: e.target.value })} placeholder="LearnHub" />
+            <Input value={f.fromName} onChange={(e) => setF({ ...f, fromName: e.target.value })} placeholder="Microshala" />
           </div>
         </div>
         <div className="flex items-center justify-between border-t pt-3">

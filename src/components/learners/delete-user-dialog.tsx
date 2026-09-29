@@ -3,7 +3,7 @@
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
-import { USER_PERMANENT_DELETE_STATUSES, type UserStatus } from "@learnhub/contracts";
+import { USER_PERMANENT_DELETE_STATUSES, type UserStatus } from "@microshala/contracts";
 
 /** Shared delete confirm — owns the DELETE mutation + toast. */
 export function DeleteUserDialog({

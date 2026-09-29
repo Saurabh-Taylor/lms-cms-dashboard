@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, homeForRole } from "@/lib/me";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 
-export const metadata = { title: "Set password · LearnHub" };
+export const metadata = { title: "Set password · Microshala" };
 
 export default async function ResetPasswordPage({
   searchParams,

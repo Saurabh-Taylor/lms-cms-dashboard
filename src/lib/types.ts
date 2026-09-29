@@ -1,6 +1,6 @@
 // DTO shapes returned by /api/admin/* routes.
 
-import type { LessonBlock as LessonBlockWrite, UserStatus } from "@learnhub/contracts";
+import type { LessonBlock as LessonBlockWrite, UserStatus } from "@microshala/contracts";
 
 export type { UserStatus };
 
@@ -72,7 +72,7 @@ export interface LessonNode {
 
 /**
  * Lesson content block — Postgres jsonb, served as a real array.
- * Write shape comes from @learnhub/contracts (LessonBlockSchema); the fields
+ * Write shape comes from @microshala/contracts (LessonBlockSchema); the fields
  * below are resolved server-side at read time on learner routes — never raw
  * storage keys. mediaStatus null = linked asset gone.
  */

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LearnHub CMS",
+  title: "Microshala CMS",
   description: "Learning management system administration",
 };
 

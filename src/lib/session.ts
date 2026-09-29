@@ -4,7 +4,7 @@
 // SESSION_COOKIE is the Better Auth session token issued by the NestJS API and
 // forwarded through /api/auth/* route handlers — the browser only ever stores
 // it on this origin.
-export const SESSION_COOKIE = "learnhub.session_token";
+export const SESSION_COOKIE = "microshala.session_token";
 
 // Mirrors the signed-in persona so middleware can gate portals without an API
 // hit. Unsigned hint only — pages/routes re-validate the session server-side.
@@ -18,6 +18,6 @@ export function homeForRole(role: string): string {
 /**
  * appRole → portal persona ("admin" | "instructor" | "learner"). Single
  * mapping used by me.ts and the login route — the implementation is
- * personaFor() in @learnhub/contracts (backend-owned, single source).
+ * personaFor() in @microshala/contracts (backend-owned, single source).
  */
-export { personaFor as portalRole } from "@learnhub/contracts";
+export { personaFor as portalRole } from "@microshala/contracts";

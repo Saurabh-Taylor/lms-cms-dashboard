@@ -1,7 +1,7 @@
 import { getCurrentLearner } from "@/lib/me";
 import { DashboardClient } from "./dashboard-client";
 
-export const metadata = { title: "Dashboard · LearnHub" };
+export const metadata = { title: "Dashboard · Microshala" };
 
 export default async function LearnerDashboardPage() {
   const me = await getCurrentLearner();

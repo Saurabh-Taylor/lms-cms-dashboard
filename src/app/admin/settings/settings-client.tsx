@@ -65,7 +65,7 @@ function GeneralForm() {
 
 function GeneralFormFields({ saved }: { saved: Partial<General> }) {
   const defaults: General = {
-    platformName: "Acme LMS", description: "", timezone: "UTC",
+    platformName: "Microshala", description: "", timezone: "UTC",
     defaultLocale: "en", supportEmail: "",
     ...saved,
   };
