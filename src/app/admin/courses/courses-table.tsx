@@ -93,12 +93,21 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
         meta: { sortKey: "title" },
         cell: ({ row }) => (
           <div className="flex items-center gap-2.5 min-w-0">
-            <span
-              className="grid size-8 shrink-0 place-items-center rounded-md text-[10px] font-bold text-white"
-              style={{ background: row.original.thumbnailColor }}
-            >
-              {initials(row.original.title)}
-            </span>
+            {row.original.thumbnailUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
+              <img
+                src={row.original.thumbnailUrl}
+                alt=""
+                className="size-8 shrink-0 rounded-md object-cover"
+              />
+            ) : (
+              <span
+                className="grid size-8 shrink-0 place-items-center rounded-md text-[10px] font-bold text-white"
+                style={{ background: row.original.thumbnailColor }}
+              >
+                {initials(row.original.title)}
+              </span>
+            )}
             <div className="min-w-0">
               <Link
                 href={`/admin/courses/${row.original.id}` as never}

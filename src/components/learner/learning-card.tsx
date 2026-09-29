@@ -16,7 +16,12 @@ export function LearningCard({ course }: { course: LearnerCourse }) {
 
   return (
     <Card className="overflow-hidden transition-shadow duration-(--duration-fast) hover:shadow-sm">
-      <div className="h-1.5" style={{ background: course.thumbnailColor }} aria-hidden />
+      {course.thumbnailUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
+        <img src={course.thumbnailUrl} alt="" className="h-28 w-full object-cover" />
+      ) : (
+        <div className="h-1.5" style={{ background: course.thumbnailColor }} aria-hidden />
+      )}
       <CardContent className="flex flex-col gap-3 pt-4">
         <div className="min-w-0">
           <Link

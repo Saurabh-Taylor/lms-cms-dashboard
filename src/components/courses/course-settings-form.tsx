@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CourseRow, OptionItem } from "@/lib/types";
@@ -35,6 +36,9 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
   const [instructor, setInstructor] = React.useState<OptionItem | null>(null);
   const [categories, setCategories] = React.useState<OptionItem[]>([]);
   const [tagInput, setTagInput] = React.useState("");
+  const qc = useQueryClient();
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [thumbProgress, setThumbProgress] = React.useState<number | null>(null);
 
   if (course && form === null) {
     setForm({
@@ -61,6 +65,49 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
     successToast: "Settings saved",
     onSuccess: () => router.refresh(),
   });
+
+  const removeThumb = useApiMutation({
+    mutationFn: () =>
+      api(`/api/admin/courses/${courseId}/thumbnail`, { method: "DELETE" }),
+    invalidate: [["course", courseId], ["/api/admin/courses"]],
+    successToast: "Thumbnail removed",
+  });
+
+  /** Presign → browser PUTs straight to R2 → complete verifies + swaps the key. */
+  async function uploadThumbnail(file: File) {
+    setThumbProgress(0);
+    try {
+      const ticket = await api<{ uploadUrl: string; key: string; contentType: string }>(
+        `/api/admin/courses/${courseId}/thumbnail-upload`,
+        { method: "POST", body: JSON.stringify({ name: file.name, sizeBytes: file.size }) },
+      );
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", ticket.uploadUrl);
+        xhr.setRequestHeader("Content-Type", ticket.contentType);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable)
+            setThumbProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () =>
+          xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status})`));
+        xhr.onerror = () => reject(new Error("Upload failed"));
+        xhr.send(file);
+      });
+      await api(`/api/admin/courses/${courseId}/thumbnail/complete`, {
+        method: "POST",
+        body: JSON.stringify({ key: ticket.key }),
+      });
+      toast.success("Thumbnail updated");
+      qc.invalidateQueries({ queryKey: ["course", courseId] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/courses"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setThumbProgress(null);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   if (isLoading || !form)
     return <div className="max-w-2xl space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 w-full" />)}</div>;
@@ -115,6 +162,71 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
             <Label>Instructor</Label>
             <AsyncCombobox resource="instructors" value={instructor} onChange={(v) => setInstructor(v as OptionItem | null)} placeholder="Assign instructor…" />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-sm font-medium">Course thumbnail</CardTitle></CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="flex items-center gap-4">
+            {course.thumbnailUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
+              <img
+                src={course.thumbnailUrl}
+                alt="Course thumbnail"
+                className="h-20 w-36 rounded-md border object-cover"
+              />
+            ) : (
+              <div
+                className="h-20 w-36 rounded-md border"
+                style={{ background: course.thumbnailColor }}
+                aria-hidden
+              />
+            )}
+            <div className="flex flex-col gap-2">
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".png,.jpg,.jpeg,.webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadThumbnail(f);
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={thumbProgress !== null}
+                >
+                  {course.thumbnailUrl ? "Replace image" : "Upload image"}
+                </Button>
+                {course.thumbnailUrl && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => removeThumb.mutate()}
+                    disabled={removeThumb.isPending}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPG or WebP up to 10 MB — 1200×675 or larger recommended.
+              </p>
+            </div>
+          </div>
+          {thumbProgress !== null && (
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${thumbProgress}%` }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

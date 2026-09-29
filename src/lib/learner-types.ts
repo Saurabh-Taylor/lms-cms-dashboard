@@ -16,6 +16,7 @@ export interface LearnerCourse {
   description: string | null;
   difficulty: string;
   thumbnailColor: string;
+  thumbnailUrl: string | null;
   estimatedMinutes: number;
   lessonCount: number;
   instructorName: string | null;
@@ -45,6 +46,7 @@ export interface LearnerCatalogCourse {
   description: string | null;
   difficulty: string;
   thumbnailColor: string;
+  thumbnailUrl: string | null;
   estimatedMinutes: number;
   lessonCount: number;
   enrollmentCount: number;
@@ -60,6 +62,7 @@ export interface LearnerCourseDetail {
     description: string | null;
     difficulty: string;
     thumbnailColor: string;
+    thumbnailUrl: string | null;
     estimatedMinutes: number;
     instructorName: string | null;
     categoryName: string | null;

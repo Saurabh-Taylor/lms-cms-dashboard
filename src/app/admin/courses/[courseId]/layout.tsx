@@ -9,6 +9,7 @@ interface CourseDetail {
   title: string;
   status: string;
   thumbnailColor: string;
+  thumbnailUrl: string | null;
   categoryName: string | null;
   instructorName: string | null;
   updatedAt: string;
@@ -25,12 +26,21 @@ export default async function CourseLayout({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span
-          className="grid size-10 shrink-0 place-items-center rounded-lg text-xs font-bold text-white"
-          style={{ background: c.thumbnailColor }}
-        >
-          {initials(c.title)}
-        </span>
+        {c.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
+          <img
+            src={c.thumbnailUrl}
+            alt=""
+            className="size-10 shrink-0 rounded-lg object-cover"
+          />
+        ) : (
+          <span
+            className="grid size-10 shrink-0 place-items-center rounded-lg text-xs font-bold text-white"
+            style={{ background: c.thumbnailColor }}
+          >
+            {initials(c.title)}
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h1 className="truncate text-xl font-semibold tracking-tight">{c.title}</h1>

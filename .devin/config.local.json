@@ -25,7 +25,9 @@
       "Exec(git add)",
       "Exec(docker ps)",
       "Exec(rm)",
-      "Exec(file)"
+      "Exec(file)",
+      "Exec(wc)",
+      "Exec(xargs)"
     ]
   }
 }

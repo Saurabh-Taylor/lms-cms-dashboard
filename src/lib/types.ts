@@ -29,6 +29,7 @@ export interface CourseRow {
   estimatedMinutes: number;
   tags: string[];
   thumbnailColor: string;
+  thumbnailUrl: string | null;
   certificateEnabled: boolean;
   enrollmentCount: number;
   completionRate: number;
