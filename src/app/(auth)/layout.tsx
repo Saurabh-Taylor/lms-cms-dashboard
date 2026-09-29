@@ -30,7 +30,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Form column */}
       <div className="flex min-w-0 flex-1 flex-col px-6 py-6 sm:px-10 md:py-8">
         <Link href="/" className="flex w-fit items-center">
-          <BrandLogo className="h-9" />
+          <BrandLogo className="h-12" />
         </Link>
 
         <main className="flex flex-1 items-center py-10">

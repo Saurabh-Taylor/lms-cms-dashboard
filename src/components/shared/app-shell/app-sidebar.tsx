@@ -28,18 +28,22 @@ export function AppSidebar({
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-3 py-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href={brand.href as never} />} tooltip={brand.title} className="gap-2.5 px-1.5 hover:bg-transparent">
-              {/* icon-rail fallback — the wordmark can't fit a collapsed sidebar */}
-              <div className="hidden size-6 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground group-data-[collapsible=icon]:grid">
-                <GraduationCapIcon className="size-3.5" />
-              </div>
-              <BrandLogo className="h-7 group-data-[collapsible=icon]:hidden" />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="px-4 pt-4 pb-2">
+        {/* wordmark fills the header width; cap tile is the icon-rail mark */}
+        <Link
+          href={brand.href as never}
+          aria-label={brand.title}
+          className="block w-fit group-data-[collapsible=icon]:hidden"
+        >
+          <BrandLogo className="w-40" />
+        </Link>
+        <Link
+          href={brand.href as never}
+          aria-label={brand.title}
+          className="hidden size-6 place-items-center rounded-md bg-primary text-primary-foreground group-data-[collapsible=icon]:grid"
+        >
+          <GraduationCapIcon className="size-3.5" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="relative gap-1">
