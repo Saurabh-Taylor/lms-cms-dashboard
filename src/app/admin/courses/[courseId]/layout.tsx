@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { apiServer } from "@/lib/api-server";
 import { CourseTabs } from "./course-tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { initials, fmtRelative } from "@/lib/format";
+import { CourseThumbnail } from "@/components/shared/course-thumbnail";
+import { fmtRelative } from "@/lib/format";
 
 interface CourseDetail {
   id: number;
@@ -26,21 +27,13 @@ export default async function CourseLayout({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        {c.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
-          <img
-            src={c.thumbnailUrl}
-            alt=""
-            className="size-10 shrink-0 rounded-lg object-cover"
-          />
-        ) : (
-          <span
-            className="grid size-10 shrink-0 place-items-center rounded-lg text-xs font-bold text-white"
-            style={{ background: c.thumbnailColor }}
-          >
-            {initials(c.title)}
-          </span>
-        )}
+        <CourseThumbnail
+          variant="square"
+          size={10}
+          thumbnailUrl={c.thumbnailUrl}
+          thumbnailColor={c.thumbnailColor}
+          title={c.title}
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h1 className="truncate text-xl font-semibold tracking-tight">{c.title}</h1>

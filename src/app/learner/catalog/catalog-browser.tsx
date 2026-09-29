@@ -9,6 +9,7 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LearnerCatalogCourse } from "@/lib/learner-types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CourseThumbnail } from "@/components/shared/course-thumbnail";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,12 +35,7 @@ function CatalogCard({ course }: { course: LearnerCatalogCourse }) {
 
   return (
     <Card className="overflow-hidden transition-shadow duration-(--duration-fast) hover:shadow-sm">
-      {course.thumbnailUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
-        <img src={course.thumbnailUrl} alt="" className="h-28 w-full object-cover" />
-      ) : (
-        <div className="h-1.5" style={{ background: course.thumbnailColor }} aria-hidden />
-      )}
+      <CourseThumbnail variant="banner" thumbnailUrl={course.thumbnailUrl} thumbnailColor={course.thumbnailColor} />
       <CardContent className="flex flex-col gap-3 pt-4">
         <div className="min-w-0">
           {enrolled ? (

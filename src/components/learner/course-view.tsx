@@ -15,6 +15,7 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LearnerCourseDetail } from "@/lib/learner-types";
 import type { LessonBlock } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
+import { CourseThumbnail } from "@/components/shared/course-thumbnail";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -254,12 +255,7 @@ export function CourseView({ courseId }: { courseId: number }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            {course.thumbnailUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
-              <img src={course.thumbnailUrl} alt="" className="size-7 rounded-md object-cover" />
-            ) : (
-              <span className="size-2.5 rounded-full" style={{ background: course.thumbnailColor }} aria-hidden />
-            )}
+            <CourseThumbnail variant="dot" thumbnailUrl={course.thumbnailUrl} thumbnailColor={course.thumbnailColor} />
             <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight">{course.title}</h1>
           </div>
           <p className="mt-0.5 text-(length:--fs-page-desc) text-muted-foreground">

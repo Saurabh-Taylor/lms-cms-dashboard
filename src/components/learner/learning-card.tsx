@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { CourseThumbnail } from "@/components/shared/course-thumbnail";
 import { fmtDuration } from "@/lib/format";
 
 /** Enrolled-course card — shared by the dashboard and My Learning. */
@@ -16,12 +17,7 @@ export function LearningCard({ course }: { course: LearnerCourse }) {
 
   return (
     <Card className="overflow-hidden transition-shadow duration-(--duration-fast) hover:shadow-sm">
-      {course.thumbnailUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
-        <img src={course.thumbnailUrl} alt="" className="h-28 w-full object-cover" />
-      ) : (
-        <div className="h-1.5" style={{ background: course.thumbnailColor }} aria-hidden />
-      )}
+      <CourseThumbnail variant="banner" thumbnailUrl={course.thumbnailUrl} thumbnailColor={course.thumbnailColor} />
       <CardContent className="flex flex-col gap-3 pt-4">
         <div className="min-w-0">
           <Link

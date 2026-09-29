@@ -11,6 +11,7 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CourseRow, OptionItem } from "@/lib/types";
 import { useServerTable } from "@/hooks/use-server-table";
 import { DataTable } from "@/components/data-table/data-table";
+import { CourseThumbnail } from "@/components/shared/course-thumbnail";
 import { SearchInput, TableToolbar } from "@/components/data-table/table-toolbar";
 import { FilterSelect } from "@/components/data-table/filter-select";
 import { RowActions } from "@/components/data-table/row-actions";
@@ -93,21 +94,12 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
         meta: { sortKey: "title" },
         cell: ({ row }) => (
           <div className="flex items-center gap-2.5 min-w-0">
-            {row.original.thumbnailUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
-              <img
-                src={row.original.thumbnailUrl}
-                alt=""
-                className="size-8 shrink-0 rounded-md object-cover"
-              />
-            ) : (
-              <span
-                className="grid size-8 shrink-0 place-items-center rounded-md text-[10px] font-bold text-white"
-                style={{ background: row.original.thumbnailColor }}
-              >
-                {initials(row.original.title)}
-              </span>
-            )}
+            <CourseThumbnail
+              variant="square"
+              thumbnailUrl={row.original.thumbnailUrl}
+              thumbnailColor={row.original.thumbnailColor}
+              title={row.original.title}
+            />
             <div className="min-w-0">
               <Link
                 href={`/admin/courses/${row.original.id}` as never}
