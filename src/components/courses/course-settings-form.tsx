@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { ATTACHMENT_IMAGE_EXTS, ATTACHMENT_IMAGE_MAX_BYTES } from "@microshala/contracts";
+import { CourseThumbnail } from "@/components/shared/course-thumbnail";
 import type { CourseRow, OptionItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -169,25 +171,22 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
         <CardHeader><CardTitle className="text-sm font-medium">Course thumbnail</CardTitle></CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="flex items-center gap-4">
-            {course.thumbnailUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- presigned URL, not optimizable
-              <img
-                src={course.thumbnailUrl}
-                alt="Course thumbnail"
-                className="h-20 w-36 rounded-md border object-cover"
-              />
-            ) : (
-              <div
-                className="h-20 w-36 rounded-md border"
-                style={{ background: course.thumbnailColor }}
-                aria-hidden
-              />
-            )}
+            <div className="w-44 shrink-0 overflow-hidden rounded-md border">
+              {course.thumbnailUrl ? (
+                <CourseThumbnail
+                  variant="banner"
+                  thumbnailUrl={course.thumbnailUrl}
+                  thumbnailColor={course.thumbnailColor}
+                />
+              ) : (
+                <div className="aspect-video" style={{ background: course.thumbnailColor }} aria-hidden />
+              )}
+            </div>
             <div className="flex flex-col gap-2">
               <input
                 ref={fileRef}
                 type="file"
-                accept=".png,.jpg,.jpeg,.webp"
+                accept={ATTACHMENT_IMAGE_EXTS.map((e) => `.${e}`).join(",")}
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -215,7 +214,8 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                PNG, JPG or WebP up to 10 MB — 1200×675 or larger recommended.
+                PNG, JPG or WebP up to {Math.round(ATTACHMENT_IMAGE_MAX_BYTES / 1024 / 1024)} MB —
+                1200×675 or larger recommended.
               </p>
             </div>
           </div>
