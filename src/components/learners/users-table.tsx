@@ -164,7 +164,10 @@ export function UsersTable({ role }: { role: Role }) {
             <RowActions
               items={
                 u.status === "deleted"
-                  ? [{ label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) }]
+                  ? [
+                      { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
+                      { label: "Remove permanently…", destructive: true, onClick: () => setDeleteTarget(u) },
+                    ]
                   : [
                       { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
                       ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
