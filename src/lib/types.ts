@@ -139,6 +139,7 @@ export interface AnnouncementRow {
   audience: string;
   status: "draft" | "scheduled" | "sent";
   scheduledAt: number | null;
+  sentAt: number | null;
   createdAt: number;
 }
 

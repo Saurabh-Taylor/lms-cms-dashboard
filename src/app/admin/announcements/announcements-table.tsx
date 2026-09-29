@@ -43,7 +43,15 @@ export function AnnouncementsTable() {
     ) },
     { id: "audience", accessorKey: "audience", header: "Audience", cell: ({ getValue }) => <span className="text-sm capitalize">{getValue() as string}</span> },
     { id: "status", accessorKey: "status", header: "Status", cell: ({ getValue }) => <StatusBadge value={getValue() as string} /> },
-    { id: "scheduledAt", accessorKey: "scheduledAt", header: "Scheduled", cell: ({ getValue }) => <span className="text-sm text-muted-foreground">{getValue() ? fmtDate(getValue() as number) : "—"}</span> },
+    { id: "delivery", header: "Delivery", cell: ({ row }) => {
+      const a = row.original;
+      const label = a.status === "sent" && a.sentAt
+        ? `Sent ${fmtRelative(a.sentAt)}`
+        : a.status === "scheduled" && a.scheduledAt
+          ? `For ${fmtDate(a.scheduledAt)}`
+          : "—";
+      return <span className="text-sm text-muted-foreground">{label}</span>;
+    } },
     { id: "createdAt", accessorKey: "createdAt", header: "Created", meta: { sortKey: "createdAt" }, cell: ({ getValue }) => <span className="text-sm text-muted-foreground">{fmtRelative(getValue() as number)}</span> },
     { id: "_actions", enableHiding: false, meta: { className: "w-8" }, cell: ({ row }) => {
       const a = row.original;
@@ -79,14 +87,23 @@ export function AnnouncementActions() {
 }
 
 function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const [f, setF] = React.useState({ title: "", body: "", audience: "all", status: "draft" });
+  const [f, setF] = React.useState({ title: "", body: "", audience: "all", status: "draft", scheduledAt: "" });
   const create = useApiMutation({
-    mutationFn: () => api("/api/admin/announcements", { method: "POST", body: JSON.stringify(f) }),
+    mutationFn: () =>
+      api("/api/admin/announcements", {
+        method: "POST",
+        body: JSON.stringify({
+          title: f.title, body: f.body, audience: f.audience, status: f.status,
+          // scheduled ↔ scheduledAt are a pair in the contract — only send together.
+          ...(f.status === "scheduled" ? { scheduledAt: new Date(f.scheduledAt).getTime() } : {}),
+        }),
+      }),
     invalidate: [["/api/admin/announcements"]],
-    successToast: () => (f.status === "sent" ? "Announcement sent" : "Draft saved"),
+    successToast: () =>
+      f.status === "sent" ? "Announcement sent" : f.status === "scheduled" ? "Announcement scheduled" : "Draft saved",
     onSuccess: () => {
       onOpenChange(false);
-      setF({ title: "", body: "", audience: "all", status: "draft" });
+      setF({ title: "", body: "", audience: "all", status: "draft", scheduledAt: "" });
     },
   });
   return (
@@ -116,14 +133,32 @@ function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
                 <SelectContent>
                   <SelectItem value="draft">Save as draft</SelectItem>
                   <SelectItem value="sent">Send now</SelectItem>
+                  <SelectItem value="scheduled">Schedule for later</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
+          {f.status === "scheduled" && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Deliver at</Label>
+              <Input
+                type="datetime-local"
+                value={f.scheduledAt}
+                onChange={(e) => setF({ ...f, scheduledAt: e.target.value })}
+                required
+              />
+              <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">
+                Delivers within about a minute of the scheduled time.
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button size="sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" type="submit" disabled={!f.title || !f.body || create.isPending}>
-              {create.isPending ? "Saving…" : f.status === "sent" ? "Send" : "Save draft"}
+            <Button
+              size="sm" type="submit"
+              disabled={!f.title || !f.body || (f.status === "scheduled" && !f.scheduledAt) || create.isPending}
+            >
+              {create.isPending ? "Saving…" : f.status === "sent" ? "Send" : f.status === "scheduled" ? "Schedule" : "Save draft"}
             </Button>
           </DialogFooter>
         </form>
