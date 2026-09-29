@@ -68,6 +68,18 @@ export function UsersTable({ role }: { role: Role }) {
     successToast: "User updated",
   });
 
+  const sendReset = useApiMutation({
+    mutationFn: (u: UserRow) =>
+      api(`/api/admin/users/${u.id}/send-password-reset`, { method: "POST" }),
+    successToast: (d, u) => `Password reset sent to ${u.email}`,
+  });
+
+  const resendInvite = useApiMutation({
+    mutationFn: (u: UserRow) =>
+      api(`/api/admin/users/${u.id}/resend-invite`, { method: "POST" }),
+    successToast: (d, u) => `Invite resent to ${u.email}`,
+  });
+
   // force the role filter into every request
   const tableProps = {
     ...st.tableProps,
@@ -140,7 +152,9 @@ export function UsersTable({ role }: { role: Role }) {
                   : [
                       { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
                       ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
-                      { label: "Reset password", onClick: () => toast.success(`Password reset sent to ${u.email}`) },
+                      u.status === "invited"
+                        ? { label: "Resend invite", onClick: () => resendInvite.mutate(u) }
+                        : { label: "Reset password", onClick: () => sendReset.mutate(u) },
                       u.status === "suspended"
                         ? { label: "Reactivate", onClick: () => patch.mutate({ id: u.id, body: { status: "active" } }), separatorAbove: true }
                         : { label: "Suspend", destructive: true, separatorAbove: true, onClick: () => patch.mutate({ id: u.id, body: { status: "suspended" } }) },
@@ -152,7 +166,7 @@ export function UsersTable({ role }: { role: Role }) {
         },
       },
     ],
-    [role, router, patch]
+    [role, router, patch, sendReset, resendInvite]
   );
 
   const selIds = Object.keys(selection).map(Number);
@@ -235,6 +249,9 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
         <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); create.mutate(); }}>
           <div className="flex flex-col gap-1.5"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required autoFocus /></div>
           <div className="flex flex-col gap-1.5"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+          <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">
+            They&apos;ll get an email with a link to set their own password.
+          </p>
           <DialogFooter>
             <Button size="sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button size="sm" type="submit" disabled={create.isPending}>{create.isPending ? "Inviting…" : "Send invite"}</Button>
