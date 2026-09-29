@@ -1,4 +1,4 @@
-import { apiServerRaw, forwardClientHeaders, forwardSetCookies } from "@/lib/api-server";
+import { publicAuthForward } from "@/lib/api-server";
 import { fail } from "@/lib/api/helpers";
 
 /**
@@ -8,22 +8,7 @@ import { fail } from "@/lib/api/helpers";
  */
 export async function POST(req: Request) {
   try {
-    const res = await apiServerRaw("/api/auth/reset-password", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...forwardClientHeaders(req),
-      },
-      body: req.body,
-      // undici requires duplex for streamed request bodies
-      ...{ duplex: "half" },
-    } as RequestInit);
-    const out = new Response(res.body, {
-      status: res.status,
-      statusText: res.statusText,
-      headers: res.headers,
-    });
-    return forwardSetCookies(res, out);
+    return await publicAuthForward("/api/auth/reset-password", req);
   } catch {
     return fail(503, "Authentication service unavailable");
   }

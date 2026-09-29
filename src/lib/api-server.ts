@@ -61,3 +61,26 @@ export function forwardSetCookies(from: Response, to: Response): Response {
   for (const c of from.headers.getSetCookie()) to.headers.append("set-cookie", c);
   return to;
 }
+
+/**
+ * Public-auth forward — the shared shape for signup / password-reset routes:
+ * streamed JSON body + client-identity headers, no session gate. The upstream
+ * body is re-streamed onto a fresh Response (content-type preserved) so
+ * content-length/encoding/set-cookie headers can't leak through verbatim;
+ * any cookies the API issued are appended exactly once.
+ */
+export async function publicAuthForward(path: string, req: Request): Promise<Response> {
+  const res = await apiServerRaw(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...forwardClientHeaders(req) },
+    body: req.body,
+    // undici requires duplex for streamed request bodies
+    ...{ duplex: "half" },
+  } as RequestInit);
+  const out = new Response(res.body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: { "content-type": res.headers.get("content-type") ?? "application/json" },
+  });
+  return forwardSetCookies(res, out);
+}

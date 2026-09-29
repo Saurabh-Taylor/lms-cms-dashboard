@@ -19,19 +19,44 @@ import { DeleteUserDialog } from "@/components/learners/delete-user-dialog";
 import type { EnrollResult } from "@/components/enrollments/enroll-dialog";
 import { EllipsisIcon } from "lucide-react";
 
+import { USER_PERMANENT_DELETE_STATUSES, type UserStatus } from "@learnhub/contracts";
+
 interface EnrollResultResponse { succeeded: number; results: EnrollResult[] }
 
-export function LearnerActions({ user }: { user: { id: number; name: string; email: string; status: string } }) {
+export function LearnerActions({ user }: { user: { id: number; name: string; email: string; status: UserStatus } }) {
   const router = useRouter();
   const [assignOpen, setAssignOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const deleted = user.status === "deleted";
+  const permanent = USER_PERMANENT_DELETE_STATUSES.includes(user.status);
 
   const patch = useApiMutation({
     mutationFn: (body: Record<string, unknown>) =>
       api(`/api/admin/users/${user.id}`, { method: "PATCH", body: JSON.stringify(body) }),
     invalidate: "all",
     successToast: "User updated",
+  });
+
+  const sendReset = useApiMutation({
+    mutationFn: () => api(`/api/admin/users/${user.id}/send-password-reset`, { method: "POST" }),
+    successToast: `Password reset sent to ${user.email}`,
+  });
+
+  const resendInvite = useApiMutation({
+    mutationFn: () => api(`/api/admin/users/${user.id}/resend-invite`, { method: "POST" }),
+    successToast: `Invite resent to ${user.email}`,
+  });
+
+  const approveRequest = useApiMutation({
+    mutationFn: () => api(`/api/admin/users/${user.id}/approve-request`, { method: "POST" }),
+    invalidate: "all",
+    successToast: `${user.name} approved — invite sent`,
+  });
+
+  const rejectRequest = useApiMutation({
+    mutationFn: () => api(`/api/admin/users/${user.id}/reject-request`, { method: "POST" }),
+    invalidate: "all",
+    successToast: `${user.name} rejected`,
   });
 
   return (
@@ -44,11 +69,22 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
           <EllipsisIcon />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {user.status === "requested" ? (
+            <>
+              <DropdownMenuItem onClick={() => approveRequest.mutate()}>Approve request</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => rejectRequest.mutate()}>
+                Reject request
+              </DropdownMenuItem>
+            </>
+          ) : user.status === "rejected" ? (
+            <DropdownMenuItem onClick={() => approveRequest.mutate()}>Approve request</DropdownMenuItem>
+          ) : user.status === "invited" ? (
+            <DropdownMenuItem onClick={() => resendInvite.mutate()}>Resend invite</DropdownMenuItem>
+          ) : !deleted ? (
+            <DropdownMenuItem onClick={() => sendReset.mutate()}>Send password reset</DropdownMenuItem>
+          ) : null}
           {!deleted && (
             <>
-              <DropdownMenuItem onClick={() => toast.success(`Password reset sent to ${user.email}`)}>
-                Reset password
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {user.status === "suspended" ? (
                 <DropdownMenuItem onClick={() => patch.mutate({ status: "active" })}>Reactivate account</DropdownMenuItem>
@@ -57,11 +93,11 @@ export function LearnerActions({ user }: { user: { id: number; name: string; ema
                   Suspend account
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
-                Delete user…
-              </DropdownMenuItem>
             </>
           )}
+          <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+            {permanent ? "Remove permanently…" : "Delete user…"}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

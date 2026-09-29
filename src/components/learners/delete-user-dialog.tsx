@@ -3,6 +3,7 @@
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { USER_PERMANENT_DELETE_STATUSES, type UserStatus } from "@learnhub/contracts";
 
 /** Shared delete confirm — owns the DELETE mutation + toast. */
 export function DeleteUserDialog({
@@ -11,15 +12,15 @@ export function DeleteUserDialog({
   onOpenChange,
   onDeleted,
 }: {
-  user: { id: number; name: string; status?: string } | null;
+  user: { id: number; name: string; status?: UserStatus } | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   /** Extra work after success — e.g. navigate off the detail page. */
   onDeleted?: () => void;
 }) {
   // Unclaimed + tombstone rows hard-delete (email freed). Claimed rows
-  // soft-delete for audit/enrollment attribution.
-  const permanent = ["requested", "rejected", "invited", "deleted"].includes(user?.status ?? "");
+  // soft-delete for audit/enrollment attribution — the set is contracts-owned.
+  const permanent = !!user?.status && USER_PERMANENT_DELETE_STATUSES.includes(user.status);
   const del = useApiMutation({
     mutationFn: () => api(`/api/admin/users/${user?.id}`, { method: "DELETE" }),
     invalidate: "all",

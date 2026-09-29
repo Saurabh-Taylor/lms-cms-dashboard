@@ -7,13 +7,14 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { LearnerProfileTabs } from "./profile-tabs";
 import { LearnerActions } from "./learner-actions";
 import { fmtDate, fmtRelative, initials } from "@/lib/format";
+import type { UserStatus } from "@/lib/types";
 
 interface AdminUserDetail {
   id: number;
   name: string;
   email: string;
   role: string;
-  status: string;
+  status: UserStatus;
   enrolledCount: number;
   avgProgress: number;
   lastActiveAt: string | null;

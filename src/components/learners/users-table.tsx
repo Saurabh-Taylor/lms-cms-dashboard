@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AsyncCombobox } from "@/components/async-combobox";
 import { fmtRelative, initials } from "@/lib/format";
+import { USER_PERMANENT_DELETE_STATUSES } from "@learnhub/contracts";
 
 const STATUS_OPTS = [
   { value: "active", label: "Active" },
@@ -73,12 +74,14 @@ export function UsersTable({ role }: { role: Role }) {
   const sendReset = useApiMutation({
     mutationFn: (u: UserRow) =>
       api(`/api/admin/users/${u.id}/send-password-reset`, { method: "POST" }),
+    invalidate: [["/api/admin/users"]],
     successToast: (d, u) => `Password reset sent to ${u.email}`,
   });
 
   const resendInvite = useApiMutation({
     mutationFn: (u: UserRow) =>
       api(`/api/admin/users/${u.id}/resend-invite`, { method: "POST" }),
+    invalidate: [["/api/admin/users"]],
     successToast: (d, u) => `Invite resent to ${u.email}`,
   });
 
@@ -95,6 +98,14 @@ export function UsersTable({ role }: { role: Role }) {
     invalidate: [["/api/admin/users"]],
     successToast: (d, u) => `${u.name} rejected`,
   });
+
+  // Destructure the stable mutate fns — whole-mutation objects are recreated
+  // each render, which would make the columns useMemo useless.
+  const { mutate: patchUser } = patch;
+  const { mutate: sendResetTo } = sendReset;
+  const { mutate: resendInviteTo } = resendInvite;
+  const { mutate: approveReq } = approveRequest;
+  const { mutate: rejectReq } = rejectRequest;
 
   // force the role filter into every request
   const tableProps = {
@@ -173,18 +184,24 @@ export function UsersTable({ role }: { role: Role }) {
                       ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
                       ...(u.status === "requested"
                         ? [
-                            { label: "Approve request", onClick: () => approveRequest.mutate(u) },
-                            { label: "Reject request", destructive: true, onClick: () => rejectRequest.mutate(u) },
+                            { label: "Approve request", onClick: () => approveReq(u) },
+                            { label: "Reject request", destructive: true, onClick: () => rejectReq(u) },
                           ]
                         : u.status === "rejected"
-                          ? [{ label: "Approve request", onClick: () => approveRequest.mutate(u) }]
+                          ? [{ label: "Approve request", onClick: () => approveReq(u) }]
                           : u.status === "invited"
-                            ? [{ label: "Resend invite", onClick: () => resendInvite.mutate(u) }]
-                            : [{ label: "Reset password", onClick: () => sendReset.mutate(u) }]),
+                            ? [{ label: "Resend invite", onClick: () => resendInviteTo(u) }]
+                            : [{ label: "Send password reset", onClick: () => sendResetTo(u) }]),
                       u.status === "suspended"
-                        ? { label: "Reactivate", onClick: () => patch.mutate({ id: u.id, body: { status: "active" } }), separatorAbove: true }
-                        : { label: "Suspend", destructive: true, separatorAbove: true, onClick: () => patch.mutate({ id: u.id, body: { status: "suspended" } }) },
-                      { label: "Delete user…", destructive: true, onClick: () => setDeleteTarget(u) },
+                        ? { label: "Reactivate", onClick: () => patchUser({ id: u.id, body: { status: "active" } }), separatorAbove: true }
+                        : { label: "Suspend", destructive: true, separatorAbove: true, onClick: () => patchUser({ id: u.id, body: { status: "suspended" } }) },
+                      {
+                        label: (USER_PERMANENT_DELETE_STATUSES as readonly string[]).includes(u.status)
+                          ? "Remove permanently…"
+                          : "Delete user…",
+                        destructive: true,
+                        onClick: () => setDeleteTarget(u),
+                      },
                     ]
               }
             />
@@ -192,7 +209,7 @@ export function UsersTable({ role }: { role: Role }) {
         },
       },
     ],
-    [role, router, patch, sendReset, resendInvite, approveRequest, rejectRequest]
+    [role, router, patchUser, sendResetTo, resendInviteTo, approveReq, rejectReq]
   );
 
   const selIds = Object.keys(selection).map(Number);
