@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GraduationCapIcon } from "lucide-react";
+import { BrandLogo } from "@/components/shared/logo";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton,
@@ -31,10 +32,11 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href={brand.href as never} />} tooltip={brand.title} className="gap-2.5 px-1.5 hover:bg-transparent">
-              <div className="grid size-6 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
+              {/* icon-rail fallback — the wordmark can't fit a collapsed sidebar */}
+              <div className="hidden size-6 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground group-data-[collapsible=icon]:grid">
                 <GraduationCapIcon className="size-3.5" />
               </div>
-              <span className="truncate text-[13px] font-semibold tracking-tight">{brand.title}</span>
+              <BrandLogo className="h-7 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

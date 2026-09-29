@@ -15,7 +15,17 @@
       "Exec(GH_TOKEN=$TOKEN gh label)",
       "Exec(awk)",
       "Exec(read loc)",
-      "Exec(find)"
+      "Exec(find)",
+      "Exec(curl)",
+      "Exec(rg)",
+      "Exec(printf)",
+      "Exec(psql)",
+      "Exec(pnpm)",
+      "Exec(git status)",
+      "Exec(git add)",
+      "Exec(docker ps)",
+      "Exec(rm)",
+      "Exec(file)"
     ]
   }
 }
