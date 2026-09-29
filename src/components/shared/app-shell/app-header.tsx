@@ -28,7 +28,10 @@ function crumbsFor(pathname: string, nav: NavGroup[]) {
     acc += `/${part}`;
     const item = nav.flatMap((g) => g.items).find((i) => i.href === acc);
     const label = item?.title ?? (isNaN(Number(part)) ? part.replace(/-/g, " ") : `#${part}`);
-    crumbs.push({ label, href: acc });
+    // Link only resolvable targets: a nav item (index page exists) or a numeric
+    // segment (detail pages like /admin/courses/328). Non-nav groupings like
+    // /learner/courses or …/lessons have no index page — plain text, not a 404 link.
+    crumbs.push({ label, href: item || !isNaN(Number(part)) ? acc : undefined });
   }
   return crumbs;
 }
@@ -83,6 +86,8 @@ export function AppHeader({
                       {c.label}
                     </span>
                   </BreadcrumbPage>
+                ) : !c.href ? (
+                  <span className="capitalize text-muted-foreground">{c.label}</span>
                 ) : (
                   <BreadcrumbLink render={<Link href={c.href as never} />} className="capitalize">
                     <span key={c.label} className="inline-block animate-in fade-in slide-in-from-left-0.5 duration-(--duration-fast)">
