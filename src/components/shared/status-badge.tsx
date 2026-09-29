@@ -25,10 +25,12 @@ const STYLES: Record<string, string> = {
   ready: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
   // danger / red
   suspended: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
+  rejected: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
   failed: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
   disabled: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
   // info / blue
   unlisted: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
+  requested: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
 };
 
 export function StatusBadge({ value, className }: { value: string; className?: string }) {

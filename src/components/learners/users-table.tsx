@@ -31,6 +31,8 @@ const STATUS_OPTS = [
   { value: "active", label: "Active" },
   { value: "suspended", label: "Suspended" },
   { value: "invited", label: "Invited" },
+  { value: "requested", label: "Requested" },
+  { value: "rejected", label: "Rejected" },
   { value: "deleted", label: "Deleted" },
 ];
 const ACTIVITY_OPTS = [
@@ -78,6 +80,20 @@ export function UsersTable({ role }: { role: Role }) {
     mutationFn: (u: UserRow) =>
       api(`/api/admin/users/${u.id}/resend-invite`, { method: "POST" }),
     successToast: (d, u) => `Invite resent to ${u.email}`,
+  });
+
+  const approveRequest = useApiMutation({
+    mutationFn: (u: UserRow) =>
+      api(`/api/admin/users/${u.id}/approve-request`, { method: "POST" }),
+    invalidate: [["/api/admin/users"]],
+    successToast: (d, u) => `${u.name} approved — invite sent`,
+  });
+
+  const rejectRequest = useApiMutation({
+    mutationFn: (u: UserRow) =>
+      api(`/api/admin/users/${u.id}/reject-request`, { method: "POST" }),
+    invalidate: [["/api/admin/users"]],
+    successToast: (d, u) => `${u.name} rejected`,
   });
 
   // force the role filter into every request
@@ -152,9 +168,16 @@ export function UsersTable({ role }: { role: Role }) {
                   : [
                       { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
                       ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
-                      u.status === "invited"
-                        ? { label: "Resend invite", onClick: () => resendInvite.mutate(u) }
-                        : { label: "Reset password", onClick: () => sendReset.mutate(u) },
+                      ...(u.status === "requested"
+                        ? [
+                            { label: "Approve request", onClick: () => approveRequest.mutate(u) },
+                            { label: "Reject request", destructive: true, onClick: () => rejectRequest.mutate(u) },
+                          ]
+                        : u.status === "rejected"
+                          ? [{ label: "Approve request", onClick: () => approveRequest.mutate(u) }]
+                          : u.status === "invited"
+                            ? [{ label: "Resend invite", onClick: () => resendInvite.mutate(u) }]
+                            : [{ label: "Reset password", onClick: () => sendReset.mutate(u) }]),
                       u.status === "suspended"
                         ? { label: "Reactivate", onClick: () => patch.mutate({ id: u.id, body: { status: "active" } }), separatorAbove: true }
                         : { label: "Suspend", destructive: true, separatorAbove: true, onClick: () => patch.mutate({ id: u.id, body: { status: "suspended" } }) },
@@ -166,7 +189,7 @@ export function UsersTable({ role }: { role: Role }) {
         },
       },
     ],
-    [role, router, patch, sendReset, resendInvite]
+    [role, router, patch, sendReset, resendInvite, approveRequest, rejectRequest]
   );
 
   const selIds = Object.keys(selection).map(Number);
