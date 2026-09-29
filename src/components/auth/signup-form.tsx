@@ -43,12 +43,12 @@ export function SignupForm() {
         <span className="grid size-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
           <CircleCheckIcon className="size-5" />
         </span>
-        <h1 className="mt-4 text-(length:--fs-page-title) leading-7 font-semibold tracking-tight">
+        <h1 className="mt-4 text-(length:--fs-page-title) leading-7 font-semibold tracking-tight text-balance">
           Request received
         </h1>
         <p className="mt-1.5 text-(length:--fs-page-desc) text-muted-foreground">
-          CMS access is provisioned by an administrator. You&apos;ll be able to sign
-          in once your account is granted access.
+          Access is granted by an administrator. You&apos;ll get an email with a
+          link to set your password once approved.
         </p>
         <Button variant="outline" className="mt-6 w-full" nativeButton={false} render={<Link href="/login" />}>
           Back to sign in
@@ -59,11 +59,11 @@ export function SignupForm() {
 
   return (
     <div>
-      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight">
+      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight text-balance">
         Create your account
       </h1>
       <p className="mt-1 text-(length:--fs-page-desc) text-muted-foreground">
-        Request access to LearnHub CMS — an administrator enables sign-in.
+        Request access to LearnHub — an administrator enables sign-in.
       </p>
 
       <form onSubmit={submit} className="mt-7 flex flex-col gap-4">
@@ -88,6 +88,7 @@ export function SignupForm() {
             name="email"
             type="email"
             autoComplete="email"
+            spellCheck={false}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}

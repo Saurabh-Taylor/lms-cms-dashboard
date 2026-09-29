@@ -46,14 +46,14 @@ export function LoginForm({ next }: { next?: string }) {
 
   return (
     <div>
-      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight">
+      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight text-balance">
         Welcome back
       </h1>
       <p className="mt-1 text-(length:--fs-page-desc) text-muted-foreground">
-        Sign in to continue to LearnHub CMS.
+        Sign in to keep learning.
       </p>
 
-      <form onSubmit={submit} className="mt-7 flex flex-col gap-4" noValidate={false}>
+      <form onSubmit={submit} className="mt-7 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -61,6 +61,7 @@ export function LoginForm({ next }: { next?: string }) {
             name="email"
             type="email"
             autoComplete="email"
+            spellCheck={false}
             autoFocus
             required
             value={email}

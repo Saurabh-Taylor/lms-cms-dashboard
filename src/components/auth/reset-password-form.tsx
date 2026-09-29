@@ -44,7 +44,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <div>
-      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight">
+      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight text-balance">
         Set your password
       </h1>
       {!token ? (

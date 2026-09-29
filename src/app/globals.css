@@ -49,6 +49,7 @@
 }
 
 :root {
+  color-scheme: light;
   --background: oklch(0.985 0 0);
   --foreground: oklch(0.18 0 0);
   --card: oklch(1 0 0);
@@ -92,6 +93,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   /* layered surfaces: page < sidebar < card < popover */
   --background: oklch(0.135 0.004 264);
   --foreground: oklch(0.94 0 0);

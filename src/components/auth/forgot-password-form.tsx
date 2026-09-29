@@ -37,7 +37,7 @@ export function ForgotPasswordForm() {
 
   return (
     <div>
-      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight">
+      <h1 className="text-(length:--fs-page-title) leading-7 font-semibold tracking-tight text-balance">
         Forgot password
       </h1>
       {done ? (
@@ -54,7 +54,7 @@ export function ForgotPasswordForm() {
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
-                id="email" name="email" type="email" autoComplete="email" autoFocus required
+                id="email" name="email" type="email" autoComplete="email" spellCheck={false} autoFocus required
                 value={email} onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
               />
