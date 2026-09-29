@@ -367,8 +367,8 @@ function UploadDialog({
           )}
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={cancel}>{busy ? "Cancel upload" : "Cancel"}</Button>
-          <Button onClick={start} disabled={!file || !!error || busy}>
+          <Button size="sm" type="button" variant="outline" onClick={cancel}>{busy ? "Cancel upload" : "Cancel"}</Button>
+          <Button size="sm" onClick={start} disabled={!file || !!error || busy}>
             {busy ? "Uploading…" : "Upload"}
           </Button>
         </DialogFooter>

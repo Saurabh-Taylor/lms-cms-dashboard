@@ -12,7 +12,9 @@
       "Exec(git remote)",
       "Exec(sed)",
       "Exec(GH_TOKEN=$TOKEN gh issue)",
-      "Exec(GH_TOKEN=$TOKEN gh label)"
+      "Exec(GH_TOKEN=$TOKEN gh label)",
+      "Exec(awk)",
+      "Exec(read loc)"
     ]
   }
 }

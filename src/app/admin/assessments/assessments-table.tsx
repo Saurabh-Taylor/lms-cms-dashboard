@@ -200,8 +200,8 @@ function CreateDialog({ open, onOpenChange, defaultKind }: { open: boolean; onOp
             </label>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={!f.title || create.isPending}>{create.isPending ? "Creating…" : "Create"}</Button>
+            <Button size="sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={!f.title || create.isPending}>{create.isPending ? "Creating…" : "Create"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

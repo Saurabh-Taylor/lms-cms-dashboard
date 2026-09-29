@@ -22,6 +22,7 @@ Next.js 16 + React 19 UI for LearnHub. **All domain data lives in the NestJS/Pos
 
 - **Next 16**: `params`/`searchParams` are Promises; `RouteContext<"/path">` types for route handlers; route files export HTTP verbs only. Next 16 differs from older Next — consult `node_modules/next/dist/docs/` before Next-specific changes.
 - **shadcn here = Base UI**: `render` prop instead of `asChild`; `onCheckedChange`, `onValueChange` signatures.
+- **Buttons**: default size is the roomier tier (learner pages, auth forms). Admin dialog/form footers use `size="sm"` — same tier as page/table action buttons. Form controls (Input, AsyncCombobox trigger) stay h-8.
 - **Tables**: all lists go through `ModuleTable`/`DataTable` + `useServerTable`/`useList`; state lives in URL params (page, pageSize, q, sort, order, filters). Never client-side full datasets. Backend list contract: `{data,total,page,pageSize}`.
 - **Wire shapes**: `src/lib/types.ts` mirrors backend DTOs — jsonb columns arrive as real objects/arrays (no JSON.parse), timestamps as ISO strings, counts as numbers.
 - **Mutations from the browser**: `api()`/`useApiMutation` in `src/lib/api-client.ts` / `src/lib/query.ts`; TanStack Query for reads, invalidation via `invalidate` keys.

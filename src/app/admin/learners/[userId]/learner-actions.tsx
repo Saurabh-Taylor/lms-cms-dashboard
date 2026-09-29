@@ -108,8 +108,8 @@ function AssignDialog({
             placeholder="Search courses…"
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={() => assign.mutate()} disabled={!item || assign.isPending}>
+            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" onClick={() => assign.mutate()} disabled={!item || assign.isPending}>
               {assign.isPending ? "Assigning…" : "Assign"}
             </Button>
           </DialogFooter>

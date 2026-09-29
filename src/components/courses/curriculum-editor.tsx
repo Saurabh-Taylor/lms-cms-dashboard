@@ -436,8 +436,8 @@ function InlineCreate({
       }}
     >
       <Input value={v} onChange={(e) => setV(e.target.value)} placeholder={placeholder} autoFocus />
-      <Button type="submit" disabled={busy || !v.trim()}>{busy ? "Adding…" : "Add"}</Button>
-      <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+      <Button size="sm" type="submit" disabled={busy || !v.trim()}>{busy ? "Adding…" : "Add"}</Button>
+      <Button size="sm" type="button" variant="outline" onClick={onCancel}>Cancel</Button>
     </form>
   );
 }
@@ -482,8 +482,8 @@ function NewLessonDialog({
             </SelectContent>
           </Select>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={busy || !title.trim()}>{busy ? "Creating…" : "Create"}</Button>
+            <Button size="sm" type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={busy || !title.trim()}>{busy ? "Creating…" : "Create"}</Button>
           </div>
         </form>
       </div>

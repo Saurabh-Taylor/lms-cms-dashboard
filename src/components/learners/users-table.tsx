@@ -236,8 +236,8 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
           <div className="flex flex-col gap-1.5"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required autoFocus /></div>
           <div className="flex flex-col gap-1.5"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={create.isPending}>{create.isPending ? "Inviting…" : "Send invite"}</Button>
+            <Button size="sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={create.isPending}>{create.isPending ? "Inviting…" : "Send invite"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -267,8 +267,8 @@ function AssignCourseDialog({ user, onClose }: { user: UserRow | null; onClose: 
         <div className="flex flex-col gap-3">
           <AsyncCombobox resource="courses" value={course} onChange={(v) => setCourse(v as OptionItem | null)} placeholder="Search courses…" />
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => assign.mutate()} disabled={!course || assign.isPending}>
+            <Button size="sm" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button size="sm" onClick={() => assign.mutate()} disabled={!course || assign.isPending}>
               {assign.isPending ? "Assigning…" : "Assign"}
             </Button>
           </DialogFooter>

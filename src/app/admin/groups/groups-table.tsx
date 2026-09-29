@@ -109,8 +109,8 @@ function GroupDialog({ group, onClose }: { group: GroupRow | null; onClose: () =
           <div className="flex flex-col gap-1.5"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required autoFocus /></div>
           <div className="flex flex-col gap-1.5"><Label>Description</Label><Input value={description} onChange={(e) => setDescription(e.target.value)} /></div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={!name || save.isPending}>{group ? "Save" : "Create"}</Button>
+            <Button size="sm" type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={!name || save.isPending}>{group ? "Save" : "Create"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

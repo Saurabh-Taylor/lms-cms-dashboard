@@ -201,8 +201,8 @@ function QuestionFormDialog({
             )}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={!valid || save.isPending}>
+            <Button size="sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={!valid || save.isPending}>
               {save.isPending ? "Saving…" : editing ? "Save changes" : "Add question"}
             </Button>
           </DialogFooter>

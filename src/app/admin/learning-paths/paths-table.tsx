@@ -143,8 +143,8 @@ function PathDialog({ path, onClose }: { path: LearningPathRow | null; onClose: 
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={!title || loading || save.isPending}>{path ? "Save" : "Create"}</Button>
+            <Button size="sm" type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={!title || loading || save.isPending}>{path ? "Save" : "Create"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -176,8 +176,8 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => router.refresh()}>Discard</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button size="sm" variant="outline" onClick={() => router.refresh()}>Discard</Button>
+        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
           {save.isPending ? "Saving…" : "Save changes"}
         </Button>
       </div>

@@ -27,8 +27,8 @@ export function ConfirmDialog({
           {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
+          <AlertDialogCancel size="sm">Cancel</AlertDialogCancel>
+          <AlertDialogAction size="sm"
             variant={destructive ? "destructive" : "default"}
             onClick={(e) => {
               e.preventDefault();

@@ -62,8 +62,8 @@ export function SingleEnrollDialog({ open, onOpenChange }: { open: boolean; onOp
             <Input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={() => mut.mutate()} disabled={!user || !course || mut.isPending}>
+            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" onClick={() => mut.mutate()} disabled={!user || !course || mut.isPending}>
               {mut.isPending ? "Enrolling…" : "Enroll"}
             </Button>
           </DialogFooter>
@@ -143,8 +143,8 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
               </p>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button
+              <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button size="sm"
                 onClick={() => { setPhase("processing"); run.mutate(learners.map((l) => l.id)); }}
                 disabled={!learners.length || !courses.length}
               >
@@ -188,7 +188,7 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
             </ScrollArea>
             <DialogFooter>
               {failed.length > 0 && (
-                <Button
+                <Button size="sm"
                   variant="outline"
                   onClick={() => {
                     const ids = [...new Set(failed.map((f) => f.userId))];
@@ -199,7 +199,7 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
                   Retry {failed.length} failed
                 </Button>
               )}
-              <Button onClick={() => { onOpenChange(false); reset(); }}>Done</Button>
+              <Button size="sm" onClick={() => { onOpenChange(false); reset(); }}>Done</Button>
             </DialogFooter>
           </div>
         )}

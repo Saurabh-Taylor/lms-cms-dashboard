@@ -107,8 +107,8 @@ export function CourseFormDialog({
             <AsyncCombobox resource="instructors" value={instructor} onChange={(v) => setInstructor(v as OptionItem | null)} placeholder="Assign instructor…" />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={!title || create.isPending}>
+            <Button size="sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={!title || create.isPending}>
               {create.isPending ? "Creating…" : "Create course"}
             </Button>
           </DialogFooter>

@@ -87,8 +87,8 @@ function GradeDialog({
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={grade.isPending}>
+            <Button size="sm" type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" type="submit" disabled={grade.isPending}>
               {grade.isPending ? "Saving…" : attempt?.gradedAt != null ? "Update grade" : "Save grade"}
             </Button>
           </DialogFooter>

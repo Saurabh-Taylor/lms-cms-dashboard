@@ -81,8 +81,8 @@ function IssueDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
             <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">The learner must have completed the course.</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={() => issue.mutate()} disabled={!user || !course || issue.isPending}>
+            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" onClick={() => issue.mutate()} disabled={!user || !course || issue.isPending}>
               {issue.isPending ? "Issuing…" : "Issue"}
             </Button>
           </DialogFooter>
