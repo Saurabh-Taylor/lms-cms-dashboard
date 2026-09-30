@@ -2,6 +2,8 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Standalone bundle for the production Docker image (deploy/compose.prod.yml).
+  output: "standalone",
   reactCompiler: true,
   allowedDevOrigins: ["127.0.0.1"],
   transpilePackages: ["@microshala/contracts"],

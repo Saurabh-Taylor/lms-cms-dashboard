@@ -1,0 +1,16 @@
+# Context = workspace parent dir (both repos). Only the frontend sources and
+# the contracts package are needed — keep the rest of the backend repo out.
+**/node_modules
+**/.next
+**/.git
+**/dist
+**/coverage
+**/.env
+**/.env.*
+**/*.log
+**/.turbo
+
+cms-lms-test-devin-swe-2-nest-backend/*
+!cms-lms-test-devin-swe-2-nest-backend/src
+cms-lms-test-devin-swe-2-nest-backend/src/*
+!cms-lms-test-devin-swe-2-nest-backend/src/contracts
