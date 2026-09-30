@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { PageHeader } from "@/components/shared/page-header";
 import { UsersTable, UsersTableActions } from "@/components/learners/users-table";
+import { getCurrentUser } from "@/lib/me";
 
-export default function InstructorsPage() {
+export default async function InstructorsPage() {
+  const me = await getCurrentUser();
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
@@ -11,7 +13,7 @@ export default function InstructorsPage() {
         actions={<UsersTableActions role="instructor" />}
       />
       <Suspense>
-        <UsersTable role="instructor" />
+        <UsersTable role="instructor" meId={me?.id} />
       </Suspense>
     </div>
   );

@@ -1,6 +1,6 @@
 // DTO shapes returned by /api/admin/* routes.
 
-import type { LessonBlock as LessonBlockWrite, UserStatus } from "@microshala/contracts";
+import type { AppRole, LessonBlock as LessonBlockWrite, UserStatus } from "@microshala/contracts";
 
 export type { UserStatus };
 
@@ -44,6 +44,7 @@ export interface UserRow {
   name: string;
   email: string;
   role: Role;
+  appRole: AppRole;
   status: UserStatus;
   title: string | null;
   enrolledCount: number;

@@ -27,7 +27,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AsyncCombobox } from "@/components/async-combobox";
 import { fmtRelative, initials } from "@/lib/format";
-import { USER_PERMANENT_DELETE_STATUSES } from "@microshala/contracts";
+import { cn } from "@/lib/utils";
+import { APP_ROLES, ROLE_LABELS, USER_PERMANENT_DELETE_STATUSES, type AppRole } from "@microshala/contracts";
+
+const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
+  super_admin: "Full platform control — admins, users and settings",
+  admin: "Manage users, courses and settings",
+  content_manager: "Create and publish catalogue content",
+  support: "View-only access to assist learners",
+  instructor: "Own and deliver courses",
+  learner: "Takes courses and tracks progress",
+};
 
 const STATUS_OPTS = [
   { value: "active", label: "Active" },
@@ -43,7 +53,7 @@ const ACTIVITY_OPTS = [
   { value: "90", label: "Active ≤90d" },
 ];
 
-export function UsersTable({ role }: { role: Role }) {
+export function UsersTable({ role, meId }: { role: Role; meId?: number }) {
   const router = useRouter();
   const st = useServerTable<UserRow>("/api/admin/users", [
     "status", "cohortId", "activeWithinDays", "courseId",
@@ -51,6 +61,7 @@ export function UsersTable({ role }: { role: Role }) {
   const [selection, setSelection] = React.useState<RowSelectionState>({});
   const [createOpen, setCreateOpen] = React.useState(false);
   const [assignTarget, setAssignTarget] = React.useState<UserRow | null>(null);
+  const [roleTarget, setRoleTarget] = React.useState<UserRow | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<UserRow | null>(null);
   const [prevParams, setPrevParams] = React.useState(st.params);
   if (prevParams !== st.params) {
@@ -184,6 +195,7 @@ export function UsersTable({ role }: { role: Role }) {
                   : [
                       { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
                       ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
+                      ...(u.id !== meId ? [{ label: "Change role…", onClick: () => setRoleTarget(u) }] : []),
                       ...(u.status === "requested"
                         ? [
                             { label: "Approve request", onClick: () => approveReq(u) },
@@ -211,7 +223,7 @@ export function UsersTable({ role }: { role: Role }) {
         },
       },
     ],
-    [role, router, patchUser, sendResetTo, resendInviteTo, approveReq, rejectReq]
+    [role, meId, router, patchUser, sendResetTo, resendInviteTo, approveReq, rejectReq]
   );
 
   const selIds = Object.keys(selection).map(Number);
@@ -257,6 +269,7 @@ export function UsersTable({ role }: { role: Role }) {
 
       <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} role={role} />
       <AssignCourseDialog user={assignTarget} onClose={() => setAssignTarget(null)} />
+      <ChangeRoleDialog user={roleTarget} onClose={() => setRoleTarget(null)} />
       <DeleteUserDialog
         user={deleteTarget}
         open={!!deleteTarget}
@@ -304,6 +317,65 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
             <Button size="sm" type="submit" disabled={create.isPending}>{create.isPending ? "Inviting…" : "Send invite"}</Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ChangeRoleDialog({ user, onClose }: { user: UserRow | null; onClose: () => void }) {
+  const [appRole, setAppRole] = React.useState<AppRole | null>(null);
+  const save = useApiMutation({
+    mutationFn: () =>
+      api(`/api/admin/users/${user!.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ appRole }),
+      }),
+    invalidate: [qk.users],
+    successToast: () => `${user!.name} is now ${ROLE_LABELS[appRole!]}`,
+    onSuccess: () => { onClose(); setAppRole(null); },
+  });
+  const current = appRole ?? user?.appRole;
+  return (
+    <Dialog open={!!user} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Change role for {user?.name}</DialogTitle></DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1" role="radiogroup" aria-label="Role">
+            {APP_ROLES.map((r) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={current === r}
+                key={r}
+                onClick={() => setAppRole(r)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors duration-(--duration-fast)",
+                  current === r ? "border-primary/60 bg-primary/5" : "border-transparent hover:bg-muted",
+                )}
+              >
+                <span className={cn(
+                  "grid size-4 shrink-0 place-items-center rounded-full border transition-colors duration-(--duration-fast)",
+                  current === r ? "border-primary" : "border-input",
+                )}>
+                  {current === r && <span className="size-2 rounded-full bg-primary" />}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-sm font-medium leading-5">{ROLE_LABELS[r]}</span>
+                  <span className="truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">
+            Admin-level roles require the admin capability — the API will reject the change otherwise.
+          </p>
+          <DialogFooter>
+            <Button size="sm" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button size="sm" onClick={() => save.mutate()} disabled={!appRole || appRole === user?.appRole || save.isPending}>
+              {save.isPending ? "Saving…" : "Save role"}
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
