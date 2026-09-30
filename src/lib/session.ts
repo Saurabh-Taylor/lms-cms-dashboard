@@ -4,11 +4,11 @@
 // SESSION_COOKIE is the Better Auth session token issued by the NestJS API and
 // forwarded through /api/auth/* route handlers — the browser only ever stores
 // it on this origin.
-export const SESSION_COOKIE = "microshala.session_token";
+export { AUTH_SESSION_COOKIE as SESSION_COOKIE } from "@microshala/contracts";
 
 // Mirrors the signed-in persona so middleware can gate portals without an API
 // hit. Unsigned hint only — pages/routes re-validate the session server-side.
-export const ROLE_COOKIE = "lh_role";
+export { AUTH_ROLE_COOKIE as ROLE_COOKIE } from "@microshala/contracts";
 
 /** Where each portal role lands after sign-in / when visiting a foreign portal. */
 export function homeForRole(role: string): string {

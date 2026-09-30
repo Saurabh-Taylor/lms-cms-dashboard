@@ -1,3 +1,4 @@
+import { LIST_PAGE_SIZE_DEFAULT } from "@microshala/contracts";
 import { apiServer } from "@/lib/api-server";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,10 +17,10 @@ interface AuditEvent {
 export default async function NotificationsPage() {
   const [annRes, events] = await Promise.all([
     apiServer<{ data: { id: number; title: string; body: string; audience: string; status: string; createdAt: string }[] }>(
-      "/api/v1/admin/announcements?pageSize=20&sort=createdAt&order=desc",
+      `/api/v1/admin/announcements?pageSize=${LIST_PAGE_SIZE_DEFAULT}&sort=createdAt&order=desc`,
     ).then((r) => r.data),
     apiServer<{ data: AuditEvent[] }>(
-      "/api/v1/admin/audit-logs?pageSize=20&sort=createdAt&order=desc",
+      `/api/v1/admin/audit-logs?pageSize=${LIST_PAGE_SIZE_DEFAULT}&sort=createdAt&order=desc`,
     ).then((r) => r.data),
   ]);
 

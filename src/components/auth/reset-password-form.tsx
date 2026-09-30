@@ -1,5 +1,6 @@
 "use client";
 
+import { PASSWORD_MIN_LENGTH } from "@microshala/contracts";
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,8 +20,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pending) return;
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      setError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters.`);
       return;
     }
     if (password !== confirm) {
@@ -69,7 +70,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
               <Label htmlFor="password">New password</Label>
               <Input
                 id="password" name="password" type="password" autoComplete="new-password"
-                autoFocus required minLength={8}
+                autoFocus required minLength={PASSWORD_MIN_LENGTH}
                 value={password} onChange={(e) => setPassword(e.target.value)}
               />
             </div>

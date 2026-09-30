@@ -20,7 +20,13 @@ import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { fmtBytes, fmtRelative } from "@/lib/format";
-import { MEDIA_FILE_EXTS, MEDIA_VIDEO_EXTS, mediaTypeForExt } from "@microshala/contracts";
+import {
+  MEDIA_FILE_EXTS,
+  MEDIA_OBJECT_MAX_UPLOAD_BYTES,
+  MEDIA_VIDEO_EXTS,
+  MEDIA_VIDEO_MAX_UPLOAD_BYTES,
+  mediaTypeForExt,
+} from "@microshala/contracts";
 import { PERM } from "@/lib/permissions";
 import {
   FileTextIcon, FileArchiveIcon, VideoIcon, ImageIcon, LinkIcon, TriangleAlertIcon, UploadIcon,
@@ -35,9 +41,8 @@ const TYPE_ICONS = {
   archive: <FileArchiveIcon className="size-4 text-muted-foreground" />,
 };
 
-/** Fallback only — the quota endpoint serves the server's real caps. */
-const DEFAULT_MAX_BYTES = 5 * 1024 ** 3;
-const DEFAULT_MAX_OBJECT_BYTES = 200 * 1024 ** 2;
+// Policy caps come from contracts; the quota endpoint still supplies them so
+// future ops overrides surface without a frontend deploy.
 const ACCEPT = [...MEDIA_VIDEO_EXTS, ...MEDIA_FILE_EXTS].map((e) => `.${e}`).join(",");
 
 function buildCols(canDelete: boolean): ColumnDef<MediaRow, unknown>[] {
@@ -92,8 +97,8 @@ export default function MediaPage() {
         actions={
           canUpload ? (
             <MediaActions
-              maxBytes={quota.data?.maxUploadBytes ?? DEFAULT_MAX_BYTES}
-              maxObjectBytes={quota.data?.maxObjectUploadBytes ?? DEFAULT_MAX_OBJECT_BYTES}
+              maxBytes={quota.data?.maxUploadBytes ?? MEDIA_VIDEO_MAX_UPLOAD_BYTES}
+              maxObjectBytes={quota.data?.maxObjectUploadBytes ?? MEDIA_OBJECT_MAX_UPLOAD_BYTES}
             />
           ) : undefined
         }

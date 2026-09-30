@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
+import { LIST_PAGE_SIZE_DEFAULT } from "@microshala/contracts";
 
 /**
  * Table state lives in the URL — shareable, back-button friendly.
@@ -18,7 +19,7 @@ export function useTableParams() {
   );
 
   const page = Math.max(1, Number(params.page) || 1);
-  const pageSize = Number(params.pageSize) || 20;
+  const pageSize = Number(params.pageSize) || LIST_PAGE_SIZE_DEFAULT;
   const q = params.q ?? "";
   const sort = params.sort;
   const order = params.order === "asc" ? ("asc" as const) : ("desc" as const);
