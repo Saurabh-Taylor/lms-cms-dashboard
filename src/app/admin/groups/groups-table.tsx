@@ -1,5 +1,6 @@
 "use client";
 
+import { LIST_PAGE_SIZE_DEFAULT } from "@microshala/contracts";
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useQuery } from "@tanstack/react-query";
@@ -128,7 +129,7 @@ interface MemberRow {
   lastActiveAt: number | null;
 }
 
-const MEMBER_PAGE = 20;
+const MEMBER_PAGE = LIST_PAGE_SIZE_DEFAULT;
 
 function MembersSheet({ group, onClose }: { group: GroupRow; onClose: () => void }) {
   const [search, setSearch] = React.useState("");
