@@ -198,11 +198,11 @@ function EnrollmentActivity() {
           ))}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-56 flex-1">
         {isLoading ? (
-          <Skeleton className="h-56 w-full" />
+          <Skeleton className="h-full min-h-56 w-full" />
         ) : (
-          <ResponsiveContainer width="100%" height={224}>
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data ?? []} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
               <defs>
                 <linearGradient id="enr" x1="0" y1="0" x2="0" y2="1">
