@@ -6,7 +6,7 @@ Next.js 16 + React 19 UI for Microshala. **All domain data lives in the NestJS/P
 
 - `pnpm dev` / `pnpm build` / `pnpm start`
 - `pnpm lint` (eslint, react-hooks compiler rules — no `setState` in effects; use render-phase adjust pattern)
-- `pnpm test` — typography token check
+- `pnpm test` — token guards: typography presets + brand palette (`scripts/check-*.ts`)
 - Backend owns all data: `cd ../cms-lms-test-devin-swe-2-nest-backend && pnpm start:dev` (+ its own seed/migration scripts)
 
 ## Architecture

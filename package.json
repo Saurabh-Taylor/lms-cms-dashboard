@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx scripts/check-typography-tokens.ts"
+    "test": "tsx scripts/check-typography-tokens.ts && tsx scripts/check-brand-tokens.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
