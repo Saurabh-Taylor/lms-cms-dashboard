@@ -8,8 +8,9 @@ import { BrandLogo } from "@/components/shared/logo";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton,
-  SidebarMenuItem, SidebarRail,
+  SidebarMenuItem, SidebarRail, useSidebar, SIDEBAR_TRANSITION_MS,
 } from "@/components/ui/sidebar";
+import { cn } from "cn";
 import type { NavGroup } from "@/lib/nav";
 
 /**
@@ -90,11 +91,22 @@ export function AppSidebar({
 /**
  * Sliding selection layer that glides to whichever nav item is active.
  * Measures the active SidebarMenuButton inside SidebarContent and animates
- * top/height between nav targets; hidden until measured.
+ * position/size between nav targets; hidden until measured. While the
+ * sidebar itself is animating its width it snap-tracks instead (see below).
  */
 function ActiveNavIndicator() {
   const pathname = usePathname();
+  const { state } = useSidebar();
   const pillRef = React.useRef<HTMLDivElement>(null);
+  // While the sidebar width is animating, the ResizeObserver feeds us the
+  // button's mid-flight rect — transitioning toward a moving target shows as
+  // a laggy glide. Snap-track instead for the duration of the collapse.
+  const [tracking, setTracking] = React.useState(false);
+  const [prevState, setPrevState] = React.useState(state);
+  if (prevState !== state) {
+    setPrevState(state);
+    setTracking(true);
+  }
   const [rect, setRect] = React.useState<{
     top: number; left: number; width: number; height: number;
   } | null>(null);
@@ -122,11 +134,20 @@ function ActiveNavIndicator() {
     return () => ro.disconnect();
   }, [pathname]);
 
+  React.useEffect(() => {
+    if (!tracking) return;
+    const t = setTimeout(() => setTracking(false), SIDEBAR_TRANSITION_MS);
+    return () => clearTimeout(t);
+  }, [tracking, state]); // state dep restarts the window on rapid toggles
+
   return (
     <div
       ref={pillRef}
       aria-hidden
-      className="pointer-events-none absolute top-0 left-0 z-0 rounded-md bg-sidebar-accent transition-[transform,width,height,opacity] duration-(--duration-moderate) ease-(--ease-standard)"
+      className={cn(
+        "pointer-events-none absolute top-0 left-0 z-0 rounded-md bg-sidebar-accent",
+        !tracking && "transition-[transform,width,height,opacity] duration-(--duration-moderate) ease-(--ease-standard)",
+      )}
       style={{
         transform: `translate(${rect?.left ?? 0}px, ${rect?.top ?? 0}px)`,
         width: rect?.width ?? 0,
