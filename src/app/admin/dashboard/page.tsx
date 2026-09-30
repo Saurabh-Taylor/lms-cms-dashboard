@@ -11,7 +11,7 @@ import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { api, qs } from "@/lib/api-client";
-import type { DashboardStats } from "@/lib/types";
+import type { DashboardStats, EnrollmentSeriesPoint } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
@@ -44,10 +44,9 @@ const ACTIVITY_LABEL: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-  const [range, setRange] = React.useState(30);
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard", range],
-    queryFn: () => api<DashboardStats>(`/api/admin/dashboard${qs({ range })}`),
+    queryKey: ["dashboard"],
+    queryFn: () => api<DashboardStats>("/api/admin/dashboard"),
   });
 
   const t = data?.totals;
@@ -79,61 +78,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-5">
-        <Card className="xl:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium">Enrollment activity</CardTitle>
-            <div className="flex gap-1">
-              {RANGES.map((r) => (
-                <button
-                  key={r.value}
-                  onClick={() => setRange(r.value)}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-medium transition-colors",
-                    range === r.value
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-56 w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={224}>
-                <AreaChart data={data?.enrollmentSeries ?? []} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
-                  <defs>
-                    <linearGradient id="enr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    minTickGap={32}
-                    tickFormatter={(d: string) => d.slice(5)}
-                  />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--popover)", border: "1px solid var(--border)",
-                      borderRadius: 8, fontSize: 12,
-                    }}
-                  />
-                  <Area type="monotone" dataKey="count" stroke="var(--chart-1)" strokeWidth={1.8} fill="url(#enr)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
+        <EnrollmentActivity />
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Recent activity</CardTitle>
@@ -217,5 +162,75 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** Range-scoped enrollment chart — the only dashboard section `range` affects,
+ *  so it owns its own query and leaves the rest of the page untouched. */
+function EnrollmentActivity() {
+  const [range, setRange] = React.useState(30);
+  const { data, isLoading } = useQuery({
+    queryKey: ["dashboard", "enrollment-series", range],
+    queryFn: () =>
+      api<EnrollmentSeriesPoint[]>(
+        `/api/admin/dashboard/enrollment-series${qs({ range })}`,
+      ),
+  });
+
+  return (
+    <Card className="xl:col-span-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-sm font-medium">Enrollment activity</CardTitle>
+        <div className="flex gap-1">
+          {RANGES.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setRange(r.value)}
+              className={cn(
+                "rounded-md px-2 py-1 text-xs font-medium transition-colors",
+                range === r.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-56 w-full" />
+        ) : (
+          <ResponsiveContainer width="100%" height={224}>
+            <AreaChart data={data ?? []} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
+              <defs>
+                <linearGradient id="enr" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border/60" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                minTickGap={32}
+                tickFormatter={(d: string) => d.slice(5)}
+              />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={40} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--popover)", border: "1px solid var(--border)",
+                  borderRadius: 8, fontSize: 12,
+                }}
+              />
+              <Area type="monotone" dataKey="count" stroke="var(--chart-1)" strokeWidth={1.8} fill="url(#enr)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
   );
 }

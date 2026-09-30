@@ -231,6 +231,11 @@ export interface OptionItem {
   sub?: string;
 }
 
+export interface EnrollmentSeriesPoint {
+  date: string;
+  count: number;
+}
+
 export interface DashboardStats {
   totals: {
     learners: number;
@@ -241,7 +246,6 @@ export interface DashboardStats {
     completionRate: number;
     certificates: number;
   };
-  enrollmentSeries: { date: string; count: number }[];
   coursePerformance: {
     id: number;
     title: string;
