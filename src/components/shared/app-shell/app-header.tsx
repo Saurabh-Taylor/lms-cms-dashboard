@@ -16,7 +16,6 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { initials } from "@/lib/format";
 import type { NavGroup } from "@/lib/nav";
@@ -68,7 +67,6 @@ export function AppHeader({
   return (
     <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
       <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="h-4" />
       <Breadcrumb className="hidden sm:block">
         <BreadcrumbList>
           <BreadcrumbItem>
