@@ -6,12 +6,10 @@ type Props = {
   thumbnailUrl?: string | null;
   /** Accent color — also the fallback surface when no image exists. */
   thumbnailColor: string;
-  /** Course title — square fallback renders initials. */
-  title?: string;
 } & (
-  | { variant: "banner" }
-  | { variant: "square"; size?: 8 | 10 }
-  | { variant: "dot" }
+  | { variant: "banner"; title?: string }
+  | { variant: "square"; size?: 8 | 10; title: string }
+  | { variant: "dot"; title?: string }
 );
 
 /**
@@ -48,7 +46,7 @@ export function CourseThumbnail(props: Props) {
         )}
         style={{ background: thumbnailColor }}
       >
-        {props.title ? initials(props.title) : null}
+        {initials(props.title)}
       </span>
     );
   }

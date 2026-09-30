@@ -27,7 +27,7 @@ import { XIcon } from "lucide-react";
 export function CourseSettingsForm({ courseId }: { courseId: number }) {
   const router = useRouter();
   const { data: course, isLoading } = useQuery({
-    queryKey: ["course", courseId],
+    queryKey: qk.course(courseId),
     queryFn: () => api<CourseRow>(`/api/admin/courses/${courseId}`),
   });
 
@@ -180,6 +180,8 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
                   thumbnailColor={course.thumbnailColor}
                 />
               ) : (
+                // editing affordance — a full swatch previews the fallback
+                // accent; banner's own fallback is a hairline strip
                 <div className="aspect-video" style={{ background: course.thumbnailColor }} aria-hidden />
               )}
             </div>
