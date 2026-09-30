@@ -30,7 +30,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       style={adminShellVars(admin?.uiPreferences) as React.CSSProperties}
     >
-      <body className="min-h-full flex flex-col">
+      {/* suppressHydrationWarning: extensions (e.g. ColorZilla's
+          cz-shortcut-listen) mutate <body> before hydration */}
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>
