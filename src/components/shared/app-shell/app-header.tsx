@@ -28,11 +28,12 @@ function crumbsFor(pathname: string, nav: NavGroup[]) {
   for (const part of parts) {
     acc += `/${part}`;
     const item = nav.flatMap((g) => g.items).find((i) => i.href === acc);
-    const label = item?.title ?? (isNaN(Number(part)) ? part.replace(/-/g, " ") : `#${part}`);
+    const isId = !isNaN(Number(part));
+    const label = item?.title ?? (isId ? `#${part}` : part.replace(/-/g, " "));
     // Link only resolvable targets: a nav item (index page exists) or a numeric
     // segment (detail pages like /admin/courses/328). Non-nav groupings like
     // /learner/courses or …/lessons have no index page — plain text, not a 404 link.
-    crumbs.push({ label, href: item || !isNaN(Number(part)) ? acc : undefined });
+    crumbs.push({ label, href: item || isId ? acc : undefined });
   }
   return crumbs;
 }
