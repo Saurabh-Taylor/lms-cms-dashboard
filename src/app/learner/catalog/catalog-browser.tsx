@@ -8,8 +8,8 @@ import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LearnerCatalogCourse } from "@/lib/learner-types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { CourseThumbnail } from "@/components/shared/course-thumbnail";
+
+import { CourseCard } from "@/components/learner/course-card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,9 +34,7 @@ function CatalogCard({ course }: { course: LearnerCatalogCourse }) {
   });
 
   return (
-    <Card className="overflow-hidden transition-shadow duration-(--duration-fast) hover:shadow-sm">
-      <CourseThumbnail variant="banner" thumbnailUrl={course.thumbnailUrl} thumbnailColor={course.thumbnailColor} />
-      <CardContent className="flex flex-col gap-3 pt-4">
+    <CourseCard course={course}>
         <div className="min-w-0">
           {enrolled ? (
             <Link
@@ -91,8 +89,7 @@ function CatalogCard({ course }: { course: LearnerCatalogCourse }) {
             </Button>
           )}
         </div>
-      </CardContent>
-    </Card>
+    </CourseCard>
   );
 }
 

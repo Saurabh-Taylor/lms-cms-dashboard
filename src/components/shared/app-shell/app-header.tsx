@@ -18,6 +18,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { initials } from "@/lib/format";
 import type { NavGroup } from "@/lib/nav";
 
 function crumbsFor(pathname: string, nav: NavGroup[]) {
@@ -34,10 +35,6 @@ function crumbsFor(pathname: string, nav: NavGroup[]) {
     crumbs.push({ label, href: item || !isNaN(Number(part)) ? acc : undefined });
   }
   return crumbs;
-}
-
-function initials(name: string) {
-  return name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 }
 
 /**

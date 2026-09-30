@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
 import {
@@ -45,7 +46,7 @@ export function CourseFormDialog({
           difficulty, categoryId, instructorId: instructor?.id ?? undefined,
         }),
       }),
-    invalidate: [["/api/admin/courses"]],
+    invalidate: [qk.courses],
     successToast: "Course created",
     onSuccess: (r) => {
       onOpenChange(false);

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { ATTACHMENT_IMAGE_EXTS, ATTACHMENT_IMAGE_MAX_BYTES } from "@microshala/contracts";
 import { CourseThumbnail } from "@/components/shared/course-thumbnail";
@@ -63,7 +64,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
         method: "PATCH",
         body: JSON.stringify({ ...form, instructorId: instructor?.id ?? null }),
       }),
-    invalidate: [["course", courseId], ["/api/admin/courses"]],
+    invalidate: [qk.course(courseId), qk.courses],
     successToast: "Settings saved",
     onSuccess: () => router.refresh(),
   });
@@ -71,7 +72,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
   const removeThumb = useApiMutation({
     mutationFn: () =>
       api(`/api/admin/courses/${courseId}/thumbnail`, { method: "DELETE" }),
-    invalidate: [["course", courseId], ["/api/admin/courses"]],
+    invalidate: [qk.course(courseId), qk.courses],
     successToast: "Thumbnail removed",
   });
 
@@ -101,8 +102,8 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
         body: JSON.stringify({ key: ticket.key }),
       });
       toast.success("Thumbnail updated");
-      qc.invalidateQueries({ queryKey: ["course", courseId] });
-      qc.invalidateQueries({ queryKey: ["/api/admin/courses"] });
+      qc.invalidateQueries({ queryKey: qk.course(courseId) });
+      qc.invalidateQueries({ queryKey: qk.courses });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -111,7 +112,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
     }
   }
 
-  if (isLoading || !form)
+  if (isLoading || !form || !course)
     return <div className="max-w-2xl space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 w-full" />)}</div>;
 
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>

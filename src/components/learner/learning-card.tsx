@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import type { LearnerCourse } from "@/lib/learner-types";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { CourseThumbnail } from "@/components/shared/course-thumbnail";
+import { CourseCard } from "./course-card";
 import { fmtDuration } from "@/lib/format";
 
 /** Enrolled-course card — shared by the dashboard and My Learning. */
@@ -16,9 +16,7 @@ export function LearningCard({ course }: { course: LearnerCourse }) {
   const cta = done ? "Review" : e.progress > 0 ? "Continue" : "Start";
 
   return (
-    <Card className="overflow-hidden transition-shadow duration-(--duration-fast) hover:shadow-sm">
-      <CourseThumbnail variant="banner" thumbnailUrl={course.thumbnailUrl} thumbnailColor={course.thumbnailColor} />
-      <CardContent className="flex flex-col gap-3 pt-4">
+    <CourseCard course={course}>
         <div className="min-w-0">
           <Link
             href={`/learner/courses/${course.id}` as never}
@@ -49,7 +47,6 @@ export function LearningCard({ course }: { course: LearnerCourse }) {
             {cta}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+    </CourseCard>
   );
 }

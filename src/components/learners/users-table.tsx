@@ -8,6 +8,7 @@ import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem, Role, UserRow } from "@/lib/types";
 import { useServerTable } from "@/hooks/use-server-table";
@@ -67,28 +68,28 @@ export function UsersTable({ role }: { role: Role }) {
   const patch = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    invalidate: [["/api/admin/users"]],
+    invalidate: [qk.users],
     successToast: "User updated",
   });
 
   const sendReset = useApiMutation({
     mutationFn: (u: UserRow) =>
       api(`/api/admin/users/${u.id}/send-password-reset`, { method: "POST" }),
-    invalidate: [["/api/admin/users"]],
+    invalidate: [qk.users],
     successToast: (d, u) => `Password reset sent to ${u.email}`,
   });
 
   const resendInvite = useApiMutation({
     mutationFn: (u: UserRow) =>
       api(`/api/admin/users/${u.id}/resend-invite`, { method: "POST" }),
-    invalidate: [["/api/admin/users"]],
+    invalidate: [qk.users],
     successToast: (d, u) => `Invite resent to ${u.email}`,
   });
 
   const approveRequest = useApiMutation({
     mutationFn: (u: UserRow) =>
       api<{ sent: boolean }>(`/api/admin/users/${u.id}/approve-request`, { method: "POST" }),
-    invalidate: [["/api/admin/users"]],
+    invalidate: [qk.users],
     successToast: (d, u) =>
       d.sent ? `${u.name} approved — invite sent` : `${u.name} approved — mail not configured, invite not sent`,
   });
@@ -96,7 +97,7 @@ export function UsersTable({ role }: { role: Role }) {
   const rejectRequest = useApiMutation({
     mutationFn: (u: UserRow) =>
       api(`/api/admin/users/${u.id}/reject-request`, { method: "POST" }),
-    invalidate: [["/api/admin/users"]],
+    invalidate: [qk.users],
     successToast: (d, u) => `${u.name} rejected`,
   });
 
@@ -283,7 +284,7 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
   const create = useApiMutation({
     mutationFn: () =>
       api<{ sent: boolean }>("/api/admin/users", { method: "POST", body: JSON.stringify({ name, email, role }) }),
-    invalidate: [["/api/admin/users"]],
+    invalidate: [qk.users],
     successToast: (d) =>
       d.sent ? `${name} invited` : `${name} invited — mail not configured, no email sent`,
     onSuccess: () => { onOpenChange(false); setName(""); setEmail(""); },
@@ -316,7 +317,7 @@ function AssignCourseDialog({ user, onClose }: { user: UserRow | null; onClose: 
         method: "POST",
         body: JSON.stringify({ userId: user!.id, courseId: course!.id }),
       }),
-    invalidate: [["/api/admin/enrollments"], ["/api/admin/users"]],
+    invalidate: [qk.enrollments, qk.users],
     onSuccess: (r) => {
       if (r.succeeded) toast.success(`Enrolled ${user!.name}`);
       else toast.warning(r.results?.[0]?.reason ?? "Not enrolled");

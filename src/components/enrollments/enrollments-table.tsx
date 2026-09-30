@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { EnrollmentRow } from "@/lib/types";
 import { useTableParams } from "@/hooks/use-table-params";
@@ -58,7 +59,7 @@ export function EnrollmentsTable({
   const bulk = useApiMutation({
     mutationFn: ({ ids, action }: { ids: number[]; action: string }) =>
       api("/api/admin/enrollments", { method: "PATCH", body: JSON.stringify({ ids, action }) }),
-    invalidate: [["/api/admin/enrollments"]],
+    invalidate: [qk.enrollments],
     successToast: (_, v) => `Updated ${v.ids.length} enrollment(s)`,
     onSuccess: () => setSelection({}),
   });

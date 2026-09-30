@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { CheckCircleIcon, XCircleIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
 import {
@@ -34,7 +35,7 @@ export function SingleEnrollDialog({ open, onOpenChange }: { open: boolean; onOp
           expiresAt: expiry ? new Date(expiry).getTime() : undefined,
         }),
       }),
-    invalidate: [["/api/admin/enrollments"]],
+    invalidate: [qk.enrollments],
     onSuccess: (r) => {
       if (r.succeeded) { toast.success("Enrollment created"); onOpenChange(false); }
       else toast.warning(r.results[0]?.reason ?? "Not enrolled");
@@ -97,7 +98,7 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
         method: "POST",
         body: JSON.stringify({ userIds, courseIds: courses.map((c) => c.id) }),
       }),
-    invalidate: [["/api/admin/enrollments"]],
+    invalidate: [qk.enrollments],
     onSuccess: (r, userIds) => {
       setResults((prev) => {
         // merge retry results back over previous failures
