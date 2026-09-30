@@ -20,7 +20,7 @@ export function FilterSelect({
 }: FilterSelectProps) {
   const selected = value ? options.find((o) => o.value === value) : undefined;
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex w-fit items-center">
       <Select
         value={value ?? "__all__"}
         onValueChange={(v) => onChange(v === "__all__" ? undefined : String(v))}
@@ -30,10 +30,10 @@ export function FilterSelect({
           className={cn(
             className,
             "transition-[color,border-color,background-color] duration-(--duration-fast)",
-            value ? "pr-6 border-primary/40 text-foreground" : "text-muted-foreground",
+            value ? "border-primary/40 text-foreground" : "text-muted-foreground",
           )}
         >
-          <span className="flex-1 truncate text-left">
+          <span className={cn("flex-1 truncate text-left", value && "mr-8")}>
             {selected ? selected.label : (allLabel ?? placeholder)}
           </span>
         </SelectTrigger>
@@ -48,10 +48,10 @@ export function FilterSelect({
         <button
           type="button"
           aria-label={`Clear ${placeholder}`}
-          className="absolute right-6 text-muted-foreground transition-colors duration-(--duration-instant) hover:text-foreground animate-in fade-in zoom-in-75"
+          className="absolute right-8 grid size-5 place-items-center rounded-full text-muted-foreground transition-colors duration-(--duration-instant) hover:bg-muted hover:text-foreground animate-in fade-in zoom-in-75"
           onClick={(e) => { e.stopPropagation(); onChange(undefined); }}
         >
-          <XIcon className="size-3" />
+          <XIcon className="size-3.5" />
         </button>
       )}
     </div>
