@@ -8,6 +8,7 @@ import {
   Tooltip, XAxis, YAxis,
 } from "recharts";
 import { api } from "@/lib/api-client";
+import { SIDEBAR_TRANSITION_MS } from "@/components/ui/sidebar";
 import type { OptionItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/stat-card";
@@ -76,7 +77,7 @@ export function AnalyticsClient() {
           <CardHeader><CardTitle className="text-sm font-medium">Engagement by event type</CardTitle></CardHeader>
           <CardContent>
             {!d ? <Skeleton className="h-56" /> : (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={240} debounce={SIDEBAR_TRANSITION_MS / 2}>
                 <BarChart data={d.engagementByType.map((r) => ({ ...r, name: r.type.replace(/_/g, " ") }))} layout="vertical" margin={{ left: 8 }}>
                   <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis type="number" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
@@ -178,7 +179,7 @@ function ChartCard({ title, data, loading, color }: { title: string; data?: { da
       <CardHeader><CardTitle className="text-sm font-medium">{title}</CardTitle></CardHeader>
       <CardContent>
         {loading ? <Skeleton className="h-52" /> : (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={220} debounce={SIDEBAR_TRANSITION_MS / 2}>
             <AreaChart data={data} margin={{ top: 4, right: 8 }}>
               <defs>
                 <linearGradient id={`g-${title}`} x1="0" y1="0" x2="0" y2="1">
