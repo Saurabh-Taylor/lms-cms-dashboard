@@ -18,6 +18,8 @@ export interface SessionUser {
   appRole: string;
   /** Capability keys resolved server-side from role_permissions — the one source of truth. */
   permissions: string[];
+  /** Persona being previewed ("learner"|"instructor") — only admins can set it; null otherwise. */
+  previewing: string | null;
   uiPreferences: UiPreferences;
 }
 
@@ -31,6 +33,7 @@ interface MeResponse {
   name: string;
   appRole: string;
   persona: string;
+  previewing: string | null;
   status: string;
   title?: string | null;
   permissions: string[];
@@ -60,6 +63,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     role: auth.persona,
     appRole: auth.appRole,
     permissions: auth.permissions ?? [],
+    previewing: auth.previewing ?? null,
     uiPreferences: auth.uiPreferences ?? {},
   };
 });

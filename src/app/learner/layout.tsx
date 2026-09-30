@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentLearner, getCurrentUser, homeForRole } from "@/lib/me";
 import { LearnerShell } from "@/components/layout/learner-shell";
+import { PreviewBanner } from "@/components/learner/preview-banner";
 
 export default async function LearnerLayout({ children }: { children: React.ReactNode }) {
   const me = await getCurrentLearner();
@@ -9,5 +10,10 @@ export default async function LearnerLayout({ children }: { children: React.Reac
     const u = await getCurrentUser();
     redirect(u ? homeForRole(u.role) : "/login");
   }
-  return <LearnerShell key={me.email} me={me}>{children}</LearnerShell>;
+  return (
+    <>
+      {me.previewing && <PreviewBanner persona={me.previewing} />}
+      <LearnerShell key={me.email} me={me}>{children}</LearnerShell>
+    </>
+  );
 }
