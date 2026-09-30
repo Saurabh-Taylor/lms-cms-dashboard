@@ -1,14 +1,10 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import {
-  Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer,
-  Tooltip, XAxis, YAxis,
-} from "recharts";
 import { api } from "@/lib/api-client";
-import { SIDEBAR_TRANSITION_MS } from "@/components/ui/sidebar";
 import type { OptionItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/stat-card";
@@ -18,6 +14,16 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+
+// recharts stays out of the page bundle — both charts share one lazy chunk
+const SeriesAreaChart = dynamic(
+  () => import("./analytics-charts").then((m) => m.SeriesAreaChart),
+  { ssr: false, loading: () => <Skeleton className="h-52" /> },
+);
+const EngagementBarChart = dynamic(
+  () => import("./analytics-charts").then((m) => m.EngagementBarChart),
+  { ssr: false, loading: () => <Skeleton className="h-56" /> },
+);
 
 interface AnalyticsData {
   learners: { newRegistrations: number; active: number; returning: number };
@@ -77,15 +83,7 @@ export function AnalyticsClient() {
           <CardHeader><CardTitle className="text-sm font-medium">Engagement by event type</CardTitle></CardHeader>
           <CardContent>
             {!d ? <Skeleton className="h-56" /> : (
-              <ResponsiveContainer width="100%" height={240} debounce={SIDEBAR_TRANSITION_MS / 2}>
-                <BarChart data={d.engagementByType.map((r) => ({ ...r, name: r.type.replace(/_/g, " ") }))} layout="vertical" margin={{ left: 8 }}>
-                  <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                  <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-                  <Tooltip />
-                  <Bar dataKey="n" fill="var(--color-chart-3)" radius={3} />
-                </BarChart>
-              </ResponsiveContainer>
+              <EngagementBarChart data={d.engagementByType} />
             )}
           </CardContent>
         </Card>
@@ -179,21 +177,7 @@ function ChartCard({ title, data, loading, color }: { title: string; data?: { da
       <CardHeader><CardTitle className="text-sm font-medium">{title}</CardTitle></CardHeader>
       <CardContent>
         {loading ? <Skeleton className="h-52" /> : (
-          <ResponsiveContainer width="100%" height={220} debounce={SIDEBAR_TRANSITION_MS / 2}>
-            <AreaChart data={data} margin={{ top: 4, right: 8 }}>
-              <defs>
-                <linearGradient id={`g-${title}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(d: string) => d.slice(5)} stroke="var(--muted-foreground)" />
-              <YAxis width={36} tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
-              <Tooltip />
-              <Area dataKey="n" stroke={color} fill={`url(#g-${title})`} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <SeriesAreaChart title={title} data={data} color={color} />
         )}
       </CardContent>
     </Card>
