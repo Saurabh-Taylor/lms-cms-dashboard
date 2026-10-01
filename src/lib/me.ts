@@ -114,3 +114,8 @@ export async function requirePermission(...perms: Perm[]): Promise<CurrentAdmin 
 export function requireLearner(): Promise<CurrentLearner | Response> {
   return requireUser(["learner", "instructor"]);
 }
+
+/** Any signed-in session — routes every persona shares (e.g. notifications). */
+export function requireAuthed(): Promise<SessionUser | Response> {
+  return requireUser(["admin", "instructor", "learner"]);
+}

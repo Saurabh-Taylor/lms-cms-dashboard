@@ -282,3 +282,27 @@ export interface SsoProvider {
   acsUrl: string;
   oidcCallbackUrl: string;
 }
+
+/** GET /me/notifications item — union of personal notifications + announcements. */
+export interface NotificationItem {
+  /** Composite wire id: `n_<id>` personal, `a_<id>` announcement. */
+  id: string;
+  source: "notification" | "announcement";
+  type: string;
+  severity: "info" | "success" | "warning" | "error";
+  title: string;
+  body: string;
+  /** App-relative deep link; null when the target is gone (dead-link filtered). */
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationInbox {
+  data: NotificationItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  severityCounts: Record<"info" | "success" | "warning" | "error", number>;
+  unreadCount: number;
+}

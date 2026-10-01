@@ -1,6 +1,6 @@
 import {
-  AwardIcon, BookOpenIcon, ClipboardCheckIcon, ClipboardListIcon,
-  CompassIcon, LayoutDashboardIcon, MegaphoneIcon, UserRoundIcon,
+  AwardIcon, BellIcon, BookOpenIcon, ClipboardCheckIcon, ClipboardListIcon,
+  CompassIcon, LayoutDashboardIcon, UserRoundIcon,
 } from "lucide-react";
 import type { NavGroup } from "@/lib/nav";
 
@@ -34,7 +34,7 @@ export const LEARNER_NAV: NavGroup[] = [
   {
     label: "Updates",
     items: [
-      { title: "Announcements", href: "/learner/announcements", icon: MegaphoneIcon },
+      { title: "Notifications", href: "/learner/announcements", icon: BellIcon },
     ],
   },
   {

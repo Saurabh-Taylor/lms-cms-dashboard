@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
-import { BellIcon, MoonIcon, SearchIcon, SunIcon } from "lucide-react";
+import { MoonIcon, SearchIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { api } from "@/lib/api-client";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { initials } from "@/lib/format";
 import type { NavGroup } from "@/lib/nav";
 
@@ -110,17 +111,7 @@ export function AppHeader({
             <kbd className="rounded border bg-muted px-1 text-[10px] font-medium">⌘K</kbd>
           </Button>
         )}
-        {notificationsHref && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            nativeButton={false}
-            render={<Link href={notificationsHref as never} />}
-            aria-label="Notifications"
-          >
-            <BellIcon className="size-4" />
-          </Button>
-        )}
+        {notificationsHref && <NotificationBell viewAllHref={notificationsHref} />}
         <Button
           variant="ghost"
           size="icon-sm"
