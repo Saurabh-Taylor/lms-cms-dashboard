@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { AsyncCombobox } from "@/components/async-combobox";
 import { fmtRelative, initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { APP_ROLES, ROLE_LABELS, USER_PERMANENT_DELETE_STATUSES, type AppRole } from "@microshala/contracts";
+import { ADMIN_APP_ROLES, APP_ROLES, ROLE_LABELS, USER_PERMANENT_DELETE_STATUSES, type AppRole } from "@microshala/contracts";
 
 const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   super_admin: "Full platform control — admins, users and settings",
@@ -53,7 +53,11 @@ const ACTIVITY_OPTS = [
   { value: "90", label: "Active ≤90d" },
 ];
 
-export function UsersTable({ role, meId }: { role: Role; meId?: number }) {
+/** Roles the actor may grant — super_admin is a super_admin-only grant (backend-enforced). */
+const grantableRoles = (meAppRole?: string): readonly AppRole[] =>
+  meAppRole === "super_admin" ? APP_ROLES : APP_ROLES.filter((r) => r !== "super_admin");
+
+export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: number; meAppRole?: string }) {
   const router = useRouter();
   const st = useServerTable<UserRow>("/api/admin/users", [
     "status", "cohortId", "activeWithinDays", "courseId",
@@ -195,7 +199,9 @@ export function UsersTable({ role, meId }: { role: Role; meId?: number }) {
                   : [
                       { label: "View profile", onClick: () => router.push(`/admin/learners/${u.id}` as never) },
                       ...(role === "learner" ? [{ label: "Assign course…", onClick: () => setAssignTarget(u) }] : []),
-                      ...(u.id !== meId ? [{ label: "Change role…", onClick: () => setRoleTarget(u) }] : []),
+                      ...(u.id !== meId && (meAppRole === "super_admin" || u.appRole !== "super_admin")
+                        ? [{ label: "Change role…", onClick: () => setRoleTarget(u) }]
+                        : []),
                       ...(u.status === "requested"
                         ? [
                             { label: "Approve request", onClick: () => approveReq(u) },
@@ -223,7 +229,7 @@ export function UsersTable({ role, meId }: { role: Role; meId?: number }) {
         },
       },
     ],
-    [role, meId, router, patchUser, sendResetTo, resendInviteTo, approveReq, rejectReq]
+    [role, meId, meAppRole, router, patchUser, sendResetTo, resendInviteTo, approveReq, rejectReq]
   );
 
   const selIds = Object.keys(selection).map(Number);
@@ -267,9 +273,9 @@ export function UsersTable({ role, meId }: { role: Role; meId?: number }) {
         }
       />
 
-      <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} role={role} />
+      <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} role={role} meAppRole={meAppRole} />
       <AssignCourseDialog user={assignTarget} onClose={() => setAssignTarget(null)} />
-      <ChangeRoleDialog user={roleTarget} onClose={() => setRoleTarget(null)} />
+      <ChangeRoleDialog user={roleTarget} onClose={() => setRoleTarget(null)} meAppRole={meAppRole} />
       <DeleteUserDialog
         user={deleteTarget}
         open={!!deleteTarget}
@@ -279,28 +285,65 @@ export function UsersTable({ role, meId }: { role: Role; meId?: number }) {
   );
 }
 
-export function UsersTableActions({ role }: { role: Role }) {
+export function UsersTableActions({ role, meAppRole }: { role: Role; meAppRole?: string }) {
   const [open, setOpen] = React.useState(false);
   return (
     <>
       <Button size="sm" onClick={() => setOpen(true)}>
         <PlusIcon /> Invite {role}
       </Button>
-      <CreateUserDialog open={open} onOpenChange={setOpen} role={role} />
+      <CreateUserDialog open={open} onOpenChange={setOpen} role={role} meAppRole={meAppRole} />
     </>
   );
 }
 
-function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenChange: (v: boolean) => void; role: Role }) {
+/** Shared radio list — used by the invite picker and the change-role dialog. */
+function RoleRadioList({ value, onChange, options }: { value: AppRole | undefined; onChange: (r: AppRole) => void; options: readonly AppRole[] }) {
+  return (
+    <div className="flex flex-col gap-1" role="radiogroup" aria-label="Role">
+      {options.map((r) => (
+        <button
+          type="button"
+          role="radio"
+          aria-checked={value === r}
+          key={r}
+          onClick={() => onChange(r)}
+          className={cn(
+            "flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors duration-(--duration-fast)",
+            value === r ? "border-primary/60 bg-primary/5" : "border-transparent hover:bg-muted",
+          )}
+        >
+          <span className={cn(
+            "grid size-4 shrink-0 place-items-center rounded-full border transition-colors duration-(--duration-fast)",
+            value === r ? "border-primary" : "border-input",
+          )}>
+            {value === r && <span className="size-2 rounded-full bg-primary" />}
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-sm font-medium leading-5">{ROLE_LABELS[r]}</span>
+            <span className="truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function CreateUserDialog({ open, onOpenChange, role, meAppRole }: { open: boolean; onOpenChange: (v: boolean) => void; role: Role; meAppRole?: string }) {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [inviteRole, setInviteRole] = React.useState<AppRole>("admin");
+  const staffRoles = grantableRoles(meAppRole).filter((r) => ADMIN_APP_ROLES.has(r));
   const create = useApiMutation({
     mutationFn: () =>
-      api<{ sent: boolean }>("/api/admin/users", { method: "POST", body: JSON.stringify({ name, email, role }) }),
+      api<{ sent: boolean }>("/api/admin/users", {
+        method: "POST",
+        body: JSON.stringify({ name, email, role, ...(role === "admin" ? { appRole: inviteRole } : {}) }),
+      }),
     invalidate: [qk.users],
     successToast: (d) =>
       d.sent ? `${name} invited` : `${name} invited — mail not configured, no email sent`,
-    onSuccess: () => { onOpenChange(false); setName(""); setEmail(""); },
+    onSuccess: () => { onOpenChange(false); setName(""); setEmail(""); setInviteRole("admin"); },
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -309,6 +352,12 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
         <form className="flex flex-col gap-3" onSubmit={(e) => { e.preventDefault(); create.mutate(); }}>
           <div className="flex flex-col gap-1.5"><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} required autoFocus /></div>
           <div className="flex flex-col gap-1.5"><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+          {role === "admin" && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Role</Label>
+              <RoleRadioList value={inviteRole} onChange={setInviteRole} options={staffRoles} />
+            </div>
+          )}
           <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">
             They&apos;ll get an email with a link to set their own password.
           </p>
@@ -322,7 +371,7 @@ function CreateUserDialog({ open, onOpenChange, role }: { open: boolean; onOpenC
   );
 }
 
-function ChangeRoleDialog({ user, onClose }: { user: UserRow | null; onClose: () => void }) {
+function ChangeRoleDialog({ user, onClose, meAppRole }: { user: UserRow | null; onClose: () => void; meAppRole?: string }) {
   const [appRole, setAppRole] = React.useState<AppRole | null>(null);
   const save = useApiMutation({
     mutationFn: () =>
@@ -340,32 +389,7 @@ function ChangeRoleDialog({ user, onClose }: { user: UserRow | null; onClose: ()
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Change role for {user?.name}</DialogTitle></DialogHeader>
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1" role="radiogroup" aria-label="Role">
-            {APP_ROLES.map((r) => (
-              <button
-                type="button"
-                role="radio"
-                aria-checked={current === r}
-                key={r}
-                onClick={() => setAppRole(r)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors duration-(--duration-fast)",
-                  current === r ? "border-primary/60 bg-primary/5" : "border-transparent hover:bg-muted",
-                )}
-              >
-                <span className={cn(
-                  "grid size-4 shrink-0 place-items-center rounded-full border transition-colors duration-(--duration-fast)",
-                  current === r ? "border-primary" : "border-input",
-                )}>
-                  {current === r && <span className="size-2 rounded-full bg-primary" />}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-sm font-medium leading-5">{ROLE_LABELS[r]}</span>
-                  <span className="truncate text-(length:--fs-meta) leading-4 text-muted-foreground">{ROLE_DESCRIPTIONS[r]}</span>
-                </span>
-              </button>
-            ))}
-          </div>
+          <RoleRadioList value={current} onChange={setAppRole} options={grantableRoles(meAppRole)} />
           <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">
             Admin-level roles require the admin capability — the API will reject the change otherwise.
           </p>

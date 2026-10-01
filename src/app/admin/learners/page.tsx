@@ -10,10 +10,10 @@ export default async function LearnersPage() {
       <PageHeader
         title="Learners"
         description="Manage learner accounts, enrollments and access"
-        actions={<UsersTableActions role="learner" />}
+        actions={<UsersTableActions meAppRole={me?.appRole} role="learner" />}
       />
       <Suspense>
-        <UsersTable role="learner" meId={me?.id} />
+        <UsersTable role="learner" meId={me?.id} meAppRole={me?.appRole} />
       </Suspense>
     </div>
   );

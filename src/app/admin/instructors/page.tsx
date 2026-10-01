@@ -10,10 +10,10 @@ export default async function InstructorsPage() {
       <PageHeader
         title="Instructors"
         description="Instructor accounts and course ownership"
-        actions={<UsersTableActions role="instructor" />}
+        actions={<UsersTableActions meAppRole={me?.appRole} role="instructor" />}
       />
       <Suspense>
-        <UsersTable role="instructor" meId={me?.id} />
+        <UsersTable role="instructor" meId={me?.id} meAppRole={me?.appRole} />
       </Suspense>
     </div>
   );

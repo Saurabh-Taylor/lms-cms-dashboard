@@ -10,10 +10,10 @@ export default async function AdministratorsPage() {
       <PageHeader
         title="Administrators"
         description="Admin accounts with platform access"
-        actions={<UsersTableActions role="admin" />}
+        actions={<UsersTableActions meAppRole={me?.appRole} role="admin" />}
       />
       <Suspense>
-        <UsersTable role="admin" meId={me?.id} />
+        <UsersTable role="admin" meId={me?.id} meAppRole={me?.appRole} />
       </Suspense>
     </div>
   );
