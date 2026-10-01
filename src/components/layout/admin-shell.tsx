@@ -8,6 +8,7 @@ import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { AdminHeader } from "@/components/layout/admin-header";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { PageTransition } from "@/components/layout/page-transition";
+import { AiPanelProvider } from "@/components/ai/ai-panel";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 
 export function AdminShell({
@@ -21,14 +22,16 @@ export function AdminShell({
 
   return (
     <UiPrefsProvider initial={me.uiPreferences} endpoint="/api/admin/me">
-      <SidebarProvider>
-        <AdminSidebar permissions={me.permissions} />
-        <SidebarInset className="min-w-0">
-          <AdminHeader me={me} onOpenSearch={() => setOpen(true)} />
-          <main className="flex-1 p-4 md:p-6"><PageTransition>{children}</PageTransition></main>
-        </SidebarInset>
-        <CommandPalette open={open} onOpenChange={setOpen} />
-      </SidebarProvider>
+      <AiPanelProvider>
+        <SidebarProvider>
+          <AdminSidebar permissions={me.permissions} />
+          <SidebarInset className="min-w-0">
+            <AdminHeader me={me} onOpenSearch={() => setOpen(true)} />
+            <main className="flex-1 p-4 md:p-6"><PageTransition>{children}</PageTransition></main>
+          </SidebarInset>
+          <CommandPalette open={open} onOpenChange={setOpen} />
+        </SidebarProvider>
+      </AiPanelProvider>
     </UiPrefsProvider>
   );
 }

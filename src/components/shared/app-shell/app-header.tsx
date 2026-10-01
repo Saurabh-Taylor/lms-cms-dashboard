@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
-import { MoonIcon, SearchIcon, SunIcon } from "lucide-react";
+import { MoonIcon, SearchIcon, SparklesIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { api } from "@/lib/api-client";
 import {
@@ -50,6 +50,7 @@ export function AppHeader({
   onOpenSearch,
   searchPlaceholder = "Search…",
   notificationsHref,
+  onOpenAi,
   menuSections,
 }: {
   nav: NavGroup[];
@@ -58,6 +59,7 @@ export function AppHeader({
   onOpenSearch?: () => void;
   searchPlaceholder?: string;
   notificationsHref?: string;
+  onOpenAi?: () => void;
   menuSections?: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -109,6 +111,11 @@ export function AppHeader({
             <SearchIcon className="size-3.5" />
             <span className="flex-1 text-left">{searchPlaceholder}</span>
             <kbd className="rounded border bg-muted px-1 text-[10px] font-medium">⌘K</kbd>
+          </Button>
+        )}
+        {onOpenAi && (
+          <Button variant="ghost" size="icon-sm" onClick={onOpenAi} aria-label="AI assistant">
+            <SparklesIcon className="size-4" />
           </Button>
         )}
         {notificationsHref && <NotificationBell viewAllHref={notificationsHref} />}

@@ -9,6 +9,7 @@ import {
   DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { AppHeader } from "@/components/shared/app-shell/app-header";
+import { useAiPanel } from "@/components/ai/ai-panel";
 import { NAV } from "@/lib/nav";
 
 /** Admin header — generic chrome + admin menu items (settings, roles). */
@@ -20,6 +21,7 @@ export function AdminHeader({
   onOpenSearch: () => void;
 }) {
   const router = useRouter();
+  const { open: openAi } = useAiPanel();
   const previewAs = async (persona: "learner" | "instructor") => {
     try {
       await api("/api/preview", { method: "POST", body: JSON.stringify({ persona }) });
@@ -36,6 +38,7 @@ export function AdminHeader({
       user={{ name: me.name, email: me.email, roleLabel: me.appRole.replace("_", " ") }}
       onOpenSearch={onOpenSearch}
       notificationsHref="/admin/notifications"
+      onOpenAi={openAi}
       menuSections={
         <>
           <DropdownMenuSeparator />
