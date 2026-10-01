@@ -1,6 +1,5 @@
 import { proxy } from "@/lib/api/proxy";
 import { requireAuthed } from "@/lib/me";
 
-const authed = requireAuthed;
 
-export const POST = proxy<"/api/me/notifications/read">("/api/v1/me/notifications/read", authed);
+export const POST = proxy<"/api/me/notifications/read">("/api/v1/me/notifications/read", requireAuthed);

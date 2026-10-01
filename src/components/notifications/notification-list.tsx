@@ -26,7 +26,7 @@ export type SeverityFilter = (typeof SEVERITIES)[number];
 
 export function useInbox(severity: SeverityFilter, pageSize = 30, enabled = true) {
   return useQuery({
-    queryKey: ["notifications", "inbox", severity],
+    queryKey: ["notifications", "inbox", severity, pageSize],
     queryFn: () =>
       api<NotificationInbox>(
         `/api/me/notifications?pageSize=${pageSize}${severity === "all" ? "" : `&severity=${severity}`}`,
@@ -87,7 +87,7 @@ export function NotificationRow({
   item: NotificationItem;
   onOpen: (i: NotificationItem) => void;
 }) {
-  const S = SEV[item.severity] ?? SEV.info;
+  const sevStyle = SEV[item.severity] ?? SEV.info;
   return (
     <button
       onClick={() => onOpen(item)}
@@ -96,8 +96,8 @@ export function NotificationRow({
         !item.readAt && "bg-muted/30",
       )}
     >
-      <span className={cn("mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full", S.badge)}>
-        <S.icon className="size-3.5" />
+      <span className={cn("mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full", sevStyle.badge)}>
+        <sevStyle.icon className="size-3.5" />
       </span>
       <span className="min-w-0 flex-1">
         <span className={cn("block truncate text-sm", !item.readAt && "font-medium")}>
@@ -106,12 +106,12 @@ export function NotificationRow({
         <span className="block truncate text-xs text-muted-foreground">{item.body}</span>
         <span className="mt-1 flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground">{fmtRelative(item.createdAt)}</span>
-          <Badge variant="outline" className={cn("h-4 border-0 px-1 text-[10px] capitalize", S.badge)}>
+          <Badge variant="outline" className={cn("h-4 border-0 px-1 text-[10px] capitalize", sevStyle.badge)}>
             {item.severity}
           </Badge>
         </span>
       </span>
-      {!item.readAt && <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", S.dot)} />}
+      {!item.readAt && <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", sevStyle.dot)} />}
     </button>
   );
 }
