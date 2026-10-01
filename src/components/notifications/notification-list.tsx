@@ -17,31 +17,35 @@ type Severity = NotificationItem["severity"];
 /** Single source for severity color — rows, dots, badges, and tab tint all read here. */
 const SEV: Record<
   Severity,
-  { icon: typeof InfoIcon; badge: string; dot: string; tab: string }
+  { icon: typeof InfoIcon; badge: string; dot: string; tab: string; tabText: string }
 > = {
   info: {
     icon: InfoIcon,
     badge: "text-blue-600 bg-blue-500/10",
     dot: "bg-blue-500",
     tab: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    tabText: "text-blue-600 hover:bg-blue-500/10 dark:text-blue-400",
   },
   success: {
     icon: CheckCircle2Icon,
     badge: "text-emerald-600 bg-emerald-500/10",
     dot: "bg-emerald-500",
     tab: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    tabText: "text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400",
   },
   warning: {
     icon: AlertTriangleIcon,
     badge: "text-amber-600 bg-amber-500/10",
     dot: "bg-amber-500",
     tab: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    tabText: "text-amber-600 hover:bg-amber-500/10 dark:text-amber-400",
   },
   error: {
     icon: XCircleIcon,
     badge: "text-red-600 bg-red-500/10",
     dot: "bg-red-500",
     tab: "bg-red-500/10 text-red-700 dark:text-red-400",
+    tabText: "text-red-600 hover:bg-red-500/10 dark:text-red-400",
   },
 };
 
@@ -155,14 +159,20 @@ export function SeverityTabs({
     <div className="flex flex-wrap gap-1">
       {SEVERITIES.map((k) => {
         const active = value === k;
-        const tint = k === "all" ? "bg-muted font-medium" : SEV[k].tab;
         return (
           <button
             key={k}
             onClick={() => onChange(k)}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs capitalize transition-colors",
-              active ? tint : "text-muted-foreground hover:bg-muted/60",
+              active && "font-medium",
+              k === "all"
+                ? active
+                  ? "bg-muted"
+                  : "text-muted-foreground hover:bg-muted/60"
+                : active
+                  ? SEV[k].tab
+                  : SEV[k].tabText,
             )}
           >
             {k !== "all" && <span className={cn("size-1.5 rounded-full", SEV[k].dot)} />}
