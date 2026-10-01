@@ -166,8 +166,8 @@ export function UsersTable({ role, meId }: { role: Role; meId?: number }) {
           ] satisfies ColumnDef<UserRow, unknown>[])
         : ([
             {
-              id: "title", accessorKey: "title", header: "Title",
-              cell: ({ getValue }: { getValue: () => unknown }) => <span className="text-sm">{(getValue() as string) ?? "—"}</span>,
+              id: "role", accessorKey: "appRole", header: "Role",
+              cell: ({ getValue }: { getValue: () => unknown }) => <span className="text-sm">{ROLE_LABELS[getValue() as AppRole] ?? "—"}</span>,
             },
           ] satisfies ColumnDef<UserRow, unknown>[])),
       {
