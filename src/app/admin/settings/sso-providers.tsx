@@ -142,7 +142,7 @@ function AddProviderDialog({ onClose }: { onClose: () => void }) {
   const [issuer, setIssuer] = React.useState("");
   const [clientId, setClientId] = React.useState("");
   const [clientSecret, setClientSecret] = React.useState("");
-  const [spEntityId, setSpEntityId] = React.useState("");
+  const [idpEntityId, setIdpEntityId] = React.useState("");
   const [entryPoint, setEntryPoint] = React.useState("");
   const [cert, setCert] = React.useState("");
 
@@ -151,7 +151,7 @@ function AddProviderDialog({ onClose }: { onClose: () => void }) {
     domain.trim() !== "" &&
     (kind === "oidc"
       ? issuer.trim() !== "" && clientId.trim() !== "" && clientSecret !== ""
-      : spEntityId.trim() !== "" && entryPoint.trim() !== "" && cert.trim() !== "");
+      : idpEntityId.trim() !== "" && entryPoint.trim() !== "" && cert.trim() !== "");
 
   const save = useApiMutation({
     mutationFn: () =>
@@ -163,8 +163,10 @@ function AddProviderDialog({ onClose }: { onClose: () => void }) {
             : {
                 providerId,
                 domain,
-                issuer: spEntityId,
-                samlConfig: { issuer: spEntityId, entryPoint, cert },
+                // Top-level `issuer` is omitted — the backend derives the SP
+                // entityID from our SP metadata URL. The IdP entity ID goes
+                // inside samlConfig.idpMetadata (required by the plugin).
+                samlConfig: { entryPoint, cert, idpMetadata: { entityID: idpEntityId } },
               },
         ),
       }),
@@ -216,15 +218,16 @@ function AddProviderDialog({ onClose }: { onClose: () => void }) {
             </>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label>SP entity ID</Label>
-                  <Input value={spEntityId} onChange={(e) => setSpEntityId(e.target.value)} placeholder="microshala" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label>IdP SSO URL (entry point)</Label>
-                  <Input value={entryPoint} onChange={(e) => setEntryPoint(e.target.value)} placeholder="https://idp.acme.com/sso" />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>IdP entity ID</Label>
+                <Input value={idpEntityId} onChange={(e) => setIdpEntityId(e.target.value)} placeholder="http://www.okta.com/exk…" />
+                <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">
+                  From the IdP&apos;s metadata — Okta/Entra issue these as URLs.
+                </p>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>IdP SSO URL (entry point)</Label>
+                <Input value={entryPoint} onChange={(e) => setEntryPoint(e.target.value)} placeholder="https://idp.acme.com/sso" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label>IdP signing certificate (PEM)</Label>
