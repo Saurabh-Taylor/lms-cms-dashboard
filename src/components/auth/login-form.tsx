@@ -12,11 +12,34 @@ import { Label } from "@/components/ui/label";
 export function LoginForm({ next }: { next?: string }) {
   const router = useRouter();
   const passwordRef = React.useRef<HTMLInputElement>(null);
+  const emailRef = React.useRef<HTMLInputElement>(null);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [pending, setPending] = React.useState(false);
+  const [ssoPending, setSsoPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  const sso = async () => {
+    if (ssoPending) return;
+    if (!email.trim()) {
+      setError("Enter your work email first.");
+      emailRef.current?.focus();
+      return;
+    }
+    setError(null);
+    setSsoPending(true);
+    try {
+      const res = await api<{ url: string }>("/api/auth/sso", {
+        method: "POST",
+        body: JSON.stringify({ email: email.trim(), next }),
+      });
+      window.location.assign(res.url);
+    } catch (err) {
+      setError((err as Error).message || "SSO sign-in failed.");
+      setSsoPending(false);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +80,7 @@ export function LoginForm({ next }: { next?: string }) {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
+            ref={emailRef}
             id="email"
             name="email"
             type="email"
@@ -111,10 +135,25 @@ export function LoginForm({ next }: { next?: string }) {
           </p>
         )}
 
-        <Button type="submit" className="mt-1 w-full" disabled={pending}>
+        <Button type="submit" className="mt-1 w-full" disabled={pending || ssoPending}>
           {pending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
+
+      <div className="mt-5 flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-(length:--fs-meta) leading-4 text-muted-foreground">or</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="mt-4 w-full"
+        disabled={pending || ssoPending}
+        onClick={sso}
+      >
+        {ssoPending ? "Redirecting…" : "Sign in with SSO"}
+      </Button>
 
       <p className="mt-6 text-center text-(length:--fs-meta) leading-4 text-muted-foreground">
         Don&apos;t have access?{" "}

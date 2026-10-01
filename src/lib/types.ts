@@ -270,3 +270,15 @@ export interface SearchResults {
   courses: OptionItem[];
   assessments: OptionItem[];
 }
+
+/** GET /admin/sso-providers row — secrets never reach the wire (backend whitelist). */
+export interface SsoProvider {
+  providerId: string;
+  type: "oidc" | "saml";
+  issuer: string;
+  domain: string;
+  /** Customer-IdP-admin setup URLs emitted by the backend. */
+  spMetadataUrl: string;
+  acsUrl: string;
+  oidcCallbackUrl: string;
+}

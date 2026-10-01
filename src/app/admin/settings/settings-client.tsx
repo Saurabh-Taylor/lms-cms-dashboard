@@ -18,6 +18,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmailForm } from "./email-form";
+import { SsoProviders } from "./sso-providers";
 
 interface General {
   platformName: string; description: string; timezone: string;
@@ -36,6 +37,7 @@ export function SettingsClient() {
         <TabsTrigger value="enrollment">Enrollment rules</TabsTrigger>
         <TabsTrigger value="email">Email</TabsTrigger>
         <TabsTrigger value="roles">Roles & permissions</TabsTrigger>
+        <TabsTrigger value="sso">SSO</TabsTrigger>
       </TabsList>
       <TabsContent value="general" className="mt-4 flex max-w-2xl flex-col gap-4">
         <GeneralForm />
@@ -44,6 +46,7 @@ export function SettingsClient() {
       <TabsContent value="enrollment" className="mt-4"><RulesForm /></TabsContent>
       <TabsContent value="email" className="mt-4"><EmailForm /></TabsContent>
       <TabsContent value="roles" className="mt-4"><RolesMatrix /></TabsContent>
+      <TabsContent value="sso" className="mt-4"><SsoProviders /></TabsContent>
     </Tabs>
   );
 }
