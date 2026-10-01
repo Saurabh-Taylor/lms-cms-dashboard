@@ -14,11 +14,35 @@ import type { NotificationInbox, NotificationItem } from "@/lib/types";
 
 type Severity = NotificationItem["severity"];
 
-const SEV: Record<Severity, { icon: typeof InfoIcon; badge: string; dot: string }> = {
-  info: { icon: InfoIcon, badge: "text-blue-600 bg-blue-500/10", dot: "bg-blue-500" },
-  success: { icon: CheckCircle2Icon, badge: "text-emerald-600 bg-emerald-500/10", dot: "bg-emerald-500" },
-  warning: { icon: AlertTriangleIcon, badge: "text-amber-600 bg-amber-500/10", dot: "bg-amber-500" },
-  error: { icon: XCircleIcon, badge: "text-red-600 bg-red-500/10", dot: "bg-red-500" },
+/** Single source for severity color — rows, dots, badges, and tab tint all read here. */
+const SEV: Record<
+  Severity,
+  { icon: typeof InfoIcon; badge: string; dot: string; tab: string }
+> = {
+  info: {
+    icon: InfoIcon,
+    badge: "text-blue-600 bg-blue-500/10",
+    dot: "bg-blue-500",
+    tab: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  },
+  success: {
+    icon: CheckCircle2Icon,
+    badge: "text-emerald-600 bg-emerald-500/10",
+    dot: "bg-emerald-500",
+    tab: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  },
+  warning: {
+    icon: AlertTriangleIcon,
+    badge: "text-amber-600 bg-amber-500/10",
+    dot: "bg-amber-500",
+    tab: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  },
+  error: {
+    icon: XCircleIcon,
+    badge: "text-red-600 bg-red-500/10",
+    dot: "bg-red-500",
+    tab: "bg-red-500/10 text-red-700 dark:text-red-400",
+  },
 };
 
 export const SEVERITIES = ["all", "error", "warning", "success", "info"] as const;
@@ -128,22 +152,27 @@ export function SeverityTabs({
 }) {
   const all = counts ? counts.info + counts.success + counts.warning + counts.error : 0;
   return (
-    <div className="flex gap-1">
-      {SEVERITIES.map((k) => (
-        <button
-          key={k}
-          onClick={() => onChange(k)}
-          className={cn(
-            "rounded-md px-2.5 py-1 text-xs capitalize transition-colors",
-            value === k ? "bg-muted font-medium" : "text-muted-foreground hover:bg-muted/60",
-          )}
-        >
-          {k}
-          <span className="ml-0.5 text-muted-foreground">
-            {k === "all" ? all : (counts?.[k] ?? 0)}
-          </span>
-        </button>
-      ))}
+    <div className="flex flex-wrap gap-1">
+      {SEVERITIES.map((k) => {
+        const active = value === k;
+        const tint = k === "all" ? "bg-muted font-medium" : SEV[k].tab;
+        return (
+          <button
+            key={k}
+            onClick={() => onChange(k)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs capitalize transition-colors",
+              active ? tint : "text-muted-foreground hover:bg-muted/60",
+            )}
+          >
+            {k !== "all" && <span className={cn("size-1.5 rounded-full", SEV[k].dot)} />}
+            {k}
+            <span className={cn("text-muted-foreground", active && k !== "all" && "opacity-70")}>
+              {k === "all" ? all : (counts?.[k] ?? 0)}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
