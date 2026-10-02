@@ -59,22 +59,6 @@ function useAiModels(enabled: boolean) {
 
 const MODEL_PREF_KEY = "microshala-ai:model";
 
-/** Matches --duration-moderate (200ms) in globals.css — keep in sync. */
-const PANEL_ANIM_MS = 200;
-type Phase = "entering" | "open" | "closing";
-
-const RAIL_FADE = "motion-safe:animate-in motion-safe:fade-in-0 h-full";
-const PHASE_CLASS: Record<Exclude<Phase, "open">, Record<Mode, string>> = {
-  entering: {
-    float: "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-(--duration-moderate)",
-    drawer: "motion-safe:animate-in motion-safe:slide-in-from-right motion-safe:duration-(--duration-moderate)",
-  },
-  closing: {
-    float: "motion-safe:animate-out motion-safe:fade-out-0 motion-safe:zoom-out-95 motion-safe:duration-(--duration-moderate)",
-    drawer: "motion-safe:animate-out motion-safe:slide-out-to-right motion-safe:duration-(--duration-moderate)",
-  },
-};
-
 function useSelectedModel(defaultModel?: string) {
   const [selected, setSelected] = React.useState<string | null>(() =>
     typeof window === "undefined" ? null : localStorage.getItem(MODEL_PREF_KEY),
@@ -356,15 +340,14 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
   return (
     <>
       {mode === "float" && (
-        <div key="rail" className={RAIL_FADE}>
-          <ThreadRail
-            threads={threads}
-            activeId={threadId}
-            onSelect={onSelectThread}
-            onNew={onNewThread}
-            onDelete={onDeleteThread}
-          />
-        </div>
+        <ThreadRail
+          key="rail"
+          threads={threads}
+          activeId={threadId}
+          onSelect={onSelectThread}
+          onNew={onNewThread}
+          onDelete={onDeleteThread}
+        />
       )}
       <div key="body" className="flex min-w-0 flex-1 flex-col">
         <PanelHeader
@@ -378,11 +361,7 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
         />
         <ChatBody chat={chat} configured={configured} onSend={handleSend} />
       </div>
-      {mode === "float" && detailsOpen && (
-        <div key="details" className={RAIL_FADE}>
-          <DetailsRail chat={chat} model={model} />
-        </div>
-      )}
+      {mode === "float" && detailsOpen && <DetailsRail key="details" chat={chat} model={model} />}
     </>
   );
 }
@@ -395,7 +374,6 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
  */
 export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [phase, setPhase] = React.useState<Phase>("open");
   const [mode, setMode] = React.useState<Mode>("drawer");
   const [threadId, setThreadId] = React.useState(() => crypto.randomUUID());
   const [threads, setThreads] = React.useState<ThreadMeta[]>([]);
@@ -404,32 +382,20 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const models = useAiModels(isOpen);
   const { selected: selectedModel, effective: effectiveModel, select: selectModel } =
     useSelectedModel(config.data?.model);
-  const phaseTimer = React.useRef<number>(undefined);
-
   const open = React.useCallback(() => {
-    window.clearTimeout(phaseTimer.current);
     setThreads(listThreads());
-    // Already open → don't replay the enter animation; closing → re-enter.
-    setPhase((p) => (!isOpen || p === "closing" ? "entering" : "open"));
     setIsOpen(true);
-    phaseTimer.current = window.setTimeout(() => setPhase("open"), PANEL_ANIM_MS);
-  }, [isOpen]);
-  const close = React.useCallback(() => {
-    window.clearTimeout(phaseTimer.current);
-    setPhase("closing");
-    phaseTimer.current = window.setTimeout(() => setIsOpen(false), PANEL_ANIM_MS);
   }, []);
+  const close = React.useCallback(() => setIsOpen(false), []);
 
   React.useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") setIsOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, close]);
-
-  React.useEffect(() => () => window.clearTimeout(phaseTimer.current), []);
+  }, [isOpen]);
 
   const newThread = React.useCallback(() => setThreadId(crypto.randomUUID()), []);
   const onThreadUsed = React.useCallback((id: string, title: string) => {
@@ -475,34 +441,26 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   return (
     <AiPanelContext.Provider value={{ open }}>
       {children}
-      {/* One morphing surface: the panel is a single absolutely-positioned
-          element whose geometry (top/right/width/height/radius) transitions
-          between drawer and float modes, so expand/dock is a smooth morph —
-          and ChatSession's fiber never moves, keeping useChat + streams alive.
-          Enter/exit run as keyframe phases so the surface stays mounted
-          through the closing animation. */}
+      {/* One container, mode swaps classes only — ChatSession's fiber stays
+          mounted across drawer↔float so useChat state (and any in-flight
+          stream) survives; it remounts only on thread switch (key change). */}
       {isOpen && (
-        <div className="pointer-events-none fixed inset-0 z-40">
-          <div
-            aria-hidden
-            onClick={mode === "float" ? close : undefined}
-            className={cn(
-              "absolute inset-0 bg-black/40 motion-safe:transition-opacity motion-safe:duration-(--duration-moderate)",
-              mode === "float" && phase !== "closing"
-                ? "pointer-events-auto opacity-100"
-                : "pointer-events-none opacity-0",
-            )}
-          />
+        <div
+          className={cn(
+            "fixed z-40",
+            mode === "float"
+              ? "inset-0 flex items-center justify-center bg-black/40 p-6"
+              : "inset-y-0 right-0 w-[420px] max-w-full",
+          )}
+        >
           <div
             role="dialog"
             aria-label="AI Assistant"
             className={cn(
-              "pointer-events-auto absolute flex overflow-hidden bg-background shadow-xl",
-              "motion-safe:transition-[top,right,width,height,border-radius] motion-safe:duration-(--duration-moderate) motion-safe:ease-(--ease-enter)",
+              "flex bg-background",
               mode === "float"
-                ? "top-[10vh] right-[max(1.5rem,calc(50%_-_32rem))] h-[80vh] w-[min(64rem,calc(100%_-_3rem))] rounded-xl border"
-                : "top-0 right-0 h-full w-[420px] max-w-full rounded-none border-l",
-              phase !== "open" && PHASE_CLASS[phase][mode],
+                ? "h-[80vh] w-full max-w-5xl overflow-hidden rounded-xl border shadow-2xl"
+                : "h-full w-full border-l shadow-xl",
             )}
           >
             {session}
