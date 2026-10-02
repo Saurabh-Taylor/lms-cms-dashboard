@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "./chat-messages";
+import { ModelPicker, type AiModel } from "./model-picker";
 import {
   THREAD_KEY_PREFIX, listThreads, removeThread, touchThread, type ThreadMeta,
 } from "./thread-store";
@@ -47,6 +48,29 @@ function useAiConfig(enabled: boolean) {
   });
 }
 
+function useAiModels(enabled: boolean) {
+  return useQuery({
+    queryKey: ["ai", "models"],
+    queryFn: () => api<AiModel[]>("/api/ai/models"),
+    staleTime: 5 * 60_000,
+    enabled,
+  });
+}
+
+const MODEL_PREF_KEY = "microshala-ai:model";
+
+function useSelectedModel(defaultModel?: string) {
+  const [selected, setSelected] = React.useState<string | null>(() =>
+    typeof window === "undefined" ? null : localStorage.getItem(MODEL_PREF_KEY),
+  );
+  const select = React.useCallback((id: string | null) => {
+    setSelected(id);
+    if (id) localStorage.setItem(MODEL_PREF_KEY, id);
+    else localStorage.removeItem(MODEL_PREF_KEY);
+  }, []);
+  return { selected, effective: selected ?? defaultModel, select };
+}
+
 function EmptyState({ configured }: { configured?: boolean }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
@@ -72,12 +96,12 @@ function EmptyState({ configured }: { configured?: boolean }) {
   );
 }
 
-function PanelHeader({ mode, onModeChange, onClose, threadId, model, detailsOpen, onToggleDetails }: {
+function PanelHeader({ mode, onModeChange, onClose, threadId, modelPicker, detailsOpen, onToggleDetails }: {
   mode: Mode;
   onModeChange: (m: Mode) => void;
   onClose: () => void;
   threadId: string;
-  model?: string;
+  modelPicker: React.ReactNode;
   detailsOpen?: boolean;
   onToggleDetails?: () => void;
 }) {
@@ -111,13 +135,11 @@ function PanelHeader({ mode, onModeChange, onClose, threadId, model, detailsOpen
           </Button>
         </div>
       </div>
-      {mode === "float" && (
-        <div className="flex items-center gap-2 border-t px-4 py-1.5 font-mono text-[10px] text-muted-foreground">
-          <span>Model: {model ?? "…"}</span>
-          <span>|</span>
-          <span>Thread: {threadId.slice(0, 13)}…</span>
-        </div>
-      )}
+      <div className="flex items-center gap-2 border-t px-4 py-1.5 font-mono text-[10px] text-muted-foreground">
+        {modelPicker}
+        <span aria-hidden>|</span>
+        <span>Thread: {threadId.slice(0, 13)}…</span>
+      </div>
     </div>
   );
 }
@@ -282,7 +304,7 @@ function ChatBody({ chat, configured, onSend }: {
 }
 
 /** One useChat instance per thread — `key={threadId}` remount swaps conversations. */
-function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectThread, onNewThread, onDeleteThread, onThreadUsed, detailsOpen, onToggleDetails, configured, model }: {
+function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectThread, onNewThread, onDeleteThread, onThreadUsed, detailsOpen, onToggleDetails, configured, model, modelPicker }: {
   threadId: string;
   mode: Mode;
   onModeChange: (m: Mode) => void;
@@ -296,11 +318,17 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
   onToggleDetails: () => void;
   configured?: boolean;
   model?: string;
+  modelPicker: React.ReactNode;
 }) {
+  // Stable identity — a fresh literal every render would re-fire
+  // client.updateOptions each commit. Always passing {model} (undefined
+  // serialized away) also clears a stale selection once config loads.
+  const forwardedProps = React.useMemo(() => ({ model }), [model]);
   const chat = useChat({
     threadId,
     connection: AI_CONNECTION,
     persistence: AI_PERSISTENCE,
+    forwardedProps,
   });
   const handleSend = React.useCallback(
     (title: string) => onThreadUsed(threadId, title),
@@ -327,7 +355,7 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
           onModeChange={onModeChange}
           onClose={onClose}
           threadId={threadId}
-          model={model}
+          modelPicker={modelPicker}
           detailsOpen={detailsOpen}
           onToggleDetails={onToggleDetails}
         />
@@ -351,6 +379,9 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const [threads, setThreads] = React.useState<ThreadMeta[]>([]);
   const [detailsOpen, setDetailsOpen] = React.useState(true);
   const config = useAiConfig(isOpen);
+  const models = useAiModels(isOpen);
+  const { selected: selectedModel, effective: effectiveModel, select: selectModel } =
+    useSelectedModel(config.data?.model);
   const open = React.useCallback(() => {
     setThreads(listThreads());
     setIsOpen(true);
@@ -395,7 +426,15 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
       detailsOpen={detailsOpen}
       onToggleDetails={() => setDetailsOpen((v) => !v)}
       configured={config.data?.configured}
-      model={config.data?.model}
+      model={effectiveModel}
+      modelPicker={
+        <ModelPicker
+          models={models.data ?? []}
+          value={selectedModel}
+          defaultModel={config.data?.model}
+          onSelect={selectModel}
+        />
+      }
     />
   );
 

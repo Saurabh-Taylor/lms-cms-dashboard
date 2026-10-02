@@ -306,3 +306,11 @@ export interface NotificationInbox {
   severityCounts: Record<"info" | "success" | "warning" | "error", number>;
   unreadCount: number;
 }
+
+/** GET /api/ai/models — slim OpenRouter catalog entry. */
+export interface AiModel {
+  id: string;
+  name: string;
+  contextLength: number | null;
+  supportsTools: boolean;
+}
