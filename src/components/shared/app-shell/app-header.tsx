@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
-import { MoonIcon, SearchIcon, SparklesIcon, SunIcon } from "lucide-react";
+import { MoonIcon, SearchIcon, SunIcon } from "lucide-react";
+import { NiyamakMark } from "@/components/ai/niyamak-mark";
 import { useTheme } from "next-themes";
 import { api } from "@/lib/api-client";
 import {
@@ -114,8 +115,8 @@ export function AppHeader({
           </Button>
         )}
         {onOpenAi && (
-          <Button variant="ghost" size="icon-sm" onClick={onOpenAi} aria-label="AI assistant">
-            <SparklesIcon className="size-4" />
+          <Button variant="ghost" size="icon-sm" onClick={onOpenAi} aria-label="Niyamak — AI assistant">
+            <NiyamakMark className="size-4" />
           </Button>
         )}
         {notificationsHref && <NotificationBell viewAllHref={notificationsHref} />}

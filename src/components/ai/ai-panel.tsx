@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useChat, fetchServerSentEvents, localStoragePersistence } from "@tanstack/ai-react";
 import {
-  HistoryIcon, Maximize2Icon, Minimize2Icon, PanelRightIcon,
-  PlusIcon, SparklesIcon, SquareIcon, Trash2Icon, XIcon,
+  CheckCircle2Icon, ClockIcon, HistoryIcon, Loader2Icon, Maximize2Icon,
+  Minimize2Icon, PanelRightIcon, PlusIcon, SquareIcon, Trash2Icon, XCircleIcon, XIcon,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,6 +15,8 @@ import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "./chat-messages";
 import { ModelPicker, type AiModel } from "./model-picker";
+import { NiyamakMark } from "./niyamak-mark";
+import { NIYAMAK_WRITE_TOOLS } from "./niyamak-tools";
 import {
   THREAD_KEY_PREFIX, listThreads, removeThread, touchThread, type ThreadMeta,
 } from "./thread-store";
@@ -24,7 +26,19 @@ import {
 const AI_CONNECTION = fetchServerSentEvents("/api/ai/chat");
 const AI_PERSISTENCE = localStoragePersistence({ keyPrefix: THREAD_KEY_PREFIX });
 
-const SUGGESTIONS = [
+/** Page-contextual starter prompts — key is a pathname segment match. */
+const SUGGESTIONS: [RegExp, string[]][] = [
+  [/\/learners/, ["Who hasn't been active this week?", "Learners close to finishing a course"]],
+  [/\/courses/, ["Which courses have low completion?", "Summarize the newest course"]],
+  [/\/enrollments/, ["Recent enrollment activity", "Any failed enrollments today?"]],
+  [/\/(analytics|reports)/, ["Give me a platform overview", "Completion rate trend this month"]],
+  [/\/assessments/, ["Which assessments have the lowest scores?", "Pending assessment reviews"]],
+  [/\/assignments/, ["Any assignments pending review?", "Overdue submissions this week"]],
+  [/\/(audit|activity)/, ["Summarize recent admin activity", "Any unusual actions today?"]],
+  [/\/certificates/, ["Certificates issued this month", "Any failed certificate runs?"]],
+  [/\/announcements/, ["Draft an announcement for course updates", "Which announcements are scheduled?"]],
+];
+const FALLBACK_SUGGESTIONS = [
   "Give me a platform overview",
   "Which courses have low completion?",
   "Recent enrollment activity",
@@ -42,7 +56,7 @@ export const useAiPanel = () => React.useContext(AiPanelContext);
 function useAiConfig(enabled: boolean) {
   return useQuery({
     queryKey: ["ai", "config"],
-    queryFn: () => api<{ configured: boolean; model: string }>("/api/ai/config"),
+    queryFn: () => api<{ configured: boolean; model: string; locked?: boolean }>("/api/ai/config"),
     staleTime: 60_000,
     enabled,
   });
@@ -74,25 +88,25 @@ function useSelectedModel(defaultModel?: string) {
     if (id) localStorage.setItem(MODEL_PREF_KEY, id);
     else localStorage.removeItem(MODEL_PREF_KEY);
   }, []);
-  return { selected, effective: selected ?? defaultModel, select };
+  return { selected, effective: selected || defaultModel, select };
 }
 
 function EmptyState({ configured }: { configured?: boolean }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
       <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10">
-        <SparklesIcon className="size-6 text-primary" />
+        <NiyamakMark className="size-6 text-primary" />
       </div>
       {configured === false ? (
         <div>
-          <p className="text-base font-semibold">AI assistant isn’t configured</p>
+          <p className="text-base font-semibold">Niyamak isn’t configured</p>
           <p className="mt-1 max-w-72 text-sm text-muted-foreground">
             Set <code className="rounded bg-muted px-1 text-xs">OPENROUTER_API_KEY</code> on the API and restart.
           </p>
         </div>
       ) : (
         <div>
-          <p className="text-base font-semibold">Ask me anything about your LMS</p>
+          <p className="text-base font-semibold">Ask Niyamak anything about your LMS</p>
           <p className="mt-1 max-w-72 text-sm text-muted-foreground">
             Learners, courses, enrollments, stats — I can look things up and run actions with your approval.
           </p>
@@ -102,7 +116,7 @@ function EmptyState({ configured }: { configured?: boolean }) {
   );
 }
 
-function PanelHeader({ mode, onModeChange, onClose, threadId, modelPicker, detailsOpen, onToggleDetails }: {
+function PanelHeader({ mode, onModeChange, onClose, threadId, modelPicker, detailsOpen, onToggleDetails, working }: {
   mode: Mode;
   onModeChange: (m: Mode) => void;
   onClose: () => void;
@@ -110,14 +124,18 @@ function PanelHeader({ mode, onModeChange, onClose, threadId, modelPicker, detai
   modelPicker: React.ReactNode;
   detailsOpen?: boolean;
   onToggleDetails?: () => void;
+  working?: boolean;
 }) {
   return (
     <div className="border-b">
       <div className="flex items-center gap-2.5 px-4 py-3">
         <div className="flex size-8 items-center justify-center rounded-full bg-primary/10">
-          <SparklesIcon className="size-4 text-primary" />
+          <NiyamakMark className="size-4 text-primary" active={working} />
         </div>
-        <span className="text-sm font-semibold">AI Assistant</span>
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold">Niyamak</span>
+          <span className="text-[10px] leading-tight text-muted-foreground">The one who governs</span>
+        </div>
         <div className="ml-auto flex items-center gap-0.5">
           {mode === "float" && onToggleDetails && (
             <Button
@@ -158,8 +176,8 @@ function ThreadRail({ threads, activeId, onSelect, onNew, onDelete }: {
   onDelete: (id: string) => void;
 }) {
   return (
-    <aside className="flex w-52 shrink-0 flex-col border-r">
-      <div className="flex items-center justify-between border-b px-3 py-2.5">
+    <aside className="flex h-full w-52 shrink-0 flex-col border-r">
+      <div className="flex h-14 items-center justify-between border-b px-3">
         <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <HistoryIcon className="size-3.5" /> Threads
         </span>
@@ -175,11 +193,16 @@ function ThreadRail({ threads, activeId, onSelect, onNew, onDelete }: {
           <div
             key={t.id}
             className={cn(
-              "group flex w-full items-center gap-1 border-b border-border/50 px-3 py-2.5 hover:bg-muted/50",
-              t.id === activeId && "bg-muted/40",
+              "group flex w-full items-center gap-1 border-b border-border/50 px-3 py-2.5 transition-colors duration-(--duration-fast) hover:bg-muted/50",
+              t.id === activeId &&
+                "bg-accent font-medium text-accent-foreground shadow-[inset_2px_0_0_var(--primary)] hover:bg-accent",
             )}
           >
-            <button onClick={() => onSelect(t.id)} className="min-w-0 flex-1 text-left">
+            <button
+              onClick={() => onSelect(t.id)}
+              aria-current={t.id === activeId ? "true" : undefined}
+              className="min-w-0 flex-1 text-left"
+            >
               <span className="block truncate text-xs font-medium">{t.title}</span>
               <span className="text-[10px] text-muted-foreground">
                 {new Date(t.updatedAt).toLocaleDateString()}
@@ -199,38 +222,64 @@ function ThreadRail({ threads, activeId, onSelect, onNew, onDelete }: {
   );
 }
 
+type ToolCallPart = Extract<Chat["messages"][number]["parts"][number], { type: "tool-call" }>;
+type ToolResultPart = Extract<Chat["messages"][number]["parts"][number], { type: "tool-result" }>;
+
+/** Per-call status icon — the tool-call part's terminal state lives on its tool-result sibling. */
+function CallIcon({ call, result }: { call: ToolCallPart; result?: ToolResultPart }) {
+  if (result?.state === "complete") return <CheckCircle2Icon className="size-3 shrink-0 text-emerald-500" />;
+  if (result?.state === "error" || call.state === "error") return <XCircleIcon className="size-3 shrink-0 text-red-500" />;
+  if (call.state === "approval-requested") return <ClockIcon className="size-3 shrink-0 text-amber-500" />;
+  return <Loader2Icon className="size-3 shrink-0 animate-spin text-muted-foreground" />;
+}
+
 function DetailsRail({ chat, model }: { chat: Chat; model?: string }) {
-  const tools = chat.messages.flatMap((m) =>
-    m.parts.filter((p) => p.type === "tool-call").map((p) => p.name),
-  );
-  const pendingApprovals = chat.messages.flatMap((m) =>
-    m.parts.filter((p) => p.type === "tool-call" && p.state === "approval-requested"),
-  ).length;
+  // Chronological tool calls joined to their results by toolCallId — the same
+  // join ChatMessages performs for the inline chips.
+  const calls = chat.messages.flatMap((m) => {
+    const results = new Map<string, ToolResultPart>();
+    for (const p of m.parts) if (p.type === "tool-result") results.set(p.toolCallId, p);
+    return m.parts
+      .filter((p): p is ToolCallPart => p.type === "tool-call")
+      .map((call) => ({ call, result: results.get(call.id) }));
+  });
+  const pendingApprovals = calls.filter((c) => c.call.state === "approval-requested").length;
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-l">
-      <div className="border-b px-3 py-2.5 text-xs font-medium text-muted-foreground">Run details</div>
-      <div className="flex flex-col gap-3 p-3 text-xs">
+    <aside className="flex h-full w-56 shrink-0 flex-col border-l bg-muted/30">
+      <div className="flex h-14 items-center border-b px-3 text-xs font-medium text-muted-foreground">Run details</div>
+      <div className="flex flex-col gap-4 p-3 text-xs">
         <div>
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Status</div>
           <div className="mt-0.5 flex items-center gap-1.5 font-medium">
             <span className={cn("size-1.5 rounded-full", chat.isLoading ? "animate-pulse bg-amber-500" : "bg-emerald-500")} />
             {chat.isLoading ? "Running" : "Ready"}
+            <span className="font-normal text-muted-foreground">· {chat.messages.length} messages</span>
           </div>
         </div>
-        <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Tools used</div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {tools.length === 0 && <span className="text-muted-foreground">—</span>}
-            {[...new Set(tools)].map((t) => (
-              <Badge key={t} variant="outline" className="font-mono text-[10px] font-normal">{t}</Badge>
-            ))}
+        {pendingApprovals > 0 && (
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 font-medium text-amber-600 dark:text-amber-400">
+            {pendingApprovals} awaiting approval
           </div>
-        </div>
+        )}
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pending approvals</div>
-          <div className="mt-0.5 font-medium">{pendingApprovals || "—"}</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Tool calls</div>
+          {calls.length === 0 ? (
+            <p className="mt-1 text-muted-foreground">No tool calls yet</p>
+          ) : (
+            <div className="mt-1 flex flex-col">
+              {calls.map(({ call, result }, i) => (
+                <div key={call.id} className="relative flex items-center gap-2 py-1">
+                  {i < calls.length - 1 && (
+                    <span className="absolute left-[5.5px] top-4 h-[calc(100%-8px)] w-px bg-border" />
+                  )}
+                  <CallIcon call={call} result={result} />
+                  <span className="truncate font-mono text-[11px]">{call.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div>
+        <div className="mt-auto">
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Model</div>
           <div className="mt-0.5 font-mono text-[11px]">{model ?? "…"}</div>
         </div>
@@ -246,6 +295,8 @@ function ChatBody({ chat, configured, onSend }: {
 }) {
   const { messages, sendMessage, isLoading, error, stop } = chat;
   const [input, setInput] = React.useState("");
+  const pathname = usePathname();
+  const suggestions = SUGGESTIONS.find(([re]) => re.test(pathname))?.[1] ?? FALLBACK_SUGGESTIONS;
   const onApprovalResponse = React.useCallback(
     (id: string, approved: boolean) => void chat.addToolApprovalResponse({ id, approved }),
     [chat],
@@ -253,6 +304,7 @@ function ChatBody({ chat, configured, onSend }: {
 
   const send = (text: string) => {
     if (!text.trim() || isLoading || configured === false) return;
+    console.log(`[niyamak] send "${text.trim().slice(0, 80)}"`); // TEMP #86
     onSend(text.trim().slice(0, 60));
     sendMessage(text.trim());
     setInput("");
@@ -260,11 +312,11 @@ function ChatBody({ chat, configured, onSend }: {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea className="min-h-0 flex-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-(--duration-moderate) motion-reduce:animate-none">
         {messages.length === 0 ? (
           <EmptyState configured={configured} />
         ) : (
-          <ChatMessages messages={messages} onApprovalResponse={onApprovalResponse} />
+          <ChatMessages messages={messages} loading={isLoading} onApprovalResponse={onApprovalResponse} />
         )}
       </ScrollArea>
       {error && (
@@ -274,7 +326,7 @@ function ChatBody({ chat, configured, onSend }: {
       )}
       {messages.length === 0 && configured !== false && (
         <div className="flex flex-wrap justify-center gap-1.5 px-4 pb-3">
-          {SUGGESTIONS.map((s) => (
+          {suggestions.map((s) => (
             <button
               key={s}
               onClick={() => send(s)}
@@ -296,7 +348,7 @@ function ChatBody({ chat, configured, onSend }: {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={configured === false}
-          placeholder="Ask about learners, courses, or tell me to do something…"
+          placeholder="Ask Niyamak about learners, courses, or tell it to do something…"
           className="min-w-0 flex-1"
         />
         {isLoading && (
@@ -305,6 +357,9 @@ function ChatBody({ chat, configured, onSend }: {
           </Button>
         )}
       </form>
+      <p className="px-3 pb-2 text-center text-[10px] text-muted-foreground/60">
+        Niyamak can make mistakes — verify important actions.
+      </p>
     </div>
   );
 }
@@ -334,7 +389,17 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
     threadId,
     connection: AI_CONNECTION,
     persistence: AI_PERSISTENCE,
+    // Write-tool declarations (no execute) — without them InterruptManager
+    // marks approval interrupts unresolvable and Approve never submits.
+    tools: NIYAMAK_WRITE_TOOLS,
     forwardedProps,
+    // TEMP #86 trace — client-side view of the same event stream.
+    onChunk: (chunk: unknown) => {
+      const t = (chunk as { type?: string })?.type;
+      if (t && t !== "TEXT_MESSAGE_CONTENT") console.log(`[niyamak] evt ${t}`);
+    },
+    onFinish: () => console.log("[niyamak] run finished"),
+    onError: (e: unknown) => console.error("[niyamak] run error", e),
   });
   const handleSend = React.useCallback(
     (title: string) => onThreadUsed(threadId, title),
@@ -365,6 +430,7 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
           modelPicker={modelPicker}
           detailsOpen={detailsOpen}
           onToggleDetails={onToggleDetails}
+          working={chat.isLoading}
         />
         <ChatBody chat={chat} configured={configured} onSend={handleSend} />
       </div>
@@ -395,6 +461,15 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const { selected: selectedModel, effective: effectiveModel, select: selectModel } =
     useSelectedModel(config.data?.model);
   const phaseTimer = React.useRef<number>(undefined);
+
+  // A stale persisted id (model removed upstream) would be sent on every run —
+  // reconcile against the catalog once it loads. Only on success: a failed
+  // fetch never touches the user's selection.
+  React.useEffect(() => {
+    if (models.data && selectedModel && !models.data.some((m) => m.id === selectedModel)) {
+      selectModel(null);
+    }
+  }, [models.data, selectedModel, selectModel]);
 
   const open = React.useCallback(() => {
     window.clearTimeout(phaseTimer.current);
@@ -477,12 +552,13 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
       detailsOpen={detailsOpen}
       onToggleDetails={() => setDetailsOpen((v) => !v)}
       configured={config.data?.configured}
-      model={effectiveModel}
+      model={config.data?.locked ? config.data?.model : effectiveModel}
       modelPicker={
         <ModelPicker
           models={models.data ?? []}
           value={selectedModel}
           defaultModel={config.data?.model}
+          locked={config.data?.locked}
           onSelect={selectModel}
         />
       }
@@ -512,7 +588,7 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
           <div
             ref={panelRef}
             role="dialog"
-            aria-label="AI Assistant"
+            aria-label="Niyamak — AI admin copilot"
             className={cn(
               "pointer-events-auto absolute flex overflow-hidden bg-background shadow-xl",
               "transition-[transform,opacity] duration-(--duration-moderate)",

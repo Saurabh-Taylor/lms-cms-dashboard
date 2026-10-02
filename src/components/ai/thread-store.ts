@@ -15,7 +15,8 @@ const MAX_THREADS = 50;
 
 export function listThreads(): ThreadMeta[] {
   try {
-    return JSON.parse(localStorage.getItem(INDEX_KEY) ?? "[]");
+    const parsed: unknown = JSON.parse(localStorage.getItem(INDEX_KEY) ?? "[]");
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -31,7 +32,12 @@ export function touchThread(id: string, title = "New chat") {
       threads.unshift({ id, title, updatedAt: Date.now() });
     }
     threads.sort((a, b) => b.updatedAt - a.updatedAt);
-    localStorage.setItem(INDEX_KEY, JSON.stringify(threads.slice(0, MAX_THREADS)));
+    const kept = threads.slice(0, MAX_THREADS);
+    // Pruned threads' transcripts must go too, else localStorage grows forever.
+    for (const t of threads.slice(MAX_THREADS)) {
+      localStorage.removeItem(`${THREAD_KEY_PREFIX}${t.id}`);
+    }
+    localStorage.setItem(INDEX_KEY, JSON.stringify(kept));
   } catch {}
 }
 
