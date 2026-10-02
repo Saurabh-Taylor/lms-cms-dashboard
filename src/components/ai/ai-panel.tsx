@@ -59,6 +59,12 @@ function useAiModels(enabled: boolean) {
 
 const MODEL_PREF_KEY = "microshala-ai:model";
 
+/** Matches --duration-moderate (200ms) in globals.css — keep in sync. */
+const PANEL_ANIM_MS = 200;
+type Phase = "open" | "closing";
+
+const RAIL_FADE = "animate-in fade-in-0 duration-(--duration-moderate) h-full motion-reduce:animate-none";
+
 function useSelectedModel(defaultModel?: string) {
   const [selected, setSelected] = React.useState<string | null>(() =>
     typeof window === "undefined" ? null : localStorage.getItem(MODEL_PREF_KEY),
@@ -340,14 +346,15 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
   return (
     <>
       {mode === "float" && (
-        <ThreadRail
-          key="rail"
-          threads={threads}
-          activeId={threadId}
-          onSelect={onSelectThread}
-          onNew={onNewThread}
-          onDelete={onDeleteThread}
-        />
+        <div key="rail" className={RAIL_FADE}>
+          <ThreadRail
+            threads={threads}
+            activeId={threadId}
+            onSelect={onSelectThread}
+            onNew={onNewThread}
+            onDelete={onDeleteThread}
+          />
+        </div>
       )}
       <div key="body" className="flex min-w-0 flex-1 flex-col">
         <PanelHeader
@@ -361,7 +368,11 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
         />
         <ChatBody chat={chat} configured={configured} onSend={handleSend} />
       </div>
-      {mode === "float" && detailsOpen && <DetailsRail key="details" chat={chat} model={model} />}
+      {mode === "float" && detailsOpen && (
+        <div key="details" className={RAIL_FADE}>
+          <DetailsRail chat={chat} model={model} />
+        </div>
+      )}
     </>
   );
 }
@@ -374,6 +385,7 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
  */
 export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [phase, setPhase] = React.useState<Phase>("open");
   const [mode, setMode] = React.useState<Mode>("drawer");
   const [threadId, setThreadId] = React.useState(() => crypto.randomUUID());
   const [threads, setThreads] = React.useState<ThreadMeta[]>([]);
@@ -382,20 +394,59 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const models = useAiModels(isOpen);
   const { selected: selectedModel, effective: effectiveModel, select: selectModel } =
     useSelectedModel(config.data?.model);
+  const phaseTimer = React.useRef<number>(undefined);
+
   const open = React.useCallback(() => {
+    window.clearTimeout(phaseTimer.current);
     setThreads(listThreads());
+    setPhase("open");
     setIsOpen(true);
   }, []);
-  const close = React.useCallback(() => setIsOpen(false), []);
+  const close = React.useCallback(() => {
+    window.clearTimeout(phaseTimer.current);
+    setPhase("closing");
+    phaseTimer.current = window.setTimeout(() => setIsOpen(false), PANEL_ANIM_MS);
+  }, []);
+
+  // FLIP morph for drawer↔float: capture the rect before the mode flip,
+  // then animate transform (GPU-only) from the old geometry to the new.
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const prevRect = React.useRef<DOMRect>(undefined);
+  const morphTo = React.useCallback((m: Mode) => {
+    prevRect.current = panelRef.current?.getBoundingClientRect();
+    setMode(m);
+  }, []);
+  React.useLayoutEffect(() => {
+    const el = panelRef.current;
+    const before = prevRect.current;
+    prevRect.current = undefined;
+    if (!el || !before) return;
+    const after = el.getBoundingClientRect();
+    const dx = before.left - after.left;
+    const dy = before.top - after.top;
+    const sx = before.width / after.width;
+    const sy = before.height / after.height;
+    if (!dx && !dy && sx === 1 && sy === 1) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, borderRadius: before.width > after.width ? "12px" : "0px" },
+        { transform: "none", borderRadius: before.width > after.width ? "0px" : "12px" },
+      ],
+      { duration: PANEL_ANIM_MS, easing: "cubic-bezier(0.2, 0, 0, 1)" }, // --ease-standard
+    );
+  }, [mode]);
 
   React.useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen]);
+  }, [isOpen, close]);
+
+  React.useEffect(() => () => window.clearTimeout(phaseTimer.current), []);
 
   const newThread = React.useCallback(() => setThreadId(crypto.randomUUID()), []);
   const onThreadUsed = React.useCallback((id: string, title: string) => {
@@ -416,7 +467,7 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
       key={threadId}
       threadId={threadId}
       mode={mode}
-      onModeChange={setMode}
+      onModeChange={morphTo}
       onClose={close}
       threads={threads}
       onSelectThread={setThreadId}
@@ -441,26 +492,36 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   return (
     <AiPanelContext.Provider value={{ open }}>
       {children}
-      {/* One container, mode swaps classes only — ChatSession's fiber stays
-          mounted across drawer↔float so useChat state (and any in-flight
-          stream) survives; it remounts only on thread switch (key change). */}
+      {/* One surface, transitions only (transform/opacity — never layout
+          props). Enter rides `@starting-style` (the `starting:` variant),
+          exit holds the element mounted through `phase === "closing"`, and
+          the drawer↔float mode switch morphs via WAAPI FLIP so ChatSession
+          never unmounts and streams survive. */}
       {isOpen && (
-        <div
-          className={cn(
-            "fixed z-40",
-            mode === "float"
-              ? "inset-0 flex items-center justify-center bg-black/40 p-6"
-              : "inset-y-0 right-0 w-[420px] max-w-full",
-          )}
-        >
+        <div className="pointer-events-none fixed inset-0 z-40">
           <div
+            aria-hidden
+            onClick={mode === "float" ? close : undefined}
+            className={cn(
+              "absolute inset-0 bg-black/40 transition-opacity duration-(--duration-moderate)",
+              mode === "float" && phase !== "closing"
+                ? "pointer-events-auto opacity-100"
+                : "pointer-events-none opacity-0",
+            )}
+          />
+          <div
+            ref={panelRef}
             role="dialog"
             aria-label="AI Assistant"
             className={cn(
-              "flex bg-background",
+              "pointer-events-auto absolute flex overflow-hidden bg-background shadow-xl",
+              "transition-[transform,opacity] duration-(--duration-moderate)",
+              phase === "closing" ? "ease-(--ease-exit)" : "ease-(--ease-enter)",
               mode === "float"
-                ? "h-[80vh] w-full max-w-5xl overflow-hidden rounded-xl border shadow-2xl"
-                : "h-full w-full border-l shadow-xl",
+                ? "top-[10vh] right-[max(1.5rem,calc(50%_-_32rem))] h-[80vh] w-[min(64rem,calc(100%_-_3rem))] rounded-xl border starting:opacity-0 motion-safe:starting:scale-95"
+                : "top-0 right-0 h-full w-[420px] max-w-full rounded-none border-l starting:opacity-0 motion-safe:starting:translate-x-full",
+              phase === "closing" &&
+                (mode === "float" ? "opacity-0 motion-safe:scale-95" : "opacity-0 motion-safe:translate-x-full"),
             )}
           >
             {session}
