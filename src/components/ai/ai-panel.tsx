@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { useChat, fetchServerSentEvents, localStoragePersistence } from "@tanstack/ai-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useChat, fetchServerSentEvents, type UIMessage } from "@tanstack/ai-react";
 import {
   CheckCircle2Icon, ClockIcon, HistoryIcon, Loader2Icon, Maximize2Icon,
   Minimize2Icon, PanelRightIcon, PlusIcon, SquareIcon, Trash2Icon, XCircleIcon, XIcon,
@@ -12,20 +12,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "./chat-messages";
 import { ModelPicker, type AiModel } from "./model-picker";
 import { NiyamakMark } from "./niyamak-mark";
 import { NIYAMAK_WRITE_TOOLS } from "./niyamak-tools";
 import { toolCallStatus, toolResults, type ToolCallPart, type ToolResultPart } from "./tool-parts";
-import {
-  THREAD_KEY_PREFIX, listThreads, removeThread, touchThread, type ThreadMeta,
-} from "./thread-store";
 
 // Connection adapter is stable across renders — hoisted so useChat never
 // re-instantiates (which would drop the conversation) on drawer↔float swaps.
 const AI_CONNECTION = fetchServerSentEvents("/api/ai/chat");
-const AI_PERSISTENCE = localStoragePersistence({ keyPrefix: THREAD_KEY_PREFIX });
+
+/** Server-authoritative thread row — GET /api/ai/threads (bare list, cap 50). */
+interface ThreadMeta {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
 
 /** Page-contextual starter prompts — key is a pathname segment match. */
 const SUGGESTIONS: [RegExp, string[]][] = [
@@ -46,7 +50,17 @@ const FALLBACK_SUGGESTIONS = [
 ];
 
 type Mode = "drawer" | "float";
-type Chat = ReturnType<typeof useChat>;
+// useChat's return is generic-invariant (tools narrow it below the
+// AnyClientTool[] constraint), so prop types declare the consumed surface
+// instead of importing UseChatReturn.
+interface Chat {
+  messages: UIMessage[];
+  sendMessage: (text: string) => unknown;
+  isLoading: boolean;
+  error: Error | undefined;
+  stop: () => void;
+  addToolApprovalResponse: (response: { id: string; approved: boolean }) => unknown;
+}
 
 interface AiPanelApi {
   open: () => void;
@@ -68,6 +82,16 @@ function useAiModels(enabled: boolean) {
     queryKey: ["ai", "models"],
     queryFn: () => api<AiModel[]>("/api/ai/models"),
     staleTime: 5 * 60_000,
+    enabled,
+  });
+}
+
+const AI_THREADS_KEY = ["ai", "threads"] as const;
+
+function useAiThreads(enabled: boolean) {
+  return useQuery({
+    queryKey: AI_THREADS_KEY,
+    queryFn: () => api<ThreadMeta[]>("/api/ai/threads"),
     enabled,
   });
 }
@@ -287,7 +311,7 @@ function DetailsRail({ chat, model }: { chat: Chat; model?: string }) {
 function ChatBody({ chat, configured, onSend }: {
   chat: Chat;
   configured?: boolean;
-  onSend: (title: string) => void;
+  onSend: () => void;
 }) {
   const { messages, sendMessage, isLoading, error, stop } = chat;
   const [input, setInput] = React.useState("");
@@ -300,7 +324,7 @@ function ChatBody({ chat, configured, onSend }: {
 
   const send = (text: string) => {
     if (!text.trim() || isLoading || configured === false) return;
-    onSend(text.trim().slice(0, 60));
+    onSend();
     sendMessage(text.trim());
     setInput("");
   };
@@ -369,7 +393,7 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
   onSelectThread: (id: string) => void;
   onNewThread: () => void;
   onDeleteThread: (id: string) => void;
-  onThreadUsed: (id: string, title: string) => void;
+  onThreadUsed: () => void;
   detailsOpen: boolean;
   onToggleDetails: () => void;
   configured?: boolean;
@@ -380,19 +404,23 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
   // client.updateOptions each commit. Always passing {model} (undefined
   // serialized away) also clears a stale selection once config loads.
   const forwardedProps = React.useMemo(() => ({ model }), [model]);
+  const queryClient = useQueryClient();
   const chat = useChat({
     threadId,
     connection: AI_CONNECTION,
-    persistence: AI_PERSISTENCE,
+    // Server-authoritative (#93): transcript + pending approvals live in
+    // Postgres — mount hydrates via GET, sends carry only the delta.
+    persistence: true,
+    history: { pageSize: 50 },
     // Write-tool declarations (no execute) — without them InterruptManager
     // marks approval interrupts unresolvable and Approve never submits.
     tools: NIYAMAK_WRITE_TOOLS,
     forwardedProps,
+    // Title + recency land on the server at run end — refresh the rail then.
+    onFinish: () => queryClient.invalidateQueries({ queryKey: AI_THREADS_KEY }),
+    onError: () => queryClient.invalidateQueries({ queryKey: AI_THREADS_KEY }),
   });
-  const handleSend = React.useCallback(
-    (title: string) => onThreadUsed(threadId, title),
-    [onThreadUsed, threadId],
-  );
+  const handleSend = React.useCallback(() => onThreadUsed(), [onThreadUsed]);
 
   // Siblings are keyed so inserting/removing the rails on mode switches
   // reconciles by key — the chat body keeps its DOM and draft input.
@@ -434,18 +462,19 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
 /**
  * AI copilot panel — hybrid container (decision #82): right-side drawer by
  * default, expands to a floating card with thread rail + run-details rail +
- * meta row. Threads persist client-side via localStoragePersistence until the
- * backend thread store lands (spec phase 5).
+ * meta row. Threads are server-authoritative (#93): the rail lists from
+ * /api/ai/threads and each session hydrates its transcript via GET.
  */
 export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [phase, setPhase] = React.useState<Phase>("open");
   const [mode, setMode] = React.useState<Mode>("drawer");
   const [threadId, setThreadId] = React.useState(() => crypto.randomUUID());
-  const [threads, setThreads] = React.useState<ThreadMeta[]>([]);
   const [detailsOpen, setDetailsOpen] = React.useState(true);
   const config = useAiConfig(isOpen);
   const models = useAiModels(isOpen);
+  const threads = useAiThreads(isOpen);
+  const queryClient = useQueryClient();
   const { selected: selectedModel, effective: effectiveModel, select: selectModel } =
     useSelectedModel(config.data?.model);
   const phaseTimer = React.useRef<number>(undefined);
@@ -461,7 +490,6 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
 
   const open = React.useCallback(() => {
     window.clearTimeout(phaseTimer.current);
-    setThreads(listThreads());
     setPhase("open");
     setIsOpen(true);
   }, []);
@@ -512,17 +540,21 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => () => window.clearTimeout(phaseTimer.current), []);
 
   const newThread = React.useCallback(() => setThreadId(crypto.randomUUID()), []);
-  const onThreadUsed = React.useCallback((id: string, title: string) => {
-    touchThread(id, title);
-    setThreads(listThreads());
-  }, []);
+  const onThreadUsed = React.useCallback(
+    () => queryClient.invalidateQueries({ queryKey: AI_THREADS_KEY }),
+    [queryClient],
+  );
+  const deleteThread = useApiMutation({
+    mutationFn: (id: string) => api(`/api/ai/threads/${id}`, { method: "DELETE" }),
+    invalidate: [AI_THREADS_KEY],
+    errorToast: "Couldn't delete the conversation",
+  });
   const onDeleteThread = React.useCallback(
     (id: string) => {
-      removeThread(id);
-      setThreads(listThreads());
+      deleteThread.mutate(id);
       if (id === threadId) newThread();
     },
-    [threadId, newThread],
+    [deleteThread, threadId, newThread],
   );
 
   const session = (
@@ -532,7 +564,7 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
       mode={mode}
       onModeChange={morphTo}
       onClose={close}
-      threads={threads}
+      threads={threads.data ?? []}
       onSelectThread={setThreadId}
       onNewThread={newThread}
       onDeleteThread={onDeleteThread}

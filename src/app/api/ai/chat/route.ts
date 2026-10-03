@@ -6,3 +6,7 @@ import { requireAdmin } from "@/lib/me";
 export const POST = proxy<"/api/ai/chat">("/api/v1/ai/chat", requireAdmin, {
   maxBodyBytes: 512 * 1024,
 });
+
+// Thread hydrate (#93) — the persistence:true client GETs the same path
+// (?threadId&limit&before) on mount.
+export const GET = proxy<"/api/ai/chat">("/api/v1/ai/chat", requireAdmin);
