@@ -89,7 +89,7 @@ export function CertificatesTable() {
       <RevokeDialog
         cert={revokeTarget}
         onOpenChange={(v) => !v && setRevokeTarget(null)}
-        onConfirm={(reason) => revoke.mutate({ id: revokeTarget!.id, reason })}
+        onConfirm={(id, reason) => revoke.mutate({ id, reason })}
         loading={revoke.isPending}
       />
     </>
@@ -101,23 +101,27 @@ function RevokeDialog({
 }: {
   cert: CertificateRow | null;
   onOpenChange: (v: boolean) => void;
-  onConfirm: (reason?: string) => void;
+  onConfirm: (id: number, reason?: string) => void;
   loading: boolean;
 }) {
   const [reason, setReason] = React.useState("");
+  // Snapshot the target at open (render-phase adjust) — `cert` can go null
+  // mid-close while the confirm click is still in flight.
+  const [target, setTarget] = React.useState<CertificateRow | null>(null);
+  if (cert && cert !== target) setTarget(cert);
   return (
     <Dialog open={!!cert} onOpenChange={(v) => { if (!v) setReason(""); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Revoke certificate</DialogTitle></DialogHeader>
         <p className="text-sm text-muted-foreground">
-          <span className="font-mono text-xs">{cert?.serial}</span> will show as revoked on its public verify page. This can be undone later.
+          <span className="font-mono text-xs">{target?.serial}</span> will show as revoked on its public verify page. This can be undone later.
         </p>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="revoke-reason">Reason (optional)</Label>
           <Input id="revoke-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Issued in error" />
         </div>
         <DialogFooter>
-          <Button size="sm" variant="destructive" disabled={loading} onClick={() => onConfirm(reason.trim() || undefined)}>
+          <Button size="sm" variant="destructive" disabled={loading} onClick={() => target && onConfirm(target.id, reason.trim() || undefined)}>
             {loading ? "Working…" : "Revoke"}
           </Button>
         </DialogFooter>
