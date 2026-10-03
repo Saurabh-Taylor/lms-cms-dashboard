@@ -2,8 +2,11 @@ import {
   AI_TOOL_DESCRIPTIONS,
   AiCreateAnnouncementSchema,
   AiEnrollLearnersSchema,
+  AiIssueCertificateSchema,
+  AiPublishCourseSchema,
   AiSendAnnouncementSchema,
   AiUpdateAnnouncementSchema,
+  AiUpdateLearnerSchema,
 } from "@microshala/contracts";
 
 /**
@@ -49,6 +52,27 @@ export const NIYAMAK_WRITE_TOOLS = [
     name: "send_announcement",
     description: AI_TOOL_DESCRIPTIONS.send_announcement,
     inputSchema: AiSendAnnouncementSchema,
+    needsApproval: true,
+  },
+  {
+    __toolSide: "client",
+    name: "update_learner",
+    description: AI_TOOL_DESCRIPTIONS.update_learner,
+    inputSchema: AiUpdateLearnerSchema,
+    needsApproval: true,
+  },
+  {
+    __toolSide: "client",
+    name: "publish_course",
+    description: AI_TOOL_DESCRIPTIONS.publish_course,
+    inputSchema: AiPublishCourseSchema,
+    needsApproval: true,
+  },
+  {
+    __toolSide: "client",
+    name: "issue_certificate",
+    description: AI_TOOL_DESCRIPTIONS.issue_certificate,
+    inputSchema: AiIssueCertificateSchema,
     needsApproval: true,
   },
 ] as const;

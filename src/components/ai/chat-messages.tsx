@@ -30,6 +30,7 @@ const TOOL_VERB: Record<string, string> = {
   list: "Listing", get: "Fetching", read: "Reading", search: "Searching",
   create: "Creating", update: "Updating", delete: "Deleting",
   enroll: "Enrolling", audit: "Auditing", send: "Sending",
+  publish: "Publishing", issue: "Issuing",
 };
 
 /** Verb-led label for the in-flight tool call of the trailing assistant turn. */
@@ -93,6 +94,18 @@ const WRITE_TOOL_DISPLAY: Record<string, { title: string; hint: string }> = {
   send_announcement: {
     title: "Send announcement",
     hint: "Publishes to the audience immediately — this can't be unsent.",
+  },
+  update_learner: {
+    title: "Update learner",
+    hint: "Applies to the learner's profile now — suspending blocks their login.",
+  },
+  publish_course: {
+    title: "Publish course",
+    hint: "Makes the course visible to learners; notifies on a real transition.",
+  },
+  issue_certificate: {
+    title: "Issue certificate",
+    hint: "Creates the certificate serial and emails the learner.",
   },
 };
 
