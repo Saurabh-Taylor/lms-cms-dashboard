@@ -18,6 +18,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmailForm } from "./email-form";
+import { ProfileCard } from "./profile-card";
 import { SsoProviders } from "./sso-providers";
 
 interface General {
@@ -40,6 +41,7 @@ export function SettingsClient() {
         <TabsTrigger value="sso">SSO</TabsTrigger>
       </TabsList>
       <TabsContent value="general" className="mt-4 flex max-w-2xl flex-col gap-4">
+        <ProfileCard />
         <GeneralForm />
         <TypographyCard description="Text sizing for your admin account only — other administrators keep their own preferences." />
       </TabsContent>
