@@ -149,6 +149,7 @@ export function AppHeader({
             {menuSections}
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              variant="destructive"
               onClick={async () => {
                 await api("/api/auth/logout", { method: "POST" }).catch(() => {});
                 router.push("/login");

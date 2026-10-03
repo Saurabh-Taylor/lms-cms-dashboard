@@ -123,7 +123,7 @@ export function EnrollmentsTable({
               { label: "View course", onClick: () => router.push(`/admin/courses/${row.original.courseId}` as never) },
               row.original.status === "suspended"
                 ? { label: "Reactivate", onClick: () => bulk.mutate({ ids: [row.original.id], action: "reactivate" }), separatorAbove: true }
-                : { label: "Suspend", onClick: () => bulk.mutate({ ids: [row.original.id], action: "suspend" }), separatorAbove: true },
+                : { label: "Suspend", destructive: true, onClick: () => bulk.mutate({ ids: [row.original.id], action: "suspend" }), separatorAbove: true },
             ]}
           />
         ),

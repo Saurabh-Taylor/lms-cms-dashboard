@@ -209,6 +209,7 @@ function MembersSheet({ group, onClose }: { group: GroupRow; onClose: () => void
                   <Button
                     variant="ghost"
                     size="xs"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     disabled={remove.isPending}
                     onClick={() => remove.mutate(m.id)}
                   >
