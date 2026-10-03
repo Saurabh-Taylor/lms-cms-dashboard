@@ -147,10 +147,10 @@ function IssueDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
   const [user, setUser] = React.useState<OptionItem | null>(null);
   const [course, setCourse] = React.useState<OptionItem | null>(null);
   const issue = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (v: { userId: number; courseId: number }) =>
       api("/api/admin/certificates", {
         method: "POST",
-        body: JSON.stringify({ userId: user!.id, courseId: course!.id }),
+        body: JSON.stringify(v),
       }),
     invalidate: [["/api/admin/certificates"]],
     successToast: "Certificate issued",
@@ -172,7 +172,7 @@ function IssueDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
           </div>
           <DialogFooter>
             <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={() => issue.mutate()} disabled={!user || !course || issue.isPending}>
+            <Button size="sm" onClick={() => user && course && issue.mutate({ userId: user.id, courseId: course.id })} disabled={!user || !course || issue.isPending}>
               {issue.isPending ? "Issuing…" : "Issue"}
             </Button>
           </DialogFooter>

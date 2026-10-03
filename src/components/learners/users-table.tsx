@@ -380,6 +380,7 @@ function ChangeRoleDialog({ user, onClose, meAppRole }: { user: UserRow | null; 
     setTarget(user);
     setAppRole(null);
   }
+  const close = () => { setAppRole(null); onClose(); };
   const save = useApiMutation({
     mutationFn: (v: { id: number; name: string; role: AppRole }) =>
       api(`/api/admin/users/${v.id}`, {
@@ -388,20 +389,20 @@ function ChangeRoleDialog({ user, onClose, meAppRole }: { user: UserRow | null; 
       }),
     invalidate: [qk.users],
     successToast: (_d, v) => `${v.name} is now ${ROLE_LABELS[v.role]}`,
-    onSuccess: () => onClose(),
+    onSuccess: () => close(),
   });
   const current = appRole ?? user?.appRole;
   return (
-    <Dialog open={!!user} onOpenChange={(v) => { if (!v) { setAppRole(null); onClose(); } }}>
+    <Dialog open={!!user} onOpenChange={(v) => { if (!v) close(); }}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Change role for {user?.name}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Change role for {target?.name}</DialogTitle></DialogHeader>
         <div className="flex flex-col gap-3">
           <RoleRadioList value={current} onChange={setAppRole} options={grantableRoles(meAppRole)} />
           <p className="text-(length:--fs-meta) leading-4 text-muted-foreground">
             Admin-level roles require the admin capability — the API will reject the change otherwise.
           </p>
           <DialogFooter>
-            <Button size="sm" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button size="sm" variant="outline" onClick={close}>Cancel</Button>
             <Button size="sm" onClick={() => target && appRole && save.mutate({ id: target.id, name: target.name, role: appRole })} disabled={!appRole || appRole === user?.appRole || save.isPending}>
               {save.isPending ? "Saving…" : "Save role"}
             </Button>
@@ -421,6 +422,7 @@ function AssignCourseDialog({ user, onClose }: { user: UserRow | null; onClose: 
     setTarget(user);
     setCourse(null);
   }
+  const close = () => { setCourse(null); onClose(); };
   const assign = useApiMutation({
     mutationFn: (v: { userId: number; userName: string; courseId: number }) =>
       api<{ succeeded: number; results: { reason?: string }[] }>("/api/admin/enrollments", {
@@ -431,17 +433,17 @@ function AssignCourseDialog({ user, onClose }: { user: UserRow | null; onClose: 
     onSuccess: (r, v) => {
       if (r.succeeded) toast.success(`Enrolled ${v.userName}`);
       else toast.warning(r.results?.[0]?.reason ?? "Not enrolled");
-      onClose();
+      close();
     },
   });
   return (
-    <Dialog open={!!user} onOpenChange={(v) => { if (!v) { setCourse(null); onClose(); } }}>
+    <Dialog open={!!user} onOpenChange={(v) => { if (!v) close(); }}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Assign course to {user?.name}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Assign course to {target?.name}</DialogTitle></DialogHeader>
         <div className="flex flex-col gap-3">
           <AsyncCombobox resource="courses" value={course} onChange={(v) => setCourse(v as OptionItem | null)} placeholder="Search courses…" />
           <DialogFooter>
-            <Button size="sm" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button size="sm" variant="outline" onClick={close}>Cancel</Button>
             <Button size="sm" onClick={() => target && course && assign.mutate({ userId: target.id, userName: target.name, courseId: course.id })} disabled={!course || assign.isPending}>
               {assign.isPending ? "Assigning…" : "Assign"}
             </Button>

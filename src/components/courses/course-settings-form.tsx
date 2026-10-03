@@ -132,7 +132,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
               <CategoryHint loaded={categoriesLoaded} error={categoriesError} empty={categories.length === 0 && !form.categoryId} />
-              {(!categoriesLoaded || categories.length > 0 || !!form.categoryId) && (
+              {!categoriesError && (!categoriesLoaded || categories.length > 0 || !!form.categoryId) && (
                 <Select
                   value={form.categoryId ? String(form.categoryId) : ""}
                   onValueChange={(v) => set("categoryId", Number(v))}
