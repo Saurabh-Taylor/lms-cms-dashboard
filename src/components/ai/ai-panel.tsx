@@ -60,6 +60,29 @@ interface Chat {
   error: Error | undefined;
   stop: () => void;
   addToolApprovalResponse: (response: { id: string; approved: boolean }) => unknown;
+  /** Bound interrupt items the engine/hydrate emits (ChatClient state). */
+  pendingInterrupts: ReadonlyArray<{
+    readonly kind: string;
+    readonly interruptId: string;
+    readonly toolCallId?: string;
+  }>;
+}
+
+/**
+ * toolCallId → interruptId for pending tool-approval interrupts. Hydrated
+ * tool-call parts carry no `approval` field (they're rebuilt from stored
+ * ModelMessages), so the approval card keys off this map instead of
+ * `part.approval`. `addToolApprovalResponse` resolves by descriptor id —
+ * that's `interruptId` on a bound item.
+ */
+function pendingApprovalIds(chat: Chat): ReadonlyMap<string, string> {
+  const map = new Map<string, string>();
+  for (const i of chat.pendingInterrupts ?? []) {
+    if (i.kind === "tool-approval" && typeof i.toolCallId === "string") {
+      map.set(i.toolCallId, i.interruptId);
+    }
+  }
+  return map;
 }
 
 interface AiPanelApi {
@@ -263,7 +286,10 @@ function DetailsRail({ chat, model }: { chat: Chat; model?: string }) {
       .filter((p): p is ToolCallPart => p.type === "tool-call")
       .map((call) => ({ call, result: results.get(call.id) }));
   });
-  const pendingApprovals = calls.filter((c) => c.call.state === "approval-requested").length;
+  const bridged = pendingApprovalIds(chat);
+  const pendingApprovals = calls.filter(
+    (c) => c.call.state === "approval-requested" || bridged.has(c.call.id),
+  ).length;
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col border-l bg-muted/30">
       <div className="flex h-14 items-center border-b px-3 text-xs font-medium text-muted-foreground">Run details</div>
@@ -335,7 +361,7 @@ function ChatBody({ chat, configured, onSend }: {
         {messages.length === 0 ? (
           <EmptyState configured={configured} />
         ) : (
-          <ChatMessages messages={messages} loading={isLoading} onApprovalResponse={onApprovalResponse} />
+          <ChatMessages messages={messages} loading={isLoading} pendingApprovals={pendingApprovalIds(chat)} onApprovalResponse={onApprovalResponse} />
         )}
       </ScrollArea>
       {error && (
@@ -544,17 +570,17 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
     () => queryClient.invalidateQueries({ queryKey: AI_THREADS_KEY }),
     [queryClient],
   );
-  const deleteThread = useApiMutation({
+  const deleteThread = useApiMutation<unknown, string>({
     mutationFn: (id: string) => api(`/api/ai/threads/${id}`, { method: "DELETE" }),
     invalidate: [AI_THREADS_KEY],
     errorToast: "Couldn't delete the conversation",
+    // Reset the view only on success — a failed delete must not strand the
+    // user on a fresh thread while the doomed one still exists.
+    onSuccess: (_data, id) => { if (id === threadId) newThread(); },
   });
   const onDeleteThread = React.useCallback(
-    (id: string) => {
-      deleteThread.mutate(id);
-      if (id === threadId) newThread();
-    },
-    [deleteThread, threadId, newThread],
+    (id: string) => deleteThread.mutate(id),
+    [deleteThread],
   );
 
   const session = (

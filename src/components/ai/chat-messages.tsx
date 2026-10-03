@@ -116,11 +116,13 @@ function formatArgValue(v: unknown): string {
   return String(v);
 }
 
-function ApprovalCard({ part, onResponse }: {
+function ApprovalCard({ part, approvalId, onResponse }: {
   part: ToolCallPart;
+  /** Hydrated parts carry no part.approval — callers pass the bridged id. */
+  approvalId?: string;
   onResponse: (id: string, approved: boolean) => void;
 }) {
-  const approvalId = "approval" in part ? part.approval?.id : undefined;
+  const resolvedApprovalId = approvalId ?? ("approval" in part ? part.approval?.id : undefined);
   const display = WRITE_TOOL_DISPLAY[part.name];
   let args: [string, unknown][] = [];
   try {
@@ -149,10 +151,10 @@ function ApprovalCard({ part, onResponse }: {
           <p className="mt-1.5 break-all font-mono text-xs text-muted-foreground">{part.arguments}</p>
         )}
         <div className="mt-2.5 flex gap-2">
-          <Button size="sm" disabled={!approvalId} onClick={() => approvalId && onResponse(approvalId, true)}>
+          <Button size="sm" disabled={!resolvedApprovalId} onClick={() => resolvedApprovalId && onResponse(resolvedApprovalId, true)}>
             Approve
           </Button>
-          <Button size="sm" variant="outline" disabled={!approvalId} onClick={() => approvalId && onResponse(approvalId, false)}>
+          <Button size="sm" variant="outline" disabled={!resolvedApprovalId} onClick={() => resolvedApprovalId && onResponse(resolvedApprovalId, false)}>
             Cancel
           </Button>
         </div>
@@ -161,9 +163,12 @@ function ApprovalCard({ part, onResponse }: {
   );
 }
 
-export function ChatMessages({ messages, loading, onApprovalResponse }: {
+export function ChatMessages({ messages, loading, pendingApprovals, onApprovalResponse }: {
   messages: UIMessage[];
   loading: boolean;
+  /** toolCallId → interruptId from chat.pendingInterrupts — hydrated
+   *  tool-call parts lack part.approval, so pending cards key off this. */
+  pendingApprovals?: ReadonlyMap<string, string>;
   onApprovalResponse: (id: string, approved: boolean) => void;
 }) {
   const endRef = React.useRef<HTMLDivElement>(null);
@@ -228,8 +233,11 @@ export function ChatMessages({ messages, loading, onApprovalResponse }: {
                   );
                 }
                 if (part.type === "tool-call") {
-                  return part.state === "approval-requested" ? (
-                    <ApprovalCard key={part.id ?? i} part={part} onResponse={onApprovalResponse} />
+                  const bridgedApprovalId =
+                    ("approval" in part ? part.approval?.id : undefined) ??
+                    pendingApprovals?.get(part.id);
+                  return part.state === "approval-requested" || bridgedApprovalId ? (
+                    <ApprovalCard key={part.id ?? i} part={part} approvalId={bridgedApprovalId} onResponse={onApprovalResponse} />
                   ) : (
                     <ToolChip key={part.id ?? i} part={part} result={results?.get(part.id)} />
                   );
