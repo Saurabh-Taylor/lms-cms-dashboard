@@ -27,6 +27,7 @@ const DROP_RESPONSE_HEADERS = [
 export function proxy<P extends AppRouteHandlerRoutes>(
   target: string,
   gate: Gate,
+  opts?: { maxBodyBytes?: number },
 ): (req: Request, ctx: RouteContext<P>) => Promise<Response> {
   return async (req, ctx) => {
     const me =
@@ -34,6 +35,14 @@ export function proxy<P extends AppRouteHandlerRoutes>(
         ? await gate()
         : await requirePermission(...[gate].flat());
     if (me instanceof Response) return me;
+
+    // Declared-oversized bodies are rejected before req.text() buffers them
+    // whole — defense in depth; the backend bodyLimit is the real bound and
+    // also catches chunked requests (no content-length), which this can't.
+    const declared = Number(req.headers.get("content-length") ?? 0);
+    if (opts?.maxBodyBytes && declared > opts.maxBodyBytes) {
+      return fail(413, "Payload too large");
+    }
 
     let path = target;
     const params = ((await ctx.params) ?? {}) as Record<string, string>;
