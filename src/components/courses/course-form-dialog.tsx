@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -32,9 +33,15 @@ export function CourseFormDialog({
   const [categoryId, setCategoryId] = React.useState<number | null>(null);
   const [instructor, setInstructor] = React.useState<OptionItem | null>(null);
   const [categories, setCategories] = React.useState<OptionItem[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = React.useState(false);
 
   React.useEffect(() => {
-    if (open) api<OptionItem[]>("/api/admin/options?resource=categories").then(setCategories).catch(() => {});
+    if (open) {
+      api<OptionItem[]>("/api/admin/options?resource=categories")
+        .then(setCategories)
+        .catch(() => {})
+        .finally(() => setCategoriesLoaded(true));
+    }
   }, [open]);
 
   const create = useApiMutation({
@@ -84,16 +91,26 @@ export function CourseFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              <Select
-                value={categoryId ? String(categoryId) : ""}
-                onValueChange={(v) => setCategoryId(Number(v))}
-                items={Object.fromEntries(categories.map((c) => [String(c.id), c.label]))}
-              >
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {categoriesLoaded && categories.length === 0 ? (
+                <p className="flex h-8 items-center text-xs text-muted-foreground">
+                  No categories yet —{" "}
+                  <Link href="/admin/categories" className="text-primary underline-offset-2 hover:underline">
+                    create one first
+                  </Link>
+                  , or leave blank.
+                </p>
+              ) : (
+                <Select
+                  value={categoryId ? String(categoryId) : ""}
+                  onValueChange={(v) => setCategoryId(Number(v))}
+                  items={Object.fromEntries(categories.map((c) => [String(c.id), c.label]))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Difficulty</Label>

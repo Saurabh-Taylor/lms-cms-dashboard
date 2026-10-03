@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
   }>(null);
   const [instructor, setInstructor] = React.useState<OptionItem | null>(null);
   const [categories, setCategories] = React.useState<OptionItem[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = React.useState(false);
   const [tagInput, setTagInput] = React.useState("");
   const qc = useQueryClient();
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -55,7 +57,10 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
   }
 
   React.useEffect(() => {
-    api<OptionItem[]>("/api/admin/options?resource=categories").then(setCategories).catch(() => {});
+    api<OptionItem[]>("/api/admin/options?resource=categories")
+      .then(setCategories)
+      .catch(() => {})
+      .finally(() => setCategoriesLoaded(true));
   }, []);
 
   const save = useApiMutation({
@@ -138,16 +143,26 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              <Select
-                value={form.categoryId ? String(form.categoryId) : ""}
-                onValueChange={(v) => set("categoryId", Number(v))}
-                items={Object.fromEntries(categories.map((c) => [String(c.id), c.label]))}
-              >
-                <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {categoriesLoaded && categories.length === 0 && !form?.categoryId ? (
+                <p className="flex h-8 items-center text-xs text-muted-foreground">
+                  No categories yet —{" "}
+                  <Link href="/admin/categories" className="text-primary underline-offset-2 hover:underline">
+                    create one first
+                  </Link>
+                  , or leave blank.
+                </p>
+              ) : (
+                <Select
+                  value={form.categoryId ? String(form.categoryId) : ""}
+                  onValueChange={(v) => set("categoryId", Number(v))}
+                  items={Object.fromEntries(categories.map((c) => [String(c.id), c.label]))}
+                >
+                  <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Difficulty</Label>
