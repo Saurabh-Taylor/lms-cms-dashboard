@@ -141,7 +141,6 @@ export function LessonEditor({ lessonId }: { lessonId: number }) {
           value={meta.durationMin}
           onChange={(e) => { setMeta({ ...meta, durationMin: Number(e.target.value) }); setDirty(true); }}
         />
-        <span className="text-muted-foreground capitalize">Type: {lesson!.type}</span>
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -274,8 +273,8 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
 
 /**
  * Shared media picker for video/pdf/image/resource blocks — the `mediaType`
- * param filters the library to the matching asset kind. Blocks keep the
- * external-URL fallback when nothing's picked.
+ * param filters the library to the matching asset kind. Media blocks require
+ * a library asset; legacy `url`-only blocks still render learner-side.
  */
 function MediaPick({ block, onChange }: { block: Block; onChange: (id: string, p: Partial<Block>) => void }) {
   return (
@@ -295,6 +294,11 @@ function MediaPick({ block, onChange }: { block: Block; onChange: (id: string, p
         }}
         placeholder="Pick from media library…"
       />
+      {!block.mediaId && block.url && (
+        <div className="truncate text-xs text-muted-foreground">
+          External URL (legacy — pick a media asset to replace): {block.url}
+        </div>
+      )}
       {block.mediaId && (
         <div className="flex items-center gap-2">
           <StatusBadge value={block.mediaStatus ?? "ready"} />
@@ -304,13 +308,6 @@ function MediaPick({ block, onChange }: { block: Block; onChange: (id: string, p
             </span>
           )}
         </div>
-      )}
-      {!block.mediaId && (
-        <Input
-          placeholder={`or paste an external ${block.type === "pdf" ? "PDF" : block.type === "image" ? "image" : block.type === "resource" ? "resource" : "video"} URL`}
-          value={block.url ?? ""}
-          onChange={(e) => onChange(block.id, { url: e.target.value })}
-        />
       )}
     </div>
   );
