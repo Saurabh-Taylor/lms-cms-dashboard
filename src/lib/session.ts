@@ -5,6 +5,10 @@
 // forwarded through /api/auth/* route handlers — the browser only ever stores
 // it on this origin.
 export { AUTH_SESSION_COOKIE as SESSION_COOKIE } from "@microshala/contracts";
+export { AUTH_SESSION_DATA_COOKIE as SESSION_DATA_COOKIE } from "@microshala/contracts";
+// BA's remember-me preference flag (cleared by BA on sign-out; kept here so
+// the logout route can drop it locally when the upstream call fails).
+export { AUTH_DONT_REMEMBER_COOKIE as DONT_REMEMBER_COOKIE } from "@microshala/contracts";
 
 // Mirrors the signed-in persona so middleware can gate portals without an API
 // hit. Unsigned hint only — pages/routes re-validate the session server-side.
