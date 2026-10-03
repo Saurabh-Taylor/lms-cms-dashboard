@@ -132,6 +132,7 @@ export interface CertificateRow {
   courseId: number;
   courseTitle: string;
   issuedAt: number;
+  revokedAt: number | null;
 }
 
 export interface AnnouncementRow {

@@ -32,7 +32,7 @@ export default function LearnerCertificatesPage() {
                 <div className="grid size-10 shrink-0 place-items-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <AwardIcon className="size-5" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{c.courseTitle}</p>
                   <p className="truncate font-mono text-(length:--fs-meta) leading-4 text-muted-foreground">
                     {c.serial}
@@ -41,6 +41,14 @@ export default function LearnerCertificatesPage() {
                     Issued {fmtDate(c.issuedAt)}
                   </p>
                 </div>
+                <a
+                  href={`/verify/${encodeURIComponent(c.serial)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 h-7 text-xs font-medium hover:bg-accent"
+                >
+                  View
+                </a>
               </CardContent>
             </Card>
           ))}
