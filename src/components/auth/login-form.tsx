@@ -76,7 +76,7 @@ export function LoginForm({ next }: { next?: string }) {
         Sign in to keep learning.
       </p>
 
-      <form onSubmit={submit} className="mt-7 flex flex-col gap-4">
+      <form method="post" onSubmit={submit} className="mt-7 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
