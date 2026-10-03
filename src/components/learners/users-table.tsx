@@ -373,19 +373,26 @@ function CreateUserDialog({ open, onOpenChange, role, meAppRole }: { open: boole
 
 function ChangeRoleDialog({ user, onClose, meAppRole }: { user: UserRow | null; onClose: () => void; meAppRole?: string }) {
   const [appRole, setAppRole] = React.useState<AppRole | null>(null);
+  // Snapshot the target (render-phase adjust) — `user` can go null mid-close
+  // while the confirm click is still in flight. New target → reset the pick.
+  const [target, setTarget] = React.useState<UserRow | null>(null);
+  if (user && user !== target) {
+    setTarget(user);
+    setAppRole(null);
+  }
   const save = useApiMutation({
-    mutationFn: () =>
-      api(`/api/admin/users/${user!.id}`, {
+    mutationFn: (v: { id: number; name: string; role: AppRole }) =>
+      api(`/api/admin/users/${v.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ appRole }),
+        body: JSON.stringify({ appRole: v.role }),
       }),
     invalidate: [qk.users],
-    successToast: () => `${user!.name} is now ${ROLE_LABELS[appRole!]}`,
-    onSuccess: () => { onClose(); setAppRole(null); },
+    successToast: (_d, v) => `${v.name} is now ${ROLE_LABELS[v.role]}`,
+    onSuccess: () => onClose(),
   });
   const current = appRole ?? user?.appRole;
   return (
-    <Dialog open={!!user} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={!!user} onOpenChange={(v) => { if (!v) { setAppRole(null); onClose(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Change role for {user?.name}</DialogTitle></DialogHeader>
         <div className="flex flex-col gap-3">
@@ -395,7 +402,7 @@ function ChangeRoleDialog({ user, onClose, meAppRole }: { user: UserRow | null; 
           </p>
           <DialogFooter>
             <Button size="sm" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button size="sm" onClick={() => save.mutate()} disabled={!appRole || appRole === user?.appRole || save.isPending}>
+            <Button size="sm" onClick={() => target && appRole && save.mutate({ id: target.id, name: target.name, role: appRole })} disabled={!appRole || appRole === user?.appRole || save.isPending}>
               {save.isPending ? "Saving…" : "Save role"}
             </Button>
           </DialogFooter>
@@ -407,28 +414,35 @@ function ChangeRoleDialog({ user, onClose, meAppRole }: { user: UserRow | null; 
 
 function AssignCourseDialog({ user, onClose }: { user: UserRow | null; onClose: () => void }) {
   const [course, setCourse] = React.useState<OptionItem | null>(null);
+  // Snapshot the target (render-phase adjust) — `user` can go null mid-close
+  // while the confirm click is still in flight. New target → reset the pick.
+  const [target, setTarget] = React.useState<UserRow | null>(null);
+  if (user && user !== target) {
+    setTarget(user);
+    setCourse(null);
+  }
   const assign = useApiMutation({
-    mutationFn: () =>
+    mutationFn: (v: { userId: number; userName: string; courseId: number }) =>
       api<{ succeeded: number; results: { reason?: string }[] }>("/api/admin/enrollments", {
         method: "POST",
-        body: JSON.stringify({ userId: user!.id, courseId: course!.id }),
+        body: JSON.stringify({ userId: v.userId, courseId: v.courseId }),
       }),
     invalidate: [qk.enrollments, qk.users],
-    onSuccess: (r) => {
-      if (r.succeeded) toast.success(`Enrolled ${user!.name}`);
+    onSuccess: (r, v) => {
+      if (r.succeeded) toast.success(`Enrolled ${v.userName}`);
       else toast.warning(r.results?.[0]?.reason ?? "Not enrolled");
-      onClose(); setCourse(null);
+      onClose();
     },
   });
   return (
-    <Dialog open={!!user} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={!!user} onOpenChange={(v) => { if (!v) { setCourse(null); onClose(); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Assign course to {user?.name}</DialogTitle></DialogHeader>
         <div className="flex flex-col gap-3">
           <AsyncCombobox resource="courses" value={course} onChange={(v) => setCourse(v as OptionItem | null)} placeholder="Search courses…" />
           <DialogFooter>
             <Button size="sm" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button size="sm" onClick={() => assign.mutate()} disabled={!course || assign.isPending}>
+            <Button size="sm" onClick={() => target && course && assign.mutate({ userId: target.id, userName: target.name, courseId: course.id })} disabled={!course || assign.isPending}>
               {assign.isPending ? "Assigning…" : "Assign"}
             </Button>
           </DialogFooter>

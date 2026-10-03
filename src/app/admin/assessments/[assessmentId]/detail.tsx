@@ -41,8 +41,8 @@ function GradeDialog({
   }
 
   const grade = useApiMutation({
-    mutationFn: () =>
-      api(`/api/admin/attempts/${attempt!.id}`, {
+    mutationFn: (attemptId: number) =>
+      api(`/api/admin/attempts/${attemptId}`, {
         method: "PATCH",
         body: JSON.stringify({ score, feedback: feedback || undefined }),
       }),
@@ -62,7 +62,7 @@ function GradeDialog({
         </DialogHeader>
         <form
           className="flex flex-col gap-4"
-          onSubmit={(e) => { e.preventDefault(); grade.mutate(); }}
+          onSubmit={(e) => { e.preventDefault(); if (attempt) grade.mutate(attempt.id); }}
         >
           <div className="flex flex-col gap-1.5">
             <Label>Submission</Label>
