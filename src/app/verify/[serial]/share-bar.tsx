@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
  * brand-tokens utility scan.
  */
 const LI_SOLID = "bg-[#0A66C2] text-white hover:bg-[#0A66C2]/90";
-const LI_OUTLINE = "border-[#0A66C2] text-[#0A66C2] hover:bg-[#0A66C2]/10";
+const LI_OUTLINE = "border-[#0A66C2] text-[#0A66C2] hover:bg-[#0A66C2]/10 hover:text-[#0A66C2]";
 
 /** Interactive share chrome — everything here is print:hidden. */
 export function ShareBar({

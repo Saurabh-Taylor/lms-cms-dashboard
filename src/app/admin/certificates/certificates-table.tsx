@@ -108,7 +108,10 @@ function RevokeDialog({
   // Snapshot the target at open (render-phase adjust) — `cert` can go null
   // mid-close while the confirm click is still in flight.
   const [target, setTarget] = React.useState<CertificateRow | null>(null);
-  if (cert && cert !== target) setTarget(cert);
+  if (cert && cert !== target) {
+    setTarget(cert);
+    setReason("");
+  }
   return (
     <Dialog open={!!cert} onOpenChange={(v) => { if (!v) setReason(""); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md">

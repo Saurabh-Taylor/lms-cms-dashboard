@@ -74,7 +74,7 @@ export function CourseFormDialog({
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
               <CategoryHint loaded={categoriesLoaded} error={categoriesError} empty={categories.length === 0} />
-              {(!categoriesLoaded || categoriesError || categories.length > 0) && (
+              {(!categoriesLoaded || categories.length > 0) && (
                 <Select
                   value={categoryId ? String(categoryId) : ""}
                   onValueChange={(v) => setCategoryId(Number(v))}
