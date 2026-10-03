@@ -65,20 +65,28 @@ interface Chat {
     readonly kind: string;
     readonly interruptId: string;
     readonly toolCallId?: string;
+    /** 'pending' | 'validating' | 'staged' | 'submitting' | 'error' */
+    readonly status?: string;
   }>;
 }
 
 /**
- * toolCallId → interruptId for pending tool-approval interrupts. Hydrated
+ * toolCallId → interruptId for ACTIONABLE tool-approval interrupts. Hydrated
  * tool-call parts carry no `approval` field (they're rebuilt from stored
  * ModelMessages), so the approval card keys off this map instead of
- * `part.approval`. `addToolApprovalResponse` resolves by descriptor id —
- * that's `interruptId` on a bound item.
+ * `part.approval`. Only `status === "pending"` items map — a staged or
+ * submitting decision must not keep a live card with enabled buttons.
+ * `addToolApprovalResponse` resolves by descriptor id — that's `interruptId`
+ * on a bound item.
  */
 function pendingApprovalIds(chat: Chat): ReadonlyMap<string, string> {
   const map = new Map<string, string>();
   for (const i of chat.pendingInterrupts ?? []) {
-    if (i.kind === "tool-approval" && typeof i.toolCallId === "string") {
+    if (
+      i.kind === "tool-approval" &&
+      i.status === "pending" &&
+      typeof i.toolCallId === "string"
+    ) {
       map.set(i.toolCallId, i.interruptId);
     }
   }
@@ -127,7 +135,7 @@ type Phase = "open" | "closing";
 
 const RAIL_FADE = "animate-in fade-in-0 duration-(--duration-moderate) h-full motion-reduce:animate-none";
 
-function useSelectedModel(defaultModel?: string) {
+function useSelectedModel() {
   const [selected, setSelected] = React.useState<string | null>(() =>
     typeof window === "undefined" ? null : localStorage.getItem(MODEL_PREF_KEY),
   );
@@ -136,7 +144,7 @@ function useSelectedModel(defaultModel?: string) {
     if (id) localStorage.setItem(MODEL_PREF_KEY, id);
     else localStorage.removeItem(MODEL_PREF_KEY);
   }, []);
-  return { selected, effective: selected || defaultModel, select };
+  return { selected, select };
 }
 
 function EmptyState({ configured }: { configured?: boolean }) {
@@ -279,16 +287,19 @@ function CallIcon({ call, result }: { call: ToolCallPart; result?: ToolResultPar
   return <Loader2Icon className="size-3 shrink-0 animate-spin text-muted-foreground" />;
 }
 
-function DetailsRail({ chat, model }: { chat: Chat; model?: string }) {
+function DetailsRail({ chat, pendingApprovals, model }: {
+  chat: Chat;
+  pendingApprovals: ReadonlyMap<string, string>;
+  model?: string;
+}) {
   const calls = chat.messages.flatMap((m) => {
     const results = toolResults(m);
     return m.parts
       .filter((p): p is ToolCallPart => p.type === "tool-call")
       .map((call) => ({ call, result: results.get(call.id) }));
   });
-  const bridged = pendingApprovalIds(chat);
-  const pendingApprovals = calls.filter(
-    (c) => c.call.state === "approval-requested" || bridged.has(c.call.id),
+  const pendingCount = calls.filter(
+    (c) => c.call.state === "approval-requested" || pendingApprovals.has(c.call.id),
   ).length;
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col border-l bg-muted/30">
@@ -302,9 +313,9 @@ function DetailsRail({ chat, model }: { chat: Chat; model?: string }) {
             <span className="font-normal text-muted-foreground">· {chat.messages.length} messages</span>
           </div>
         </div>
-        {pendingApprovals > 0 && (
+        {pendingCount > 0 && (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 font-medium text-amber-600 dark:text-amber-400">
-            {pendingApprovals} awaiting approval
+            {pendingCount} awaiting approval
           </div>
         )}
         <div>
@@ -334,22 +345,25 @@ function DetailsRail({ chat, model }: { chat: Chat; model?: string }) {
   );
 }
 
-function ChatBody({ chat, configured, onSend }: {
+function ChatBody({ chat, configured, pendingApprovals, onSend }: {
   chat: Chat;
   configured?: boolean;
+  pendingApprovals: ReadonlyMap<string, string>;
   onSend: () => void;
 }) {
-  const { messages, sendMessage, isLoading, error, stop } = chat;
+  const { messages, sendMessage, isLoading, error, stop, addToolApprovalResponse } = chat;
   const [input, setInput] = React.useState("");
   const pathname = usePathname();
   const suggestions = SUGGESTIONS.find(([re]) => re.test(pathname))?.[1] ?? FALLBACK_SUGGESTIONS;
   const onApprovalResponse = React.useCallback(
-    (id: string, approved: boolean) => void chat.addToolApprovalResponse({ id, approved }),
-    [chat],
+    (id: string, approved: boolean) => void addToolApprovalResponse({ id, approved }),
+    [addToolApprovalResponse],
   );
 
   const send = (text: string) => {
-    if (!text.trim() || isLoading || configured === false) return;
+    // Pending approvals block sends server-side (409) and the client throws —
+    // gate here so a blocked send can't eat the draft or reject unhandled.
+    if (!text.trim() || isLoading || configured === false || pendingApprovals.size) return;
     onSend();
     sendMessage(text.trim());
     setInput("");
@@ -361,7 +375,7 @@ function ChatBody({ chat, configured, onSend }: {
         {messages.length === 0 ? (
           <EmptyState configured={configured} />
         ) : (
-          <ChatMessages messages={messages} loading={isLoading} pendingApprovals={pendingApprovalIds(chat)} onApprovalResponse={onApprovalResponse} />
+          <ChatMessages messages={messages} loading={isLoading} pendingApprovals={pendingApprovals} onApprovalResponse={onApprovalResponse} />
         )}
       </ScrollArea>
       {error && (
@@ -447,6 +461,7 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
     onError: () => queryClient.invalidateQueries({ queryKey: AI_THREADS_KEY }),
   });
   const handleSend = React.useCallback(() => onThreadUsed(), [onThreadUsed]);
+  const pendingApprovals = pendingApprovalIds(chat);
 
   // Siblings are keyed so inserting/removing the rails on mode switches
   // reconciles by key — the chat body keeps its DOM and draft input.
@@ -474,11 +489,11 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
           onToggleDetails={onToggleDetails}
           working={chat.isLoading}
         />
-        <ChatBody chat={chat} configured={configured} onSend={handleSend} />
+        <ChatBody chat={chat} configured={configured} pendingApprovals={pendingApprovals} onSend={handleSend} />
       </div>
       {mode === "float" && detailsOpen && (
         <div key="details" className={RAIL_FADE}>
-          <DetailsRail chat={chat} model={model} />
+          <DetailsRail chat={chat} pendingApprovals={pendingApprovals} model={model} />
         </div>
       )}
     </>
@@ -501,18 +516,16 @@ export function AiPanelProvider({ children }: { children: React.ReactNode }) {
   const models = useAiModels(isOpen);
   const threads = useAiThreads(isOpen);
   const queryClient = useQueryClient();
-  const { selected: selectedModel, effective: effectiveModel, select: selectModel } =
-    useSelectedModel(config.data?.model);
+  const { selected: rawSelected, select: selectModel } = useSelectedModel();
+  // A persisted id dropped from the catalog falls back to default rather
+  // than being cleared — a failed catalog fetch never invalidates it, and
+  // it self-heals if the model reappears upstream.
+  const selectedModel =
+    rawSelected && models.data && !models.data.some((m) => m.id === rawSelected)
+      ? null
+      : rawSelected;
+  const effectiveModel = selectedModel ?? config.data?.model;
   const phaseTimer = React.useRef<number>(undefined);
-
-  // A stale persisted id (model removed upstream) would be sent on every run —
-  // reconcile against the catalog once it loads. Only on success: a failed
-  // fetch never touches the user's selection.
-  React.useEffect(() => {
-    if (models.data && selectedModel && !models.data.some((m) => m.id === selectedModel)) {
-      selectModel(null);
-    }
-  }, [models.data, selectedModel, selectModel]);
 
   const open = React.useCallback(() => {
     window.clearTimeout(phaseTimer.current);

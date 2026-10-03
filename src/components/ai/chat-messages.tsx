@@ -116,13 +116,18 @@ function formatArgValue(v: unknown): string {
   return String(v);
 }
 
+/** The approval id a part carries natively — absent on hydrated parts. */
+function partApprovalId(part: ToolCallPart): string | undefined {
+  return "approval" in part ? part.approval?.id : undefined;
+}
+
 function ApprovalCard({ part, approvalId, onResponse }: {
   part: ToolCallPart;
   /** Hydrated parts carry no part.approval — callers pass the bridged id. */
   approvalId?: string;
   onResponse: (id: string, approved: boolean) => void;
 }) {
-  const resolvedApprovalId = approvalId ?? ("approval" in part ? part.approval?.id : undefined);
+  const resolvedApprovalId = approvalId ?? partApprovalId(part);
   const display = WRITE_TOOL_DISPLAY[part.name];
   let args: [string, unknown][] = [];
   try {
@@ -234,8 +239,7 @@ export function ChatMessages({ messages, loading, pendingApprovals, onApprovalRe
                 }
                 if (part.type === "tool-call") {
                   const bridgedApprovalId =
-                    ("approval" in part ? part.approval?.id : undefined) ??
-                    pendingApprovals?.get(part.id);
+                    partApprovalId(part) ?? pendingApprovals?.get(part.id);
                   return part.state === "approval-requested" || bridgedApprovalId ? (
                     <ApprovalCard key={part.id ?? i} part={part} approvalId={bridgedApprovalId} onResponse={onApprovalResponse} />
                   ) : (
