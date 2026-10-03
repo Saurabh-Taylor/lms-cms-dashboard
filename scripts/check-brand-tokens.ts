@@ -76,7 +76,11 @@ for (const m of css.matchAll(/--(?:primary|ring|accent|chart-\d|sidebar-(?:prima
 
 // 3. Blue-family utilities forbidden in components; allowlist = semantic
 //    status colors only (status badges intentionally differ from brand).
-const ALLOWLIST = new Set(["src/components/shared/status-badge.tsx"]);
+const ALLOWLIST = new Set([
+  "src/components/shared/status-badge.tsx",
+  // severity palette (info=blue) — semantic, same class as status-badge
+  "src/components/notifications/notification-list.tsx",
+]);
 const FORBIDDEN = /\b(?:sky|blue|indigo|violet)-\d{2,3}\b/;
 const srcFiles: string[] = [];
 const walk = (dir: string) => {
