@@ -27,7 +27,6 @@ export function CourseFormDialog({
   onCreated?: (id: number) => void;
 }) {
   const [title, setTitle] = React.useState("");
-  const [slug, setSlug] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [difficulty, setDifficulty] = React.useState("beginner");
   const [categoryId, setCategoryId] = React.useState<number | null>(null);
@@ -49,7 +48,7 @@ export function CourseFormDialog({
       api<{ id: number }>("/api/admin/courses", {
         method: "POST",
         body: JSON.stringify({
-          title, slug: slug || undefined, description: description || undefined,
+          title, description: description || undefined,
           difficulty, categoryId, instructorId: instructor?.id ?? undefined,
         }),
       }),
@@ -57,7 +56,7 @@ export function CourseFormDialog({
     successToast: "Course created",
     onSuccess: (r) => {
       onOpenChange(false);
-      setTitle(""); setSlug(""); setDescription("");
+      setTitle(""); setDescription("");
       onCreated?.(r.id);
     },
   });
@@ -75,14 +74,7 @@ export function CourseFormDialog({
         >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="cf-title">Title</Label>
-            <Input id="cf-title" value={title} onChange={(e) => {
-              setTitle(e.target.value);
-              if (!slug) setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
-            }} required autoFocus />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cf-slug">Slug</Label>
-            <Input id="cf-slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="auto-generated" />
+            <Input id="cf-title" value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="cf-desc">Description</Label>

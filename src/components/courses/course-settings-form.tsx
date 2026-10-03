@@ -33,7 +33,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
   });
 
   const [form, setForm] = React.useState<null | {
-    title: string; slug: string; description: string;
+    title: string; description: string;
     categoryId: number | null; difficulty: string; visibility: string;
     estimatedMinutes: number; tags: string[]; certificateEnabled: boolean;
   }>(null);
@@ -47,7 +47,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
 
   if (course && form === null) {
     setForm({
-      title: course.title, slug: course.slug, description: course.description ?? "",
+      title: course.title, description: course.description ?? "",
       categoryId: course.categoryId, difficulty: course.difficulty,
       visibility: course.visibility, estimatedMinutes: course.estimatedMinutes,
       tags: course.tags ?? [], certificateEnabled: course.certificateEnabled,
@@ -131,10 +131,6 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
           <div className="flex flex-col gap-1.5">
             <Label>Title</Label>
             <Input value={form.title} onChange={(e) => set("title", e.target.value)} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Slug</Label>
-            <Input value={form.slug} onChange={(e) => set("slug", e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Description</Label>
