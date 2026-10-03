@@ -16,7 +16,9 @@ import {
   CheckIcon, ChevronRightIcon, CopyIcon, GripVerticalIcon,
   PencilIcon, PlusIcon, Trash2Icon, FileTextIcon, VideoIcon, LinkIcon,
   CodeIcon, ClipboardListIcon, FlaskConicalIcon, FileIcon, FolderIcon,
+  ImageIcon, PackageIcon,
 } from "lucide-react";
+import type { LessonType } from "@microshala/contracts";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CourseRow, LessonNode, SectionNode } from "@/lib/types";
@@ -27,26 +29,23 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub,
   DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils";
 
-const LESSON_ICONS: Record<string, React.ReactNode> = {
+const LESSON_ICONS: Record<LessonType, React.ReactNode> = {
   text: <FileTextIcon className="size-3.5" />,
   video: <VideoIcon className="size-3.5" />,
+  image: <ImageIcon className="size-3.5" />,
   pdf: <FileIcon className="size-3.5" />,
   link: <LinkIcon className="size-3.5" />,
   code: <CodeIcon className="size-3.5" />,
+  resource: <PackageIcon className="size-3.5" />,
   quiz: <ClipboardListIcon className="size-3.5" />,
   lab: <FlaskConicalIcon className="size-3.5" />,
   assignment: <ClipboardListIcon className="size-3.5" />,
 };
-
-const LESSON_TYPES = ["text", "video", "pdf", "link", "code", "quiz", "assignment"];
 
 interface Curriculum { course: CourseRow; sections: SectionNode[] }
 
@@ -373,7 +372,7 @@ function SortableLesson({
       <button {...attributes} {...listeners} className="cursor-grab touch-none rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-muted-foreground" aria-label="Drag chapter">
         <GripVerticalIcon className="size-3.5" />
       </button>
-      <span className="text-muted-foreground">{LESSON_ICONS[lesson.type] ?? <FileTextIcon className="size-3.5" />}</span>
+      <span className="text-muted-foreground">{LESSON_ICONS[lesson.type as LessonType] ?? <FileTextIcon className="size-3.5" />}</span>
       <button className="min-w-0 flex-1 truncate text-left hover:underline" onClick={onOpen}>
         {lesson.title}
       </button>
@@ -450,7 +449,6 @@ function NewLessonDialog({
   onCreated: () => void;
 }) {
   const [title, setTitle] = React.useState("");
-  const [type, setType] = React.useState("text");
   const [busy, setBusy] = React.useState(false);
 
   if (sectionId === null) return null;
@@ -465,7 +463,7 @@ function NewLessonDialog({
             if (!title.trim()) return;
             setBusy(true);
             await api(`/api/admin/sections/${sectionId}/lessons`, {
-              method: "POST", body: JSON.stringify({ title: title.trim(), type }),
+              method: "POST", body: JSON.stringify({ title: title.trim() }),
             });
             setBusy(false);
             toast.success("Chapter created");
@@ -473,14 +471,6 @@ function NewLessonDialog({
           }}
         >
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Chapter title" autoFocus />
-          <Select value={type} onValueChange={(v) => setType(String(v))}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {LESSON_TYPES.map((t) => (
-                <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <div className="flex justify-end gap-2">
             <Button size="sm" type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button size="sm" type="submit" disabled={busy || !title.trim()}>{busy ? "Creating…" : "Create"}</Button>
