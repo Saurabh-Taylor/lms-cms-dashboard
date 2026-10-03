@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -22,6 +21,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { AsyncCombobox } from "@/components/async-combobox";
+import { CategoryHint, useCategories } from "@/components/courses/categories";
 import { Skeleton } from "@/components/ui/skeleton";
 import { XIcon } from "lucide-react";
 
@@ -38,8 +38,7 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
     estimatedMinutes: number; tags: string[]; certificateEnabled: boolean;
   }>(null);
   const [instructor, setInstructor] = React.useState<OptionItem | null>(null);
-  const [categories, setCategories] = React.useState<OptionItem[]>([]);
-  const [categoriesLoaded, setCategoriesLoaded] = React.useState(false);
+  const { categories, loaded: categoriesLoaded, error: categoriesError } = useCategories(true);
   const [tagInput, setTagInput] = React.useState("");
   const qc = useQueryClient();
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -55,13 +54,6 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
     if (course.instructorId)
       setInstructor({ id: course.instructorId, label: course.instructorName ?? "" });
   }
-
-  React.useEffect(() => {
-    api<OptionItem[]>("/api/admin/options?resource=categories")
-      .then(setCategories)
-      .catch(() => {})
-      .finally(() => setCategoriesLoaded(true));
-  }, []);
 
   const save = useApiMutation({
     mutationFn: () =>
@@ -139,15 +131,8 @@ export function CourseSettingsForm({ courseId }: { courseId: number }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              {categoriesLoaded && categories.length === 0 && !form?.categoryId ? (
-                <p className="flex h-8 items-center text-xs text-muted-foreground">
-                  No categories yet —{" "}
-                  <Link href="/admin/categories" className="text-primary underline-offset-2 hover:underline">
-                    create one first
-                  </Link>
-                  , or leave blank.
-                </p>
-              ) : (
+              <CategoryHint loaded={categoriesLoaded} error={categoriesError} empty={categories.length === 0 && !form?.categoryId} />
+              {(!categoriesLoaded || categoriesError || categories.length > 0 || !!form?.categoryId) && (
                 <Select
                   value={form.categoryId ? String(form.categoryId) : ""}
                   onValueChange={(v) => set("categoryId", Number(v))}

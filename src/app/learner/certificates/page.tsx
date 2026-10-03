@@ -5,6 +5,7 @@ import { AwardIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
 import type { LearnerCertificate } from "@/lib/learner-types";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -41,14 +42,12 @@ export default function LearnerCertificatesPage() {
                     Issued {fmtDate(c.issuedAt)}
                   </p>
                 </div>
-                <a
-                  href={`/verify/${encodeURIComponent(c.serial)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 h-7 text-xs font-medium hover:bg-accent"
+                <Button
+                  variant="outline" size="sm" nativeButton={false}
+                  render={<a href={`/verify/${encodeURIComponent(c.serial)}`} target="_blank" rel="noreferrer" />}
                 >
                   View
-                </a>
+                </Button>
               </CardContent>
             </Card>
           ))}

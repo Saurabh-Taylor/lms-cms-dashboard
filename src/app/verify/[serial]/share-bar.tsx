@@ -4,6 +4,16 @@ import { useState } from "react";
 import {
   AtSignIcon, CheckIcon, CopyIcon, ExternalLinkIcon, PrinterIcon, Share2Icon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+/**
+ * LinkedIn's third-party brand color — deliberately outside the Microshala
+ * palette (recognition beats brand-consistent for share CTAs). Centralized so
+ * the hex has one home; arbitrary-value syntax keeps it out of the
+ * brand-tokens utility scan.
+ */
+const LI_SOLID = "bg-[#0A66C2] text-white hover:bg-[#0A66C2]/90";
+const LI_OUTLINE = "border-[#0A66C2] text-[#0A66C2] hover:bg-[#0A66C2]/10";
 
 /** Interactive share chrome — everything here is print:hidden. */
 export function ShareBar({
@@ -25,30 +35,27 @@ export function ShareBar({
     `&certId=${encodeURIComponent(cert.serial)}`;
   const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just completed "${cert.courseTitle}" on Microshala`)}&url=${encodeURIComponent(verifyUrl)}`;
 
-  const btn = "inline-flex items-center gap-1.5 rounded-md border px-3 h-8 text-xs font-medium hover:bg-accent";
   return (
     <div className="flex flex-wrap items-center gap-2 print:hidden">
-      <a href={linkedInShare} target="_blank" rel="noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-md bg-[#0A66C2] px-3 h-8 text-xs font-medium text-white hover:opacity-90">
-        <Share2Icon className="size-3.5" /> Share on LinkedIn
-      </a>
-      <a href={linkedInAdd} target="_blank" rel="noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-md border border-[#0A66C2] px-3 h-8 text-xs font-medium text-[#0A66C2] hover:bg-[#0A66C2]/10">
-        <ExternalLinkIcon className="size-3.5" /> Add to LinkedIn profile
-      </a>
-      <a href={xShare} target="_blank" rel="noreferrer" className={btn}>
-        <AtSignIcon className="size-3.5" /> Post on X
-      </a>
-      <button
+      <Button className={LI_SOLID} nativeButton={false} render={<a href={linkedInShare} target="_blank" rel="noreferrer" />}>
+        <Share2Icon /> Share on LinkedIn
+      </Button>
+      <Button variant="outline" className={LI_OUTLINE} nativeButton={false} render={<a href={linkedInAdd} target="_blank" rel="noreferrer" />}>
+        <ExternalLinkIcon /> Add to LinkedIn profile
+      </Button>
+      <Button variant="outline" nativeButton={false} render={<a href={xShare} target="_blank" rel="noreferrer" />}>
+        <AtSignIcon /> Post on X
+      </Button>
+      <Button
+        variant="outline"
         onClick={() => { navigator.clipboard.writeText(verifyUrl); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-        className={btn}
       >
-        {copied ? <CheckIcon className="size-3.5 text-emerald-600" /> : <CopyIcon className="size-3.5" />}
+        {copied ? <CheckIcon className="text-emerald-600" /> : <CopyIcon />}
         {copied ? "Copied" : "Copy link"}
-      </button>
-      <button onClick={() => window.print()} className={btn}>
-        <PrinterIcon className="size-3.5" /> Print / Save PDF
-      </button>
+      </Button>
+      <Button variant="outline" onClick={() => window.print()}>
+        <PrinterIcon /> Print / Save PDF
+      </Button>
     </div>
   );
 }

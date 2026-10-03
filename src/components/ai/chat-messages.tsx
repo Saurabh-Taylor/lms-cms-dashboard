@@ -12,9 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UIMessage } from "@tanstack/ai-react";
 import { cn } from "@/lib/utils";
-
-type ToolCallPart = Extract<UIMessage["parts"][number], { type: "tool-call" }>;
-type ToolResultPart = Extract<UIMessage["parts"][number], { type: "tool-result" }>;
+import { toolCallStatus, toolResults } from "./tool-parts";
+import type { ToolCallPart, ToolResultPart } from "./tool-parts";
 
 const TOOL_STATE_LABEL: Record<string, string> = {
   "awaiting-input": "queued",
@@ -32,17 +31,6 @@ const TOOL_VERB: Record<string, string> = {
   create: "Creating", update: "Updating", delete: "Deleting",
   enroll: "Enrolling", audit: "Auditing", send: "Sending",
 };
-
-/**
- * A tool-call part's state never reaches "complete"/"error" — that outcome
- * lives on the sibling `tool-result` part keyed by toolCallId. Build a
- * callId→result map per message so chips resolve to a terminal state.
- */
-function toolResults(m: UIMessage): Map<string, ToolResultPart> {
-  const map = new Map<string, ToolResultPart>();
-  for (const p of m.parts) if (p.type === "tool-result") map.set(p.toolCallId, p);
-  return map;
-}
 
 /** Verb-led label for the in-flight tool call of the trailing assistant turn. */
 function activityLabel(messages: UIMessage[]): string {
@@ -66,24 +54,22 @@ function activityLabel(messages: UIMessage[]): string {
 }
 
 function ToolChip({ part, result }: { part: ToolCallPart; result?: ToolResultPart }) {
-  const done = result?.state === "complete";
-  const failed = result?.state === "error";
-  const pending = !done && !failed;
+  const status = toolCallStatus(part, result);
   return (
     <div className="flex items-center gap-2">
-      {done ? (
+      {status === "done" ? (
         <CheckCircle2Icon className="size-3.5 text-emerald-500" />
-      ) : failed ? (
+      ) : status === "failed" ? (
         <XCircleIcon className="size-3.5 text-red-500" />
-      ) : part.state === "approval-requested" ? (
+      ) : status === "approval" ? (
         <CircleDashedIcon className="size-3.5 text-amber-500" />
       ) : (
         <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
       )}
-      <Badge variant="outline" className={cn("font-mono text-[11px] font-normal", done && "text-muted-foreground")}>
+      <Badge variant="outline" className={cn("font-mono text-[11px] font-normal", status === "done" && "text-muted-foreground")}>
         {part.name}
         <span className="ml-1.5 text-[10px] text-muted-foreground">
-          {done ? "done" : failed ? "failed" : (TOOL_STATE_LABEL[part.state] ?? (pending ? "running" : part.state))}
+          {status === "done" ? "done" : status === "failed" ? "failed" : status === "approval" ? "awaiting approval" : (TOOL_STATE_LABEL[part.state] ?? "running")}
         </span>
       </Badge>
     </div>

@@ -106,7 +106,7 @@ function RevokeDialog({
 }) {
   const [reason, setReason] = React.useState("");
   return (
-    <Dialog open={!!cert} onOpenChange={onOpenChange}>
+    <Dialog open={!!cert} onOpenChange={(v) => { if (!v) setReason(""); onOpenChange(v); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Revoke certificate</DialogTitle></DialogHeader>
         <p className="text-sm text-muted-foreground">

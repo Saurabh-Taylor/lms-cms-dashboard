@@ -17,6 +17,7 @@ import { ChatMessages } from "./chat-messages";
 import { ModelPicker, type AiModel } from "./model-picker";
 import { NiyamakMark } from "./niyamak-mark";
 import { NIYAMAK_WRITE_TOOLS } from "./niyamak-tools";
+import { toolCallStatus, toolResults, type ToolCallPart, type ToolResultPart } from "./tool-parts";
 import {
   THREAD_KEY_PREFIX, listThreads, removeThread, touchThread, type ThreadMeta,
 } from "./thread-store";
@@ -222,23 +223,18 @@ function ThreadRail({ threads, activeId, onSelect, onNew, onDelete }: {
   );
 }
 
-type ToolCallPart = Extract<Chat["messages"][number]["parts"][number], { type: "tool-call" }>;
-type ToolResultPart = Extract<Chat["messages"][number]["parts"][number], { type: "tool-result" }>;
-
-/** Per-call status icon — the tool-call part's terminal state lives on its tool-result sibling. */
+/** Per-call status icon — resolved through the shared call→result status join. */
 function CallIcon({ call, result }: { call: ToolCallPart; result?: ToolResultPart }) {
-  if (result?.state === "complete") return <CheckCircle2Icon className="size-3 shrink-0 text-emerald-500" />;
-  if (result?.state === "error" || call.state === "error") return <XCircleIcon className="size-3 shrink-0 text-red-500" />;
-  if (call.state === "approval-requested") return <ClockIcon className="size-3 shrink-0 text-amber-500" />;
+  const status = toolCallStatus(call, result);
+  if (status === "done") return <CheckCircle2Icon className="size-3 shrink-0 text-emerald-500" />;
+  if (status === "failed") return <XCircleIcon className="size-3 shrink-0 text-red-500" />;
+  if (status === "approval") return <ClockIcon className="size-3 shrink-0 text-amber-500" />;
   return <Loader2Icon className="size-3 shrink-0 animate-spin text-muted-foreground" />;
 }
 
 function DetailsRail({ chat, model }: { chat: Chat; model?: string }) {
-  // Chronological tool calls joined to their results by toolCallId — the same
-  // join ChatMessages performs for the inline chips.
   const calls = chat.messages.flatMap((m) => {
-    const results = new Map<string, ToolResultPart>();
-    for (const p of m.parts) if (p.type === "tool-result") results.set(p.toolCallId, p);
+    const results = toolResults(m);
     return m.parts
       .filter((p): p is ToolCallPart => p.type === "tool-call")
       .map((call) => ({ call, result: results.get(call.id) }));
@@ -304,7 +300,6 @@ function ChatBody({ chat, configured, onSend }: {
 
   const send = (text: string) => {
     if (!text.trim() || isLoading || configured === false) return;
-    console.log(`[niyamak] send "${text.trim().slice(0, 80)}"`); // TEMP #86
     onSend(text.trim().slice(0, 60));
     sendMessage(text.trim());
     setInput("");
@@ -393,13 +388,6 @@ function ChatSession({ threadId, mode, onModeChange, onClose, threads, onSelectT
     // marks approval interrupts unresolvable and Approve never submits.
     tools: NIYAMAK_WRITE_TOOLS,
     forwardedProps,
-    // TEMP #86 trace — client-side view of the same event stream.
-    onChunk: (chunk: unknown) => {
-      const t = (chunk as { type?: string })?.type;
-      if (t && t !== "TEXT_MESSAGE_CONTENT") console.log(`[niyamak] evt ${t}`);
-    },
-    onFinish: () => console.log("[niyamak] run finished"),
-    onError: (e: unknown) => console.error("[niyamak] run error", e),
   });
   const handleSend = React.useCallback(
     (title: string) => onThreadUsed(threadId, title),

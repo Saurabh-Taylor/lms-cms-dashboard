@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { BRAND } from "@/lib/brand-colors";
 import { fetchVerification } from "./cert-data";
 
 // OG card for the share unfurl — cert-style card: name + course + issuer mark.
@@ -9,9 +10,7 @@ export default async function OgImage({ params }: { params: Promise<{ serial: st
   const { serial } = await params;
   const cert = await fetchVerification(serial);
 
-  const gold = "#FD9E0F";
-  const ink = "#2B2B2E";
-  const cream = "#FBF7F1";
+  const { primary: gold, ink, cream, muted, destructive } = BRAND;
 
   if (!cert) {
     return new ImageResponse(
@@ -37,19 +36,19 @@ export default async function OgImage({ params }: { params: Promise<{ serial: st
           padding: 48, textAlign: "center", gap: 24,
         }}
       >
-        <div style={{ fontSize: 22, letterSpacing: 8, color: "#8a8378", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 22, letterSpacing: 8, color: muted, textTransform: "uppercase" }}>
           Microshala · Certificate of Completion
         </div>
         <div style={{ fontSize: 64, fontWeight: 700, color: ink }}>{cert.learnerName}</div>
-        <div style={{ fontSize: 26, color: "#8a8378" }}>has successfully completed</div>
+        <div style={{ fontSize: 26, color: muted }}>has successfully completed</div>
         <div style={{ fontSize: 40, fontWeight: 600, color: ink }}>{cert.courseTitle}</div>
-        <div style={{ display: "flex", marginTop: 24, fontSize: 20, color: "#8a8378", fontFamily: "monospace" }}>
+        <div style={{ display: "flex", marginTop: 24, fontSize: 20, color: muted, fontFamily: "monospace" }}>
           {cert.serial}
         </div>
         {revoked && (
           <div
             style={{
-              fontSize: 28, fontWeight: 800, color: "#b91c1c",
+              fontSize: 28, fontWeight: 800, color: destructive,
               letterSpacing: 8, textTransform: "uppercase",
             }}
           >

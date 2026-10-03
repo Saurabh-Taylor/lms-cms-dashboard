@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { api } from "@/lib/api-client";
+import { CategoryHint, useCategories } from "@/components/courses/categories";
 import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
@@ -31,17 +31,7 @@ export function CourseFormDialog({
   const [difficulty, setDifficulty] = React.useState("beginner");
   const [categoryId, setCategoryId] = React.useState<number | null>(null);
   const [instructor, setInstructor] = React.useState<OptionItem | null>(null);
-  const [categories, setCategories] = React.useState<OptionItem[]>([]);
-  const [categoriesLoaded, setCategoriesLoaded] = React.useState(false);
-
-  React.useEffect(() => {
-    if (open) {
-      api<OptionItem[]>("/api/admin/options?resource=categories")
-        .then(setCategories)
-        .catch(() => {})
-        .finally(() => setCategoriesLoaded(true));
-    }
-  }, [open]);
+  const { categories, loaded: categoriesLoaded, error: categoriesError } = useCategories(open);
 
   const create = useApiMutation({
     mutationFn: () =>
@@ -83,15 +73,8 @@ export function CourseFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              {categoriesLoaded && categories.length === 0 ? (
-                <p className="flex h-8 items-center text-xs text-muted-foreground">
-                  No categories yet —{" "}
-                  <Link href="/admin/categories" className="text-primary underline-offset-2 hover:underline">
-                    create one first
-                  </Link>
-                  , or leave blank.
-                </p>
-              ) : (
+              <CategoryHint loaded={categoriesLoaded} error={categoriesError} empty={categories.length === 0} />
+              {(!categoriesLoaded || categoriesError || categories.length > 0) && (
                 <Select
                   value={categoryId ? String(categoryId) : ""}
                   onValueChange={(v) => setCategoryId(Number(v))}
