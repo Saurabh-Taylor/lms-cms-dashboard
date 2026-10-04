@@ -7,7 +7,7 @@ import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import type { PathAssignmentTarget } from "@microshala/contracts";
+import { LIST_PAGE_SIZE_MAX, type AssignLearningPathResult } from "@microshala/contracts";
 import type { LearningPathRow, OptionItem, PathAssignmentRow } from "@/lib/types";
 import { ModuleTable } from "@/components/data-table/module-table";
 import { RowActions } from "@/components/data-table/row-actions";
@@ -159,11 +159,6 @@ function PathDialog({ path, onClose }: { path: LearningPathRow | null; onClose: 
   );
 }
 
-interface AssignResult {
-  results: PathAssignmentTarget[];
-  enrolled: number;
-}
-
 /** Assign the path to learners/cohorts + review or revoke existing assignments. */
 function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: () => void }) {
   const [learners, setLearners] = React.useState<OptionItem[]>([]);
@@ -172,14 +167,14 @@ function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: (
 
   const listQ = useQuery({
     queryKey: listKey,
-    queryFn: () => api<{ data: PathAssignmentRow[]; total: number }>(`/api/admin/learning-paths/${path.id}/assignments?pageSize=100`),
+    queryFn: () => api<{ data: PathAssignmentRow[]; total: number }>(`/api/admin/learning-paths/${path.id}/assignments?pageSize=${LIST_PAGE_SIZE_MAX}`),
   });
   const rows = listQ.data?.data ?? [];
   const hidden = (listQ.data?.total ?? 0) - rows.length;
 
   const assign = useApiMutation({
     mutationFn: () =>
-      api<AssignResult>(`/api/admin/learning-paths/${path.id}/assignments`, {
+      api<AssignLearningPathResult>(`/api/admin/learning-paths/${path.id}/assignments`, {
         method: "POST",
         body: JSON.stringify({
           userIds: learners.map((l) => l.id),
@@ -231,6 +226,7 @@ function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: (
           {rows.length > 0 && (
             <div className="flex flex-col gap-1 border-t pt-3">
               <Label>Current assignments</Label>
+              <p className="text-xs text-muted-foreground">Revoking removes the assignment; existing enrollments stay.</p>
               {rows.map((r) => (
                 <div key={r.id} className="flex items-center justify-between gap-2 text-sm">
                   <span className="truncate">
