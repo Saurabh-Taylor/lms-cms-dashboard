@@ -9,4 +9,11 @@ export const qk = {
   enrollments: ["/api/admin/enrollments"],
   users: ["/api/admin/users"],
   pathAssignments: (pathId: number) => ["path-assignments", pathId],
+  // Learner-side progress surfaces — invalidated together whenever a lesson
+  // completion path (mark-complete, assessment, SCORM commit) lands.
+  learnerProgress: [
+    ["/api/learner/courses"],
+    ["/api/learner/dashboard"],
+    ["/api/learner/certificates"],
+  ] as string[][],
 };

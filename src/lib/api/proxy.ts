@@ -45,10 +45,20 @@ export function proxy<P extends AppRouteHandlerRoutes>(
     }
 
     let path = target;
-    const params = ((await ctx.params) ?? {}) as Record<string, string>;
+    const params = ((await ctx.params) ?? {}) as Record<string, string | string[]>;
     for (const [k, v] of Object.entries(params)) {
-      if (v.includes("/") || v.includes("..")) return fail(400, `Invalid ${k}`);
-      path = path.replaceAll(`[${k}]`, v);
+      // Catch-all [...k] params arrive as arrays — join into the path.
+      // Segments are already decoded, so an encoded slash (%2F) shows up as a
+      // real "/" inside an element — reject it plus any ".." substring just
+      // like a plain param, or "a%2f..%2fb" would smuggle traversal.
+      if (Array.isArray(v)) {
+        if (v.some((s) => s.includes("/") || s.includes("..") || s.includes("\0")))
+          return fail(400, `Invalid ${k}`);
+        path = path.replaceAll(`[...${k}]`, v.join("/"));
+      } else {
+        if (v.includes("/") || v.includes("..")) return fail(400, `Invalid ${k}`);
+        path = path.replaceAll(`[${k}]`, v);
+      }
     }
 
     // Buffer the body: req.body is a non-null *empty* stream for DELETE, and

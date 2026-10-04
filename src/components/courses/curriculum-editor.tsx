@@ -16,7 +16,7 @@ import {
   CheckIcon, ChevronRightIcon, CopyIcon, GripVerticalIcon,
   PencilIcon, PlusIcon, Trash2Icon, FileTextIcon, VideoIcon, LinkIcon,
   CodeIcon, ClipboardListIcon, FlaskConicalIcon, FileIcon, FolderIcon,
-  ImageIcon, PackageIcon,
+  ImageIcon, PackageIcon, FileArchiveIcon,
 } from "lucide-react";
 import type { LessonType } from "@microshala/contracts";
 import { api } from "@/lib/api-client";
@@ -45,6 +45,7 @@ const LESSON_ICONS: Record<LessonType, React.ReactNode> = {
   quiz: <ClipboardListIcon className="size-3.5" />,
   lab: <FlaskConicalIcon className="size-3.5" />,
   assignment: <ClipboardListIcon className="size-3.5" />,
+  scorm: <FileArchiveIcon className="size-3.5" />,
 };
 
 interface Curriculum { course: CourseRow; sections: SectionNode[] }

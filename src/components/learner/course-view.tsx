@@ -5,15 +5,17 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeftIcon, ArrowRightIcon, BookOpenIcon, CheckCircle2Icon,
-  CodeIcon, DownloadIcon, FileTextIcon, FlaskConicalIcon, ImageIcon,
-  LinkIcon, CirclePlayIcon, PackageIcon, ClipboardListIcon,
+  CodeIcon, DownloadIcon, FileArchiveIcon, FileTextIcon, FlaskConicalIcon,
+  ImageIcon, LinkIcon, CirclePlayIcon, PackageIcon, ClipboardListIcon,
   type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { qk } from "@/lib/query-keys";
 import type { LearnerCourseDetail } from "@/lib/learner-types";
 import type { LessonBlock } from "@/lib/types";
+import { ScormPlayer } from "./scorm-player";
 import { Badge } from "@/components/ui/badge";
 import { CourseThumbnail } from "@/components/shared/course-thumbnail";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,7 @@ const LESSON_ICONS: Record<string, LucideIcon> = {
   quiz: ClipboardListIcon,
   lab: FlaskConicalIcon,
   assignment: ClipboardListIcon,
+  scorm: FileArchiveIcon,
 };
 
 /**
@@ -127,13 +130,19 @@ function UnavailableCard({ icon: Icon, text }: { icon: LucideIcon; text: string 
   );
 }
 
-function LessonBlocks({ blocks }: { blocks: LessonBlock[] }) {
+function LessonBlocks({ blocks, lessonId }: { blocks: LessonBlock[]; lessonId: number }) {
   const parsed = Array.isArray(blocks) ? blocks : [];
   if (!parsed.length)
     return <p className="text-sm text-muted-foreground">This lesson has no content yet.</p>;
   return (
     <div className="flex flex-col gap-3">
       {parsed.map((b) => {
+        if (b.type === "scorm")
+          return b.packageId ? (
+            <ScormPlayer key={b.id} lessonId={lessonId} title={b.text} />
+          ) : (
+            <UnavailableCard key={b.id} icon={PackageIcon} text="This content is no longer available." />
+          );
         if (b.type === "text")
           return <p key={b.id} className="text-sm leading-6 text-foreground/90">{b.text}</p>;
         if (b.type === "code")
@@ -193,7 +202,7 @@ export function CourseView({ courseId }: { courseId: number }) {
         `/api/learner/lessons/${id}/complete`,
         { method: done ? "DELETE" : "POST" }
       ),
-    invalidate: [["/api/learner/courses"], ["/api/learner/dashboard"], ["/api/learner/certificates"]],
+    invalidate: qk.learnerProgress,
     onSuccess: (res, vars) => {
       if (res.certificate)
         toast.success(`Course completed — certificate ${res.certificate.serial} earned`);
@@ -294,7 +303,7 @@ export function CourseView({ courseId }: { courseId: number }) {
             </div>
           </CardHeader>
           <CardContent className="pt-4">
-            {lesson ? <LessonBlocks blocks={lesson.blocks} /> : (
+            {lesson ? <LessonBlocks blocks={lesson.blocks} lessonId={lesson.id} /> : (
               <p className="text-sm text-muted-foreground">This course has no published lessons yet.</p>
             )}
           </CardContent>

@@ -9,11 +9,12 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  CodeIcon, FileIcon, FlaskConicalIcon, GripVerticalIcon,
+  CodeIcon, FileArchiveIcon, FileIcon, FlaskConicalIcon, GripVerticalIcon,
   ImageIcon, LinkIcon, PackageIcon, ClipboardListIcon, Trash2Icon,
-  TypeIcon, VideoIcon,
+  TypeIcon, UploadIcon, VideoIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LessonNode, OptionItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -32,10 +33,12 @@ import { cn } from "@/lib/utils";
 // unusable) — id/type/text/url/mediaId are the shared write fields.
 interface Block {
   id: string;
-  type: "text" | "video" | "image" | "pdf" | "link" | "code" | "resource" | "quiz" | "lab";
+  type: "text" | "video" | "image" | "pdf" | "link" | "code" | "resource" | "quiz" | "lab" | "scorm";
   text?: string;
   url?: string;
   mediaId?: number;
+  /** scorm blocks → scorm_packages.id */
+  packageId?: number;
   /** pick-time status hint — display only; learners get the live value */
   mediaStatus?: string;
   language?: string;
@@ -51,6 +54,7 @@ const BLOCK_TYPES: { type: Block["type"]; label: string; icon: React.ReactNode }
   { type: "code", label: "Code", icon: <CodeIcon className="size-4" /> },
   { type: "resource", label: "Resource", icon: <PackageIcon className="size-4" /> },
   { type: "quiz", label: "Quiz", icon: <ClipboardListIcon className="size-4" /> },
+  { type: "scorm", label: "SCORM", icon: <FileArchiveIcon className="size-4" /> },
 ];
 
 /** Legacy block kinds that still exist in saved content — render read-only, not addable. */
@@ -260,6 +264,8 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
           placeholder="Link a quiz/assessment…"
         />
       );
+    case "scorm":
+      return <ScormPick block={block} onChange={onChange} />;
     case "lab":
       return (
         <div className="rounded-md bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
@@ -269,6 +275,73 @@ function BlockBody({ block, onChange }: { block: Block; onChange: (id: string, p
     default:
       return null;
   }
+}
+
+/**
+ * SCORM package picker — combobox over imported `scorm_packages` rows plus a
+ * direct zip upload (presigned PUT → import → auto-select the new package).
+ */
+function ScormPick({ block, onChange }: { block: Block; onChange: (id: string, p: Partial<Block>) => void }) {
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const [stage, setStage] = React.useState<string | null>(null);
+
+  const upload = async (file: File) => {
+    setStage("Requesting upload…");
+    try {
+      const presign = await api<{ assetId: number; uploadUrl: string }>(
+        "/api/admin/scorm/uploads",
+        { method: "POST", body: JSON.stringify({ name: file.name, sizeBytes: file.size }) },
+      );
+      setStage("Uploading zip…");
+      const put = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        body: file,
+        // must match the Content-Type bound into the signature (application/zip)
+        headers: { "content-type": "application/zip" },
+      });
+      if (!put.ok) throw new Error(`Upload failed (${put.status})`);
+      setStage("Importing package…");
+      const pkg = await api<{ id: number; title: string }>("/api/admin/scorm/packages", {
+        method: "POST",
+        body: JSON.stringify({ assetId: presign.assetId }),
+      });
+      onChange(block.id, { packageId: pkg.id, text: pkg.title });
+      toast.success(`Imported "${pkg.title}"`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setStage(null);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <AsyncCombobox
+        resource="scorm-packages"
+        value={block.packageId ? { id: block.packageId, label: block.text ?? `Package #${block.packageId}` } : null}
+        onChange={(v) => { const o = v as OptionItem | null; onChange(block.id, { packageId: o?.id, text: o?.label }); }}
+        placeholder="Pick an imported SCORM package…"
+      />
+      <div className="flex items-center gap-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".zip,application/zip"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
+        />
+        <Button
+          type="button" variant="outline" size="sm"
+          disabled={!!stage}
+          onClick={() => fileRef.current?.click()}
+        >
+          <UploadIcon /> Upload new package
+        </Button>
+        {stage && <span className="text-xs text-muted-foreground">{stage}</span>}
+      </div>
+    </div>
+  );
 }
 
 /**
