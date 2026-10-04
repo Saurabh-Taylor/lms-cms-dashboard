@@ -8,4 +8,5 @@ export const qk = {
   course: (id: number) => ["course", id],
   enrollments: ["/api/admin/enrollments"],
   users: ["/api/admin/users"],
+  pathAssignments: (pathId: number) => ["path-assignments", pathId],
 };

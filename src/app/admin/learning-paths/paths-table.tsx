@@ -2,13 +2,15 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { LIST_PAGE_SIZE_MAX, type AssignLearningPathResult } from "@microshala/contracts";
-import type { LearningPathRow, OptionItem, PathAssignmentRow } from "@/lib/types";
+import { PERM } from "@/lib/permissions";
+import { qk } from "@/lib/query-keys";
+import type { LearningPathRow, ListResponse, OptionItem, PathAssignmentRow } from "@/lib/types";
 import { ModuleTable } from "@/components/data-table/module-table";
 import { RowActions } from "@/components/data-table/row-actions";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -22,21 +24,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AsyncCombobox } from "@/components/async-combobox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { fmtDate } from "@/lib/format";
 
-const cols: ColumnDef<LearningPathRow, unknown>[] = [
+const buildCols = (canAssign: boolean): ColumnDef<LearningPathRow, unknown>[] => [
   { id: "title", accessorKey: "title", header: "Path", meta: { sortKey: "title" }, cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span> },
   { id: "courseCount", accessorKey: "courseCount", header: "Courses", meta: { className: "text-right", headerClassName: "text-right" }, cell: ({ getValue }) => <span className="tabular-nums">{getValue() as number}</span> },
   { id: "status", accessorKey: "status", header: "Status", meta: { sortKey: "status" }, cell: ({ getValue }) => <StatusBadge value={getValue() as string} /> },
   { id: "createdAt", accessorKey: "createdAt", header: "Created", meta: { sortKey: "createdAt" }, cell: ({ getValue }) => <span className="text-sm text-muted-foreground">{fmtDate(getValue() as number)}</span> },
-  { id: "actions", enableSorting: false, meta: { className: "w-10" }, cell: ({ row }) => <PathRowActions path={row.original} /> },
+  { id: "actions", enableSorting: false, meta: { className: "w-10" }, cell: ({ row }) => <PathRowActions path={row.original} canAssign={canAssign} /> },
 ];
 
 export function PathsTable() {
+  // Permissions drive which actions render — the proxy enforces them regardless.
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: () => api<{ permissions: string[] }>("/api/admin/me"),
+    staleTime: 60_000,
+  });
+  const canAssign = (me.data?.permissions ?? []).includes(PERM.pathAssign);
+  const columns = React.useMemo(() => buildCols(canAssign), [canAssign]);
   return (
     <ModuleTable<LearningPathRow>
       endpoint="/api/admin/learning-paths"
-      columns={cols}
+      columns={columns}
       searchPlaceholder="Search paths…"
       filters={[{ param: "status", placeholder: "Status", allLabel: "All statuses", options: [
         { value: "published", label: "Published" }, { value: "draft", label: "Draft" }, { value: "archived", label: "Archived" },
@@ -57,14 +68,14 @@ export function PathActions() {
   );
 }
 
-function PathRowActions({ path }: { path: LearningPathRow }) {
+function PathRowActions({ path, canAssign }: { path: LearningPathRow; canAssign: boolean }) {
   const [open, setOpen] = React.useState(false);
   const [assignOpen, setAssignOpen] = React.useState(false);
   return (
     <>
       <RowActions items={[
         { label: "Edit", onClick: () => setOpen(true) },
-        { label: "Assign…", onClick: () => setAssignOpen(true) },
+        ...(canAssign ? [{ label: "Assign…", onClick: () => setAssignOpen(true) }] : []),
       ]} />
       {open && <PathDialog path={path} onClose={() => setOpen(false)} />}
       {assignOpen && <AssignPathDialog path={path} onClose={() => setAssignOpen(false)} />}
@@ -163,14 +174,18 @@ function PathDialog({ path, onClose }: { path: LearningPathRow | null; onClose: 
 function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: () => void }) {
   const [learners, setLearners] = React.useState<OptionItem[]>([]);
   const [cohorts, setCohorts] = React.useState<OptionItem[]>([]);
-  const listKey = ["path-assignments", path.id];
+  const listKey = qk.pathAssignments(path.id);
 
-  const listQ = useQuery({
+  const listQ = useInfiniteQuery({
     queryKey: listKey,
-    queryFn: () => api<{ data: PathAssignmentRow[]; total: number }>(`/api/admin/learning-paths/${path.id}/assignments?pageSize=${LIST_PAGE_SIZE_MAX}`),
+    queryFn: ({ pageParam }) =>
+      api<ListResponse<PathAssignmentRow>>(`/api/admin/learning-paths/${path.id}/assignments?page=${pageParam}&pageSize=${LIST_PAGE_SIZE_MAX}`),
+    initialPageParam: 1,
+    getNextPageParam: (last) =>
+      last.page * last.pageSize < last.total ? last.page + 1 : undefined,
   });
-  const rows = listQ.data?.data ?? [];
-  const hidden = (listQ.data?.total ?? 0) - rows.length;
+  const rows = listQ.data?.pages.flatMap((p) => p.data) ?? [];
+  const total = listQ.data?.pages.at(-1)?.total ?? 0;
 
   const assign = useApiMutation({
     mutationFn: () =>
@@ -184,9 +199,15 @@ function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: (
     invalidate: [listKey],
     onSuccess: (r) => {
       const failed = r.results.filter((t) => !t.ok);
+      // reason is informational on ok targets (spec: "Already assigned" is
+      // NOT a failure) — report it separately so the count isn't a lie.
+      const already = r.results.filter((t) => t.ok && t.reason).length;
+      const fresh = r.results.length - failed.length - already;
+      const alreadyNote = already ? ` · ${already} already assigned` : "";
       if (failed.length)
-        toast.warning(`${r.results.length - failed.length} assigned · ${failed.length} skipped (${[...new Set(failed.map((f) => f.reason ?? "unknown"))].join("; ")})`);
-      else toast.success(`Assigned — ${r.enrolled} enrollment(s) created`);
+        toast.warning(`${fresh} assigned${alreadyNote} · ${failed.length} skipped (${[...new Set(failed.map((f) => f.reason ?? "unknown"))].join("; ")})`);
+      else if (!fresh) toast.info("Already assigned — nothing new");
+      else toast.success(`Assigned — ${r.enrolled} enrollment(s) created${alreadyNote}`);
       setLearners([]);
       setCohorts([]);
     },
@@ -227,16 +248,26 @@ function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: (
             <div className="flex flex-col gap-1 border-t pt-3">
               <Label>Current assignments</Label>
               <p className="text-xs text-muted-foreground">Revoking removes the assignment; existing enrollments stay.</p>
-              {rows.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate">
-                    {r.name}
-                    <span className="text-muted-foreground"> · {r.targetType === "group" ? "cohort" : "learner"}{r.email ? ` · ${r.email}` : ""}</span>
-                  </span>
-                  <Button size="sm" variant="ghost" onClick={() => revoke.mutate(r.id)} disabled={revoke.isPending}>Revoke</Button>
-                </div>
-              ))}
-              {hidden > 0 && <p className="text-xs text-muted-foreground">+{hidden} more not shown</p>}
+              <ScrollArea className="max-h-64">
+                {rows.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 py-0.5 text-sm">
+                    <span className="truncate">
+                      {r.name}
+                      <span className="text-muted-foreground">
+                        {" · "}{r.targetType === "group" ? "cohort" : "learner"}
+                        {r.email ? ` · ${r.email}` : ""}
+                        {" · by "}{r.assignedByName ?? "—"} · {fmtDate(r.createdAt)}
+                      </span>
+                    </span>
+                    <Button size="sm" variant="ghost" onClick={() => revoke.mutate(r.id)} disabled={revoke.isPending && revoke.variables === r.id}>Revoke</Button>
+                  </div>
+                ))}
+              </ScrollArea>
+              {listQ.hasNextPage && (
+                <Button size="sm" variant="outline" onClick={() => listQ.fetchNextPage()} disabled={listQ.isFetchingNextPage}>
+                  {listQ.isFetchingNextPage ? "Loading…" : `Show more (${total - rows.length} remaining)`}
+                </Button>
+              )}
             </div>
           )}
         </div>

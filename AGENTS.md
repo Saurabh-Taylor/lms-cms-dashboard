@@ -25,7 +25,7 @@ Next.js 16 + React 19 UI for Microshala. **All domain data lives in the NestJS/P
 - **Buttons**: default size is the roomier tier (learner pages, auth forms). Admin dialog/form footers use `size="sm"` — same tier as page/table action buttons. Form controls (Input, AsyncCombobox trigger) stay h-8.
 - **Tables**: all lists go through `ModuleTable`/`DataTable` + `useServerTable`/`useList`; state lives in URL params (page, pageSize, q, sort, order, filters). Never client-side full datasets. Backend list contract: `{data,total,page,pageSize}`.
 - **Wire shapes**: `src/lib/types.ts` mirrors backend DTOs — jsonb columns arrive as real objects/arrays (no JSON.parse), timestamps as ISO strings, counts as numbers.
-- **Mutations from the browser**: `api()`/`useApiMutation` in `src/lib/api-client.ts` / `src/lib/query.ts`; TanStack Query for reads, invalidation via `invalidate` keys.
+- **Mutations from the browser**: `api()`/`useApiMutation` in `src/lib/api-client.ts` / `src/hooks/use-api-mutation.ts`; TanStack Query for reads, invalidation via `invalidate` keys.
 - TanStack Table is pinned to **v8** — v9 is a breaking rewrite. Its `useReactTable` API trips the react-hooks compiler rule — the warning is upstream and benign (compiler skips the component).
 
 ## Known product gaps (tracked as tickets in the backend repo)
