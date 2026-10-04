@@ -36,7 +36,7 @@ export function NotificationBell({ viewAllHref }: { viewAllHref: string }) {
       >
         <BellIcon className="size-4" />
         {count > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-semibold text-destructive-foreground">
+          <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-semibold text-white">
             {count > 99 ? "99+" : count}
           </span>
         )}
