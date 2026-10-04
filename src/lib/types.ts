@@ -174,6 +174,17 @@ export interface LearningPathRow {
   createdAt: number;
 }
 
+export interface PathAssignmentRow {
+  id: number;
+  targetType: "user" | "group";
+  userId: number | null;
+  groupId: number | null;
+  name: string;
+  email: string | null;
+  assignedByName: string | null;
+  createdAt: string;
+}
+
 export interface MediaRow {
   id: number;
   name: string;
