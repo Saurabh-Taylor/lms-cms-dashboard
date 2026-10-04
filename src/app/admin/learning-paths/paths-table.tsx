@@ -185,7 +185,7 @@ function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: (
     onSuccess: (r) => {
       const failed = r.results.filter((t) => !t.ok);
       if (failed.length)
-        toast.warning(`${r.results.length - failed.length} assigned · ${failed.length} skipped (${failed[0].reason ?? "unknown"})`);
+        toast.warning(`${r.results.length - failed.length} assigned · ${failed.length} skipped (${[...new Set(failed.map((f) => f.reason ?? "unknown"))].join("; ")})`);
       else toast.success(`Assigned — ${r.enrolled} enrollment(s) created`);
       setLearners([]);
       setCohorts([]);
