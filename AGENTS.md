@@ -35,4 +35,4 @@ Next.js 16 + React 19 UI for Microshala. **All domain data lives in the NestJS/P
 
 ## Commit policy
 
-Before every `git commit`, review the pending diff with the **code-review** skill — fixed point `HEAD`, diff = `git diff HEAD` (staged + unstaged). Fix or flag findings in the reply before committing. Keep commits single-purpose: if the diff contains unrelated changes, split them or flag the creep.
+Before every `git commit`, review the pending diff with the **code-review** skill — fixed point `HEAD`, diff = `git diff HEAD` (staged + unstaged). Diffs touching only `*.md`/`docs/`/config may be reviewed inline instead of dispatching the skill. Fix or flag findings in the reply before committing. Keep commits single-purpose: if the diff contains unrelated changes, split them or flag the creep.
