@@ -86,7 +86,7 @@ const srcFiles: string[] = [];
 const walk = (dir: string) => {
   for (const f of readdirSync(dir)) {
     const p = join(dir, f);
-    if (statSync(p).isDirectory()) { if (!p.includes("node_modules")) walk(p); continue; }
+    if (statSync(p).isDirectory()) { if (!f.startsWith(".") && f !== "node_modules") walk(p); continue; }
     if (/\.(tsx?|jsx?)$/.test(p)) srcFiles.push(p);
   }
 };
@@ -96,6 +96,79 @@ for (const p of srcFiles) {
   const s = readFileSync(p, "utf8");
   const hit = s.match(FORBIDDEN);
   if (hit) errors.push(`${p}: brand-foreign utility "${hit[0]}" — use brand tokens (primary/accent) instead`);
+}
+
+// 4. Semantic color utilities must resolve to a --color-* token defined in
+//    globals.css. `text-destructive-foreground` compiles to nothing when
+//    --color-destructive-foreground doesn't exist — silently broken UI.
+const DEFINED = new Set([...css.matchAll(/--color-([a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+const DEFINED_FAMILY = new Set(
+  [...DEFINED].filter((n) => /-\d+$/.test(n)).map((n) => n.replace(/-\d+$/, "")),
+);
+// Tailwind default palette: usable without theme tokens.
+const DEFAULT_BARE = new Set(["white", "black", "transparent", "current", "inherit"]);
+const DEFAULT_FAMILY = new Set([
+  "slate", "gray", "zinc", "neutral", "stone", "red", "orange", "amber",
+  "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue",
+  "indigo", "violet", "purple", "fuchsia", "pink", "rose",
+]);
+// Names after a color prefix that aren't colors. Keyed by matched prefix.
+const NON_COLOR: Record<string, Set<string>> = {
+  text: new Set([
+    "xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl",
+    "left", "center", "right", "justify", "start", "end",
+    "wrap", "nowrap", "balance", "pretty",
+    "uppercase", "lowercase", "capitalize", "normal-case",
+    "underline", "overline", "line-through", "no-underline",
+    "ellipsis", "clip", "truncate",
+  ]),
+  bg: new Set([
+    "fixed", "local", "scroll", "auto", "cover", "contain",
+    "bottom", "top", "left", "right", "center",
+    "repeat", "no-repeat", "repeat-x", "repeat-y", "repeat-round", "repeat-space",
+    "none",
+  ]),
+  border: new Set(["solid", "dashed", "dotted", "double", "hidden", "none", "collapse", "separate", "t", "r", "b", "l", "x", "y"]),
+  ring: new Set(["inset", "none"]),
+  shadow: new Set(["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "inner", "none"]),
+  "inset-shadow": new Set(["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "none"]),
+  "drop-shadow": new Set(["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "none"]),
+  "text-shadow": new Set(["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "none"]),
+  outline: new Set(["none", "hidden", "solid", "dashed", "dotted", "double"]),
+  divide: new Set(["x", "y", "x-reverse", "y-reverse", "solid", "dashed", "dotted", "double", "none"]),
+  decoration: new Set(["solid", "double", "dotted", "dashed", "wavy", "none", "underline", "overline", "line-through"]),
+  accent: new Set(["auto", "none"]),
+  caret: new Set(["auto", "none"]),
+  fill: new Set(["none"]),
+  stroke: new Set(["none"]),
+};
+// Longer prefixes first so `text-shadow-lg` isn't seen as `text-` + `shadow-lg`.
+const COLOR_UTILITY = new RegExp(
+  "\\b(drop-shadow|inset-shadow|text-shadow|inset-ring|ring-offset|border-[trblxy]|bg|text|border|ring|fill|stroke|from|via|to|divide|outline|decoration|accent|caret|placeholder|shadow)-([a-z][a-z0-9-]*)",
+  "g",
+);
+for (const p of srcFiles) {
+  // Blank [...] contents: arbitrary values like transition-[...,border-color,...]
+  // embed CSS property names that aren't utility classes.
+  const s = readFileSync(p, "utf8").replace(/\[[^\]]*\]/g, (m) => " ".repeat(m.length));
+  for (const m of s.matchAll(COLOR_UTILITY)) {
+    const [match, prefix, name] = m;
+    // Preceded by `-` or alnum → hyphenated prose ("server-to-server") or a
+    // CSS var key ("--border-radius"), not a utility.
+    const prev = s[m.index - 1];
+    if (prev === "-" || /[a-z0-9]/.test(prev ?? "")) continue;
+    if (/\d/.test(name)) {
+      // `chart-9`: flag a mistyped shade of a project token family only.
+      const fam = name.replace(/-\d.*$/, "");
+      if (!DEFAULT_FAMILY.has(fam) && !DEFINED.has(name) && DEFINED_FAMILY.has(fam)) {
+        errors.push(`${p}: "${match}" — --color-${name} is not defined`);
+      }
+      continue;
+    }
+    if (DEFINED.has(name) || DEFAULT_BARE.has(name) || NON_COLOR[prefix]?.has(name)) continue;
+    if (prefix === "bg" && /^(?:linear|radial|conic|gradient|blend|clip|origin|position|size)(?:-|$)/.test(name)) continue;
+    errors.push(`${p}: "${match}" — --color-${name} is not defined`);
+  }
 }
 
 if (errors.length) {
