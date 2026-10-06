@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { fmtDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { qk } from "@/lib/query-keys";
 
 const LESSON_ICONS: Record<string, LucideIcon> = {
   video: CirclePlayIcon,
@@ -171,7 +172,7 @@ export function CourseView({ courseId }: { courseId: number }) {
   const searchParams = useSearchParams();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["/api/learner/courses", courseId],
+    queryKey: [...qk.learnerCourses, courseId],
     queryFn: () => api<LearnerCourseDetail>(`/api/learner/courses/${courseId}`),
   });
 
@@ -197,7 +198,7 @@ export function CourseView({ courseId }: { courseId: number }) {
         `/api/learner/lessons/${id}/complete`,
         { method: done ? "DELETE" : "POST" }
       ),
-    invalidate: [["/api/learner/courses"], ["/api/learner/dashboard"], ["/api/learner/certificates"]],
+    invalidate: [qk.learnerCourses, qk.learnerDashboard, qk.learnerCertificates],
     onSuccess: (res, vars) => {
       if (res.certificate)
         toast.success(`Course completed — certificate ${res.certificate.serial} earned`);

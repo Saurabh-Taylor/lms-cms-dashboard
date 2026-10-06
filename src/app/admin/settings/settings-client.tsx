@@ -4,6 +4,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CheckIcon, MinusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { TypographyCard } from "@/components/shared/typography-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +56,7 @@ export function SettingsClient() {
 
 function useSettings() {
   return useQuery<Record<string, unknown>>({
-    queryKey: ["/api/admin/settings"],
+    queryKey: qk.settings,
     queryFn: () => api("/api/admin/settings"),
   });
 }
@@ -79,7 +80,7 @@ function GeneralFormFields({ saved }: { saved: Partial<General> }) {
 
   const save = useApiMutation({
     mutationFn: () => api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ general: f }) }),
-    invalidate: [["/api/admin/settings"]],
+    invalidate: [qk.settings],
     successToast: "Settings saved",
   });
 
@@ -147,7 +148,7 @@ function RulesFormFields({ saved }: { saved: Partial<Rules> }) {
   });
   const save = useApiMutation({
     mutationFn: () => api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ enrollmentRules: f }) }),
-    invalidate: [["/api/admin/settings"]],
+    invalidate: [qk.settings],
     successToast: "Rules saved",
   });
 
@@ -190,7 +191,7 @@ interface RbacRole { key: string; label: string; permissions: string[] }
 function RolesMatrix() {
   // The matrix is served from the backend's enforced RBAC tables — never a local copy.
   const { data, isLoading } = useQuery<{ roles: RbacRole[] }>({
-    queryKey: ["/api/admin/rbac"],
+    queryKey: qk.rbac,
     queryFn: () => api("/api/admin/rbac"),
   });
   const roles = React.useMemo(() => data?.roles ?? [], [data]);

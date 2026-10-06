@@ -10,10 +10,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { fmtDate } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 export default function LearnerCertificatesPage() {
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/learner/certificates"],
+    queryKey: qk.learnerCertificates,
     queryFn: () => api<LearnerCertificate[]>("/api/learner/certificates"),
   });
 

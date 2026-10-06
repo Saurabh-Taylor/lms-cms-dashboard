@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ interface SmtpConfig {
 
 function useSmtp() {
   return useQuery<SmtpConfig | null>({
-    queryKey: ["/api/admin/settings/smtp"],
+    queryKey: qk.smtpSettings,
     queryFn: () => api("/api/admin/settings/smtp"),
   });
 }
@@ -54,7 +55,7 @@ function EmailFormFields({ saved }: { saved: SmtpConfig | null }) {
         method: "PUT",
         body: JSON.stringify({ ...f, ...(password ? { password } : {}) }),
       }),
-    invalidate: [["/api/admin/settings/smtp"]],
+    invalidate: [qk.smtpSettings],
     successToast: "Email settings saved",
     onSuccess: (r) => { setPasswordSet(r.passwordSet); setPassword(""); },
   });

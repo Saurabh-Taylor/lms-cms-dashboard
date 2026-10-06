@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx scripts/check-typography-tokens.ts && tsx scripts/check-brand-tokens.ts",
+    "test": "tsx scripts/check-typography-tokens.ts && tsx scripts/check-brand-tokens.ts && tsx scripts/check-query-keys.ts",
     "prepare": "husky",
     "typecheck": "next typegen && tsc --noEmit"
   },

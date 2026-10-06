@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fmtDate } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 const cols: ColumnDef<GroupRow, unknown>[] = [
   { id: "name", accessorKey: "name", header: "Name", meta: { sortKey: "name" }, cell: ({ getValue }) => <span className="font-medium">{getValue() as string}</span> },
@@ -59,7 +60,7 @@ function GroupRowActions({ group }: { group: GroupRow }) {
   const [mode, setMode] = React.useState<"members" | "edit" | "delete" | null>(null);
   const del = useApiMutation({
     mutationFn: () => api(`/api/admin/groups/${group.id}`, { method: "DELETE" }),
-    invalidate: [["/api/admin/groups"]],
+    invalidate: [qk.groups],
     successToast: "Cohort deleted",
     onSuccess: () => setMode(null),
   });
@@ -98,7 +99,7 @@ function GroupDialog({ group, onClose }: { group: GroupRow | null; onClose: () =
         method: group ? "PATCH" : "POST",
         body: JSON.stringify({ name, description: description || null }),
       }),
-    invalidate: [["/api/admin/groups"]],
+    invalidate: [qk.groups],
     successToast: group ? "Cohort updated" : "Cohort created",
     onSuccess: onClose,
   });
@@ -159,14 +160,14 @@ function MembersSheet({ group, onClose }: { group: GroupRow; onClose: () => void
         method: "POST",
         body: JSON.stringify({ userIds: picked.map((p) => p.id) }),
       }),
-    invalidate: [["group-members", group.id], ["/api/admin/groups"]],
+    invalidate: [["group-members", group.id], qk.groups],
     successToast: (d) => `${(d as { added: number }).added} member(s) added`,
     onSuccess: () => setPicked([]),
   });
   const remove = useApiMutation({
     mutationFn: (userId: number) =>
       api(`/api/admin/groups/${group.id}/members/${userId}`, { method: "DELETE" }),
-    invalidate: [["group-members", group.id], ["/api/admin/groups"]],
+    invalidate: [["group-members", group.id], qk.groups],
     successToast: "Member removed",
   });
 

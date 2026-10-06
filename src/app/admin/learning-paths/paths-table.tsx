@@ -122,7 +122,7 @@ function PathDialog({ path, onClose }: { path: LearningPathRow | null; onClose: 
       if (JSON.stringify(nextIds) !== JSON.stringify(wantIds)) body.courseIds = nextIds;
       return api(`/api/admin/learning-paths/${path.id}`, { method: "PATCH", body: JSON.stringify(body) });
     },
-    invalidate: [["/api/admin/learning-paths"]],
+    invalidate: [qk.learningPaths],
     successToast: path ? "Learning path updated" : "Learning path created",
     onSuccess: onClose,
   });

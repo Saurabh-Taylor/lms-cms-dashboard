@@ -4,6 +4,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,10 +38,6 @@ const TYPE_LABEL: Record<Question["type"], string> = {
   multi: "Multi select",
   tf: "True / False",
 };
-
-function questionsKey(id: number) {
-  return [`/api/admin/assessments/${id}/questions`] as const;
-}
 
 function QuestionFormDialog({
   assessmentId, question, open, onOpenChange,
@@ -95,7 +92,7 @@ function QuestionFormDialog({
           }),
         },
       ),
-    invalidate: [questionsKey(assessmentId)],
+    invalidate: [qk.assessmentQuestions(assessmentId)],
     successToast: editing ? "Question updated" : "Question added",
     onSuccess: () => onOpenChange(false),
   });
@@ -214,7 +211,7 @@ function QuestionFormDialog({
 
 export function QuestionBank({ assessmentId }: { assessmentId: number }) {
   const query = useQuery({
-    queryKey: questionsKey(assessmentId),
+    queryKey: qk.assessmentQuestions(assessmentId),
     queryFn: () => api<Question[]>(`/api/admin/assessments/${assessmentId}/questions`),
   });
   const [formOpen, setFormOpen] = React.useState(false);
@@ -224,7 +221,7 @@ export function QuestionBank({ assessmentId }: { assessmentId: number }) {
   const remove = useApiMutation({
     mutationFn: (q: Question) =>
       api(`/api/admin/assessments/${assessmentId}/questions/${q.id}`, { method: "DELETE" }),
-    invalidate: [questionsKey(assessmentId)],
+    invalidate: [qk.assessmentQuestions(assessmentId)],
     successToast: "Question deleted",
     onSuccess: () => setDeleting(null),
   });

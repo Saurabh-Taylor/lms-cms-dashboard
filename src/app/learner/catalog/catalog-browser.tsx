@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { fmtDuration } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 interface CatalogResponse {
   data: LearnerCatalogCourse[];
@@ -29,7 +30,7 @@ function CatalogCard({ course }: { course: LearnerCatalogCourse }) {
   const enroll = useApiMutation({
     mutationFn: () =>
       api(`/api/learner/courses/${course.id}/enroll`, { method: "POST" }),
-    invalidate: [["/api/learner/catalog"], ["/api/learner/courses"]],
+    invalidate: [qk.learnerCatalog, qk.learnerCourses],
     successToast: `Enrolled in ${course.title}`,
   });
 
@@ -107,7 +108,7 @@ export function CatalogBrowser() {
   }, [q]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/learner/catalog", { q: debounced, page }],
+    queryKey: [...qk.learnerCatalog, { q: debounced, page }],
     queryFn: () =>
       api<CatalogResponse>(
         `/api/learner/catalog?page=${page}&pageSize=12${debounced ? `&q=${encodeURIComponent(debounced)}` : ""}`

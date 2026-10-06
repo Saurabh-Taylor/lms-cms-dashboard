@@ -15,10 +15,11 @@ import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LearningCard } from "@/components/learner/learning-card";
 import { fmtDate } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 export function DashboardClient({ firstName }: { firstName: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/learner/dashboard"],
+    queryKey: qk.learnerDashboard,
     queryFn: () => api<LearnerDashboard>("/api/learner/dashboard"),
   });
 

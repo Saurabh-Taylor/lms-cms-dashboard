@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,7 @@ const INTEGRATIONS = [
 
 export default function IntegrationsPage() {
   const q = useQuery<Record<string, unknown>>({
-    queryKey: ["/api/admin/settings"],
+    queryKey: qk.settings,
     queryFn: () => api("/api/admin/settings"),
   });
   // Flag map lives in the settings bag under `integrations` — toggles persist.
@@ -30,7 +31,7 @@ export default function IntegrationsPage() {
   const save = useApiMutation({
     mutationFn: (next: Record<string, boolean>) =>
       api("/api/admin/settings", { method: "PUT", body: JSON.stringify({ integrations: next }) }),
-    invalidate: [["/api/admin/settings"]],
+    invalidate: [qk.settings],
     // No successToast — the switch itself is the confirmation; errors still toast.
   });
 

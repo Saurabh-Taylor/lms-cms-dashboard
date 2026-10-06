@@ -10,7 +10,7 @@ import { toast } from "sonner";
  *
  *   const save = useApiMutation({
  *     mutationFn: () => api("/api/admin/categories", { method: "POST", body }),
- *     invalidate: [["/api/admin/categories"]],
+ *     invalidate: [qk.categories],
  *     successToast: "Category created",
  *     onSuccess: () => onOpenChange(false),
  *   });

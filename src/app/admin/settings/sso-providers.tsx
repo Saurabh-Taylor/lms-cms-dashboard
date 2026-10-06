@@ -4,6 +4,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CopyIcon, KeyRoundIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { SsoProvider } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,12 +20,11 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
-const KEY = "/api/admin/sso-providers";
 
 export function SsoProviders() {
   const { data, isLoading } = useQuery<{ providers: SsoProvider[] }>({
-    queryKey: [KEY],
-    queryFn: () => api(KEY),
+    queryKey: qk.ssoProviders,
+    queryFn: () => api("/api/admin/sso-providers"),
   });
   const [addOpen, setAddOpen] = React.useState(false);
   const [setupTarget, setSetupTarget] = React.useState<SsoProvider | null>(null);
@@ -155,7 +155,7 @@ function AddProviderDialog({ onClose }: { onClose: () => void }) {
 
   const save = useApiMutation({
     mutationFn: () =>
-      api(KEY, {
+      api("/api/admin/sso-providers", {
         method: "POST",
         body: JSON.stringify(
           kind === "oidc"
@@ -170,7 +170,7 @@ function AddProviderDialog({ onClose }: { onClose: () => void }) {
               },
         ),
       }),
-    invalidate: [[KEY]],
+    invalidate: [qk.ssoProviders],
     successToast: "Provider registered",
     onSuccess: onClose,
   });
@@ -263,11 +263,11 @@ function EditDialog({ provider, onClose }: { provider: SsoProvider; onClose: () 
 
   const save = useApiMutation({
     mutationFn: () =>
-      api(`${KEY}/${provider.providerId}`, {
+      api(`/api/admin/sso-providers/${provider.providerId}`, {
         method: "PATCH",
         body: JSON.stringify({ domain, issuer }),
       }),
-    invalidate: [[KEY]],
+    invalidate: [qk.ssoProviders],
     successToast: "Provider updated",
     onSuccess: onClose,
   });
@@ -299,8 +299,8 @@ function EditDialog({ provider, onClose }: { provider: SsoProvider; onClose: () 
 
 function DeleteDialog({ provider, onClose }: { provider: SsoProvider | null; onClose: () => void }) {
   const del = useApiMutation({
-    mutationFn: () => api(`${KEY}/${provider?.providerId}`, { method: "DELETE" }),
-    invalidate: [[KEY]],
+    mutationFn: () => api(`/api/admin/sso-providers/${provider?.providerId}`, { method: "DELETE" }),
+    invalidate: [qk.ssoProviders],
     successToast: "Provider deleted",
     onSuccess: onClose,
   });

@@ -6,6 +6,7 @@ import { LocalListTable } from "@/components/shared/local-list-table";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { fmtDateTime } from "@/lib/format";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +47,7 @@ function GradeDialog({
         method: "PATCH",
         body: JSON.stringify({ score, feedback: feedback || undefined }),
       }),
-    invalidate: [["/api/admin/attempts"], ["/api/admin/analytics"]],
+    invalidate: [qk.attempts, qk.analytics],
     successToast: "Grade saved",
     onSuccess: () => onOpenChange(false),
   });

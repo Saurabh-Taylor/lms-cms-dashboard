@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { LearnerSearchResults } from "@/lib/learner-types";
 import type { OptionItem } from "@/lib/types";
 import { LEARNER_NAV } from "@/lib/nav-learner";
+import { qk } from "@/lib/query-keys";
 import { useDebounce } from "@/hooks/use-debounce";
 
 /** Learner-scoped command palette — searches only learner-visible data. */
@@ -34,7 +35,7 @@ export function LearnerCommandPalette({
   }
 
   const search = useQuery({
-    queryKey: ["/api/learner/search", debounced],
+    queryKey: [...qk.learnerSearch, debounced],
     queryFn: () => api<LearnerSearchResults>(`/api/learner/search?q=${encodeURIComponent(debounced)}`),
     enabled: open && debounced.length >= 2,
     placeholderData: (prev) => prev,

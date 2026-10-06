@@ -20,17 +20,18 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { fmtDate, fmtRelative } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 export function AnnouncementsTable() {
   const patch = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       api(`/api/admin/announcements/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    invalidate: [["/api/admin/announcements"]],
+    invalidate: [qk.announcements],
     successToast: "Updated",
   });
   const del = useApiMutation({
     mutationFn: (id: number) => api(`/api/admin/announcements/${id}`, { method: "DELETE" }),
-    invalidate: [["/api/admin/announcements"]],
+    invalidate: [qk.announcements],
     successToast: "Deleted",
   });
 
@@ -98,7 +99,7 @@ function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
           ...(f.status === "scheduled" ? { scheduledAt: new Date(f.scheduledAt).getTime() } : {}),
         }),
       }),
-    invalidate: [["/api/admin/announcements"]],
+    invalidate: [qk.announcements],
     successToast: () =>
       f.status === "sent" ? "Announcement sent" : f.status === "scheduled" ? "Announcement scheduled" : "Draft saved",
     onSuccess: () => {

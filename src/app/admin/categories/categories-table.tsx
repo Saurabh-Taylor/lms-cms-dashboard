@@ -16,13 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { fmtDate } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 export function CategoriesTable() {
   const [edit, setEdit] = React.useState<CategoryRow | null>(null);
 
   const del = useApiMutation({
     mutationFn: (id: number) => api(`/api/admin/categories/${id}`, { method: "DELETE" }),
-    invalidate: [["/api/admin/categories"]],
+    invalidate: [qk.categories],
     successToast: "Category deleted",
   });
 
@@ -81,7 +82,7 @@ function CategoryDialog({ open, onOpenChange, edit }: { open: boolean; onOpenCha
       edit
         ? api(`/api/admin/categories/${edit.id}`, { method: "PATCH", body: JSON.stringify({ name, description }) })
         : api("/api/admin/categories", { method: "POST", body: JSON.stringify({ name, description }) }),
-    invalidate: [["/api/admin/categories"]],
+    invalidate: [qk.categories],
     successToast: () => (edit ? "Category updated" : "Category created"),
     onSuccess: () => onOpenChange(false),
   });

@@ -17,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { AsyncCombobox } from "@/components/async-combobox";
 import { fmtDate } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 const baseCols: ColumnDef<CertificateRow, unknown>[] = [
   { id: "serial", accessorKey: "serial", header: "Serial", meta: { sortKey: "serial" }, cell: ({ row }) => (
@@ -46,7 +47,7 @@ export function CertificatesTable() {
   const restore = useApiMutation({
     mutationFn: (id: number) =>
       api(`/api/admin/certificates/${id}/restore`, { method: "POST" }),
-    invalidate: [["/api/admin/certificates"]],
+    invalidate: [qk.certificates],
     successToast: "Certificate restored",
   });
   const revoke = useApiMutation({
@@ -55,7 +56,7 @@ export function CertificatesTable() {
         method: "POST",
         body: JSON.stringify(reason ? { reason } : {}),
       }),
-    invalidate: [["/api/admin/certificates"]],
+    invalidate: [qk.certificates],
     successToast: "Certificate revoked",
     onSuccess: () => setRevokeTarget(null),
   });
@@ -152,7 +153,7 @@ function IssueDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: 
         method: "POST",
         body: JSON.stringify(v),
       }),
-    invalidate: [["/api/admin/certificates"]],
+    invalidate: [qk.certificates],
     successToast: "Certificate issued",
     onSuccess: () => { onOpenChange(false); setUser(null); setCourse(null); },
   });

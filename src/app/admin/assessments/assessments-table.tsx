@@ -23,6 +23,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { AsyncCombobox } from "@/components/async-combobox";
 import { fmtRelative } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 const KINDS = [
   { value: "quiz", label: "Quiz" },
@@ -41,13 +42,13 @@ export function AssessmentsTable({ fixedKind }: { fixedKind?: string }) {
   const patch = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
       api(`/api/admin/assessments/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    invalidate: [["/api/admin/assessments"]],
+    invalidate: [qk.assessments],
     successToast: "Updated",
   });
 
   const del = useApiMutation({
     mutationFn: (id: number) => api(`/api/admin/assessments/${id}`, { method: "DELETE" }),
-    invalidate: [["/api/admin/assessments"]],
+    invalidate: [qk.assessments],
     successToast: "Deleted",
   });
 
@@ -144,7 +145,7 @@ function CreateDialog({ open, onOpenChange, defaultKind }: { open: boolean; onOp
         method: "POST",
         body: JSON.stringify({ ...f, courseId: course?.id }),
       }),
-    invalidate: [["/api/admin/assessments"]],
+    invalidate: [qk.assessments],
     successToast: () => `${f.kind} created as draft`,
     onSuccess: () => {
       onOpenChange(false);

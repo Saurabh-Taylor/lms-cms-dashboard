@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { fmtDateTime, fmtDuration } from "@/lib/format";
+import { qk } from "@/lib/query-keys";
 
 function assessStatus(a: LearnerAssessment): string {
   if (a.attemptsUsed === 0) return "not started";
@@ -33,7 +34,7 @@ export function AssessmentList({
   emptyDescription: string;
 }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/learner/assessments", kind],
+    queryKey: [...qk.learnerAssessments, kind],
     queryFn: () => api<LearnerAssessment[]>(`/api/learner/assessments?kind=${kind}`),
   });
 

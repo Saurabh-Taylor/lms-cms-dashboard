@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { MediaRow } from "@/lib/types";
+import { qk } from "@/lib/query-keys";
 
 const TYPE_ICONS = {
   image: <ImageIcon className="size-4 text-muted-foreground" />,
@@ -137,7 +138,7 @@ function MediaRowActions({ row, canDelete }: { row: MediaRow; canDelete: boolean
   const [mode, setMode] = React.useState<"preview" | "delete" | null>(null);
   const del = useApiMutation({
     mutationFn: () => api(`/api/admin/media/${row.id}`, { method: "DELETE" }),
-    invalidate: [["/api/admin/media"], ["media-quota"]],
+    invalidate: [qk.media, ["media-quota"]],
     successToast: "Media deleted",
     onSuccess: () => setMode(null),
   });
@@ -332,7 +333,7 @@ function UploadDialog({
         await api<MediaRow>(`/api/admin/media/${asset.id}/complete`, { method: "POST" });
         toast.success("File ready");
       }
-      qc.invalidateQueries({ queryKey: ["/api/admin/media"] });
+      qc.invalidateQueries({ queryKey: qk.media });
       onClose();
     } catch (e) {
       toast.error((e as Error).message);

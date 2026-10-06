@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import type { OptionItem } from "@/lib/types";
+import { qk } from "@/lib/query-keys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/stat-card";
 import { AsyncCombobox } from "@/components/async-combobox";
@@ -41,7 +42,7 @@ export function AnalyticsClient() {
   const [category, setCategory] = React.useState<OptionItem | null>(null);
 
   const q = useQuery<AnalyticsData>({
-    queryKey: ["/api/admin/analytics", range, course?.id, category?.id],
+    queryKey: [...qk.analytics, range, course?.id, category?.id],
     queryFn: () => api(`/api/admin/analytics?range=${range}${course ? `&courseId=${course.id}` : ""}${category ? `&categoryId=${category.id}` : ""}`),
     placeholderData: (prev) => prev,
   });

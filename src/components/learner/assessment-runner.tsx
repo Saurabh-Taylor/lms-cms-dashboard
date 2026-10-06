@@ -21,6 +21,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { fmtDateTime, fmtDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { qk } from "@/lib/query-keys";
 
 type Take = { attemptId: number; attemptNo: number; deadline: number; questions: LearnerAttemptStart["questions"] };
 
@@ -33,7 +34,7 @@ export function AssessmentRunner({ assessmentId }: { assessmentId: number }) {
   const [remaining, setRemaining] = React.useState<number | null>(null);
 
   const detail = useQuery({
-    queryKey: ["/api/learner/assessments", assessmentId],
+    queryKey: [...qk.learnerAssessments, assessmentId],
     queryFn: () => api<LearnerAssessmentDetail>(`/api/learner/assessments/${assessmentId}`),
   });
 
@@ -54,7 +55,7 @@ export function AssessmentRunner({ assessmentId }: { assessmentId: number }) {
         method: "POST",
         body: JSON.stringify(submission !== undefined ? { submission } : { answers }),
       }),
-    invalidate: [["/api/learner/assessments"], ["/api/learner/dashboard"]],
+    invalidate: [qk.learnerAssessments, qk.learnerDashboard],
     onSuccess: (res) => {
       setResult(res);
       setTake(null);

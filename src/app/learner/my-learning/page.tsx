@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpenIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
 import type { LearnerCourse } from "@/lib/learner-types";
+import { qk } from "@/lib/query-keys";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/shared/page-header";
@@ -13,7 +14,7 @@ import { LearningCard } from "@/components/learner/learning-card";
 
 export default function MyLearningPage() {
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/learner/courses"],
+    queryKey: qk.learnerCourses,
     queryFn: () => api<{ data: LearnerCourse[] }>("/api/learner/courses"),
   });
   const [tab, setTab] = React.useState("active");
