@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { isPendingStatus, resolveMediaView } from "@/lib/media-view";
 import { toast } from "sonner";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LearnerCourseDetail } from "@/lib/learner-types";
@@ -38,41 +39,48 @@ const LESSON_ICONS: Record<string, LucideIcon> = {
 };
 
 /**
- * media-linked block renderer — embedUrl (vimeo) / url (external link or an
- * r2 presigned GET minted server-side) / pending & deleted states. Order
- * matters: mediaStatus null = linked asset gone — "unavailable" beats a
- * stale url that may still sit on the block.
+ * media-linked block renderer — the source×status ordering lives in
+ * resolveMediaView (embed beats url; a deleted asset beats a stale url).
  */
 function MediaBlock({ b }: { b: LessonBlock }) {
-  if (b.embedUrl)
-    return (
-      <div
-        className="w-full overflow-hidden rounded-md bg-black"
-        style={{ aspectRatio: b.width && b.height ? `${b.width} / ${b.height}` : "16 / 9" }}
-      >
-        <iframe
-          src={b.embedUrl}
-          className="block size-full"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-          title={b.text ?? "Lesson video"}
-        />
-      </div>
-    );
-  if (b.mediaId && b.mediaStatus == null)
-    return <UnavailableCard icon={LESSON_ICONS[b.type] ?? LinkIcon} text="This content is no longer available." />;
-  if (b.url) {
-    if (b.mime?.startsWith("image/"))
+  const icon = LESSON_ICONS[b.type] ?? LinkIcon;
+  const view = resolveMediaView({
+    embedUrl: b.embedUrl,
+    unavailable: !!b.mediaId && b.mediaStatus == null,
+    url: b.url,
+    mime: b.mime,
+    processing: !!b.mediaId && isPendingStatus(b.mediaStatus),
+    aspect: b.width && b.height ? `${b.width} / ${b.height}` : undefined,
+  });
+  switch (view.kind) {
+    case "embed":
+      return (
+        <div
+          className="w-full overflow-hidden rounded-md bg-black"
+          style={{ aspectRatio: view.aspect ?? "16 / 9" }}
+        >
+          <iframe
+            src={view.url}
+            className="block size-full"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            title={b.text ?? "Lesson video"}
+          />
+        </div>
+      );
+    case "unavailable":
+      return <UnavailableCard icon={icon} text="This content is no longer available." />;
+    case "image":
       return (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={b.url} alt={b.text ?? "Lesson image"} className="w-full rounded-md border" />
+        <img src={view.url} alt={b.text ?? "Lesson image"} className="w-full rounded-md border" />
       );
-    if (b.mime === "application/pdf")
+    case "pdf":
       return (
         <div className="flex flex-col gap-2">
-          <iframe src={b.url} className="h-[70vh] w-full rounded-md border" title={b.text ?? "PDF"} />
+          <iframe src={view.url} className="h-[70vh] w-full rounded-md border" title={b.text ?? "PDF"} />
           <a
-            href={b.url}
+            href={view.url}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-primary underline-offset-4 hover:underline"
@@ -81,20 +89,16 @@ function MediaBlock({ b }: { b: LessonBlock }) {
           </a>
         </div>
       );
-    return <LinkCard url={b.url} text={b.text} download={!!b.mediaId} />;
+    case "download":
+      return <LinkCard url={view.url} text={b.text} download={!!b.mediaId} />;
+    case "processing":
+      return <UnavailableCard icon={icon} text="Content is still processing — check back shortly." />;
+    default:
+      // mediaId present but no url/status signal — asset state unknown
+      return b.mediaId ? (
+        <UnavailableCard icon={icon} text="This content is no longer available." />
+      ) : null;
   }
-  if (b.mediaId)
-    return (
-      <UnavailableCard
-        icon={LESSON_ICONS[b.type] ?? LinkIcon}
-        text={
-          b.mediaStatus === "uploading" || b.mediaStatus === "processing"
-            ? "Content is still processing — check back shortly."
-            : "This content is no longer available."
-        }
-      />
-    );
-  return null;
 }
 
 /** url-bearing block — external link or r2 presigned download. */

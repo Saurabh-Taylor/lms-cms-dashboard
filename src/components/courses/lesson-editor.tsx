@@ -14,6 +14,7 @@ import {
   TypeIcon, VideoIcon,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { isPendingStatus } from "@/lib/media-view";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { LessonNode, OptionItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -302,7 +303,7 @@ function MediaPick({ block, onChange }: { block: Block; onChange: (id: string, p
       {block.mediaId && (
         <div className="flex items-center gap-2">
           <StatusBadge value={block.mediaStatus ?? "ready"} />
-          {block.mediaStatus === "processing" && (
+          {isPendingStatus(block.mediaStatus) && (
             <span className="text-xs text-amber-600 dark:text-amber-400">
               Still processing — learners see a pending state until it&apos;s ready.
             </span>

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api-client";
+import { resolveMediaView } from "@/lib/media-view";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { usePermissions } from "@/hooks/use-me";
 import { fmtBytes, fmtRelative } from "@/lib/format";
@@ -182,36 +183,42 @@ function PreviewDialog({ row, onClose }: { row: MediaRow; onClose: () => void })
     enabled: row.source !== "vimeo",
     staleTime: 30_000,
   });
-  const target = row.source === "vimeo" ? row.embedUrl : url.data?.url;
-  const isImage = row.mime?.startsWith("image/");
-  const isPdf = row.mime === "application/pdf";
+  const isVimeo = row.source === "vimeo";
+  // pending/error are fetch-states, not view kinds — the JSX arms run before
+  // view is consulted. (vimeo's query stays disabled+pending forever, so the
+  // embed resolution can't depend on it.)
+  const view = resolveMediaView({
+    embedUrl: row.embedUrl,
+    url: url.data?.url,
+    mime: row.mime,
+  });
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader><DialogTitle>{row.name}</DialogTitle></DialogHeader>
-        {row.source === "vimeo" ? (
+        {!isVimeo && url.isPending ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Preparing preview…</p>
+        ) : !isVimeo && url.isError ? (
+          <p className="py-8 text-center text-sm text-destructive">Could not load preview.</p>
+        ) : view.kind === "embed" ? (
           <div className="aspect-video w-full overflow-hidden rounded-md bg-black">
             <iframe
-              src={target ?? ""}
+              src={view.url}
               className="block h-full w-full"
               allow="autoplay; fullscreen; picture-in-picture"
               allowFullScreen
               title={row.name}
             />
           </div>
-        ) : url.isPending ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Preparing preview…</p>
-        ) : url.isError ? (
-          <p className="py-8 text-center text-sm text-destructive">Could not load preview.</p>
-        ) : isImage ? (
+        ) : view.kind === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={target ?? ""} alt={row.name} className="max-h-[70vh] w-full rounded-md object-contain" />
-        ) : isPdf ? (
-          <iframe src={target ?? ""} className="h-[70vh] w-full rounded-md border" title={row.name} />
+          <img src={view.url} alt={row.name} className="max-h-[70vh] w-full rounded-md object-contain" />
+        ) : view.kind === "pdf" ? (
+          <iframe src={view.url} className="h-[70vh] w-full rounded-md border" title={row.name} />
         ) : (
           <div className="flex flex-col items-center gap-3 py-8">
             <FileTextIcon className="size-8 text-muted-foreground" />
-            <a href={target ?? "#"} target="_blank" rel="noreferrer" className="text-sm underline">
+            <a href={view.kind === "download" ? view.url : "#"} target="_blank" rel="noreferrer" className="text-sm underline">
               Open / download {row.name}
             </a>
           </div>
