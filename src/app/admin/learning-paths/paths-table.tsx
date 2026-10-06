@@ -7,6 +7,7 @@ import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { usePermissions } from "@/hooks/use-me";
 import { LIST_PAGE_SIZE_MAX, type AssignLearningPathResult } from "@microshala/contracts";
 import { PERM } from "@/lib/permissions";
 import { qk } from "@/lib/query-keys";
@@ -37,12 +38,7 @@ const buildCols = (canAssign: boolean): ColumnDef<LearningPathRow, unknown>[] =>
 
 export function PathsTable() {
   // Permissions drive which actions render — the proxy enforces them regardless.
-  const me = useQuery({
-    queryKey: ["me"],
-    queryFn: () => api<{ permissions: string[] }>("/api/admin/me"),
-    staleTime: 60_000,
-  });
-  const canAssign = (me.data?.permissions ?? []).includes(PERM.pathAssign);
+  const canAssign = usePermissions().has(PERM.pathAssign);
   const columns = React.useMemo(() => buildCols(canAssign), [canAssign]);
   return (
     <ModuleTable<LearningPathRow>

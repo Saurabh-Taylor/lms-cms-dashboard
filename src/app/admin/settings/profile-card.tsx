@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { useMe } from "@/hooks/use-me";
+import type { SessionUser } from "@/lib/me";
 import { initials } from "@/lib/format";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -15,16 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface AdminMe {
-  id: number; name: string; email: string; role: string; appRole: string;
-}
-
 export function ProfileCard() {
   const router = useRouter();
-  const { data: me } = useQuery<AdminMe>({
-    queryKey: ["/api/admin/me"],
-    queryFn: () => api("/api/admin/me"),
-  });
+  const { data: me } = useMe();
 
   return (
     <Card>
@@ -40,7 +35,7 @@ export function ProfileCard() {
   );
 }
 
-function ProfileFields({ me, onSaved }: { me: AdminMe; onSaved: () => void }) {
+function ProfileFields({ me, onSaved }: { me: SessionUser; onSaved: () => void }) {
   const [name, setName] = React.useState(me.name);
   const dirty = name.trim() !== me.name;
 
@@ -48,7 +43,7 @@ function ProfileFields({ me, onSaved }: { me: AdminMe; onSaved: () => void }) {
     mutationFn: () =>
       api("/api/admin/me", { method: "PATCH", body: JSON.stringify({ name: name.trim() }) }),
     successToast: "Profile updated",
-    invalidate: [["/api/admin/me"]],
+    invalidate: [qk.me],
     onSuccess: onSaved,
     errorToast: false,
     onError: (e) => toast.error("Couldn't save profile", { description: e.message }),

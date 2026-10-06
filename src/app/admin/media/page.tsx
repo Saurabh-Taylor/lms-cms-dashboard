@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
+import { usePermissions } from "@/hooks/use-me";
 import { fmtBytes, fmtRelative } from "@/lib/format";
 import {
   MEDIA_FILE_EXTS,
@@ -66,12 +67,7 @@ function buildCols(canDelete: boolean): ColumnDef<MediaRow, unknown>[] {
 
 export default function MediaPage() {
   // Permissions drive which actions render — the proxy enforces them regardless.
-  const me = useQuery({
-    queryKey: ["me"],
-    queryFn: () => api<{ permissions: string[] }>("/api/admin/me"),
-    staleTime: 60_000,
-  });
-  const perms = new Set(me.data?.permissions ?? []);
+  const perms = usePermissions();
   const canUpload = perms.has(PERM.mediaUpload);
   const canDelete = perms.has(PERM.mediaDelete);
   const columns = React.useMemo(() => buildCols(canDelete), [canDelete]);

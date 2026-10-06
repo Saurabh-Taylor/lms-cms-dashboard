@@ -4,6 +4,7 @@
  * queries key on `["<entity>", id]`.
  */
 export const qk = {
+  me: ["/api/admin/me"],
   courses: ["/api/admin/courses"],
   course: (id: number) => ["course", id],
   enrollments: ["/api/admin/enrollments"],
