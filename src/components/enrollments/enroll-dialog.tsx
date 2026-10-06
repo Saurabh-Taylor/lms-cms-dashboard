@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { toast } from "sonner";
 import { CheckCircleIcon, XCircleIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { bulkToast, mergeResults, partitionBulk, singleToast } from "@/lib/bulk-results";
 import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
@@ -37,8 +37,11 @@ export function SingleEnrollDialog({ open, onOpenChange }: { open: boolean; onOp
       }),
     invalidate: [qk.enrollments],
     onSuccess: (r) => {
-      if (r.succeeded) { toast.success("Enrollment created"); onOpenChange(false); }
-      else toast.warning(r.results[0]?.reason ?? "Not enrolled");
+      const { failed } = singleToast(r.results, {
+        success: "Enrollment created",
+        fallbackReason: "Not enrolled",
+      });
+      if (!failed.length) onOpenChange(false);
     },
   });
 
@@ -81,7 +84,6 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
   const [courses, setCourses] = React.useState<OptionItem[]>([]);
   const [phase, setPhase] = React.useState<BulkPhase>("select");
   const [results, setResults] = React.useState<EnrollResult[]>([]);
-  const [, setRetryIds] = React.useState<number[]>([]);
 
   const learnerName = React.useCallback(
     (id: number) => learners.find((l) => l.id === id)?.label ?? `User ${id}`,
@@ -99,24 +101,23 @@ export function BulkEnrollDialog({ open, onOpenChange }: { open: boolean; onOpen
         body: JSON.stringify({ userIds, courseIds: courses.map((c) => c.id) }),
       }),
     invalidate: [qk.enrollments],
-    onSuccess: (r, userIds) => {
-      setResults((prev) => {
-        // merge retry results back over previous failures
-        const byUser = new Map<number, EnrollResult>();
-        for (const p of prev) if (!userIds.includes(p.userId) || p.ok) byUser.set(`${p.userId}:${p.courseId}` as never, p);
-        for (const n of r.results) byUser.set(`${n.userId}:${n.courseId}` as never, n);
-        return [...byUser.values()];
-      });
+    onSuccess: (r) => {
+      // merge retry results back over previous failures
+      setResults((prev) =>
+        mergeResults(prev, r.results, (e) => `${e.userId}:${e.courseId}`)
+      );
       setPhase("done");
-      if (!r.failed) toast.success(`${r.succeeded} enrollment(s) created`);
-      else toast.warning(`${r.succeeded} created, ${r.failed} failed`);
+      bulkToast(r.results, {
+        verb: "enrollment(s) created",
+        skippedLabel: "already enrolled",
+      });
     },
     onError: () => setPhase("select"),
   });
 
-  const failed = results.filter((r) => !r.ok);
+  const failed = partitionBulk(results).failed;
 
-  const reset = () => { setPhase("select"); setResults([]); setLearners([]); setCourses([]); setRetryIds([]); };
+  const reset = () => { setPhase("select"); setResults([]); setLearners([]); setCourses([]); };
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>

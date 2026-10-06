@@ -3,11 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { bulkToast, singleToast, type BulkResult } from "@/lib/bulk-results";
 import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem, Role, UserRow } from "@/lib/types";
@@ -110,6 +110,7 @@ export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: numbe
     successToast: (d, u) => `${u.name} rejected`,
   });
 
+  const qc = useQueryClient();
   // Destructure the stable mutate fns — whole-mutation objects are recreated
   // each render, which would make the columns useMemo useless.
   const { mutate: patchUser } = patch;
@@ -117,6 +118,29 @@ export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: numbe
   const { mutate: resendInviteTo } = resendInvite;
   const { mutate: approveReq } = approveRequest;
   const { mutate: rejectReq } = rejectRequest;
+
+  // One summary toast + one invalidation — not N of each.
+  const suspendSelected = async () => {
+    const ids = st.selectedIds;
+    st.clearSelection();
+    const settled = await Promise.allSettled(
+      ids.map((id) =>
+        api(`/api/admin/users/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "suspended" }),
+        })
+      )
+    );
+    qc.invalidateQueries({ queryKey: qk.users });
+    bulkToast(
+      settled.map((s): BulkResult =>
+        s.status === "fulfilled"
+          ? { ok: true }
+          : { ok: false, reason: s.reason instanceof Error ? s.reason.message : "unknown" }
+      ),
+      { verb: "suspended" }
+    );
+  };
 
   const columns = React.useMemo<ColumnDef<UserRow, unknown>[]>(
     () => [
@@ -249,10 +273,7 @@ export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: numbe
           </TableToolbar>
         }
         bulkBar={
-          <Button size="sm" variant="destructive" onClick={() => {
-            for (const id of st.selectedIds) patch.mutate({ id, body: { status: "suspended" } });
-            st.clearSelection();
-          }}>
+          <Button size="sm" variant="destructive" onClick={suspendSelected}>
             Suspend {st.selectedIds.length}
           </Button>
         }
@@ -410,14 +431,16 @@ function AssignCourseDialog({ user, onClose }: { user: UserRow | null; onClose: 
   const close = () => { setCourse(null); onClose(); };
   const assign = useApiMutation({
     mutationFn: (v: { userId: number; userName: string; courseId: number }) =>
-      api<{ succeeded: number; results: { reason?: string }[] }>("/api/admin/enrollments", {
+      api<{ succeeded: number; results: { ok: boolean; reason?: string }[] }>("/api/admin/enrollments", {
         method: "POST",
         body: JSON.stringify({ userId: v.userId, courseId: v.courseId }),
       }),
     invalidate: [qk.enrollments, qk.users],
     onSuccess: (r, v) => {
-      if (r.succeeded) toast.success(`Enrolled ${v.userName}`);
-      else toast.warning(r.results?.[0]?.reason ?? "Not enrolled");
+      singleToast(r.results, {
+        success: `Enrolled ${v.userName}`,
+        fallbackReason: "Not enrolled",
+      });
       close();
     },
   });

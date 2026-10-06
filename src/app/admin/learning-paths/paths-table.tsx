@@ -4,8 +4,8 @@ import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
-import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { bulkToast } from "@/lib/bulk-results";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { usePermissions } from "@/hooks/use-me";
 import { LIST_PAGE_SIZE_MAX, type AssignLearningPathResult } from "@microshala/contracts";
@@ -194,16 +194,14 @@ function AssignPathDialog({ path, onClose }: { path: LearningPathRow; onClose: (
       }),
     invalidate: [listKey],
     onSuccess: (r) => {
-      const failed = r.results.filter((t) => !t.ok);
       // reason is informational on ok targets (spec: "Already assigned" is
-      // NOT a failure) — report it separately so the count isn't a lie.
-      const already = r.results.filter((t) => t.ok && t.reason).length;
-      const fresh = r.results.length - failed.length - already;
-      const alreadyNote = already ? ` · ${already} already assigned` : "";
-      if (failed.length)
-        toast.warning(`${fresh} assigned${alreadyNote} · ${failed.length} skipped (${[...new Set(failed.map((f) => f.reason ?? "unknown"))].join("; ")})`);
-      else if (!fresh) toast.info("Already assigned — nothing new");
-      else toast.success(`Assigned — ${r.enrolled} enrollment(s) created${alreadyNote}`);
+      // NOT a failure) — partitionBulk reports it as skipped, not fresh.
+      bulkToast(r.results, {
+        verb: "assigned",
+        skippedLabel: "already assigned",
+        detail: r.enrolled ? `${r.enrolled} enrollment(s) created` : undefined,
+        nothingMessage: "Already assigned — nothing new",
+      });
       setLearners([]);
       setCohorts([]);
     },

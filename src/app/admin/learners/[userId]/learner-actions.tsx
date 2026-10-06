@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { singleToast } from "@/lib/bulk-results";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { OptionItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -126,8 +126,10 @@ function AssignDialog({
       api<EnrollResultResponse>("/api/admin/enrollments", { method: "POST", body: JSON.stringify({ userId: user.id, courseId: item!.id }) }),
     invalidate: "all",
     onSuccess: (r) => {
-      if (r.succeeded) toast.success(`Assigned to ${user.name}`);
-      else toast.warning(r.results?.[0]?.reason ?? "Not assigned");
+      singleToast(r.results, {
+        success: `Assigned to ${user.name}`,
+        fallbackReason: "Not assigned",
+      });
       onOpenChange(false); setItem(null);
     },
   });
