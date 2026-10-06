@@ -19,13 +19,12 @@ const API_LITERAL = /["'`]\/api\//;
 // Call-site args (api("…"), apiServer("…"), fetch("…")) hold endpoint literals
 // legitimately — blank them before the literal test so a one-line
 // useQuery({queryKey: qk.x, queryFn: () => api("/api/x")}) stays legal.
-const CALL_ARG = /\b(api|apiServer|fetch|qs|proxy)\s*\([^;]*\)/g;
-// Laundered drift: an api literal bound to a name (const KEY = "/api/…",
-// return [`/api/…`]) still bypasses qk when the name lands in a key position.
-// Only flags literals that ARE the bound value — `const res = api("/api/x")`
-// binds a call result, not the literal, and passes.
-const BOUND_LITERAL =
-  /\b(?:const|let|var)\s+\w+\s*=\s*(?:["'`]\/api\/|\[\s*["'`]\/api\/|\([^)]*\)\s*=>\s*[\["'`][^\n]*\/api\/)|\breturn\s+[\[("'`][^\n]*\/api\//;
+const CALL_ARG =
+  /\b(api|apiServer|apiServerRaw|fetch|qs|proxy|fetchServerSentEvents|useList|useServerTable|useDetail)(?:<[^>]*>)?\s*\([^)]*\)/g;
+// Laundering (binding an endpoint literal to a name that lands in a key
+// position) is an AST question — the eslint rule `local/no-api-literal-keys`
+// (scripts/eslint-rules/) owns it. This script is the CI backstop for
+// literals sitting directly in key positions.
 
 const files: string[] = [];
 const walk = (dir: string) => {
@@ -45,7 +44,6 @@ for (const file of files) {
   // query-keys.ts is the registry — literals live there by definition;
   // src/app/api/** route handlers legitimately hold endpoint literals.
   if (file.endsWith("query-keys.ts")) continue;
-  const isRouteHandler = file.includes("app/api/");
   const lines = readFileSync(file, "utf8").split("\n");
   let depth = 0; // >0 → inside a queryKey:/invalidate: array
   for (let i = 0; i < lines.length; i++) {
@@ -57,9 +55,6 @@ for (const file of files) {
       trimmed.startsWith("/*")
     )
       continue;
-    if (!isRouteHandler && BOUND_LITERAL.test(line)) {
-      errors.push(`${file}:${i + 1} endpoint literal bound to a name — put it in qk.* instead`);
-    }
     if (depth === 0 && !KEY_POSITION.test(line)) continue;
     if (API_LITERAL.test(line.replace(CALL_ARG, ""))) {
       errors.push(`${file}:${i + 1} endpoint literal in query key — use a qk.* entry`);
