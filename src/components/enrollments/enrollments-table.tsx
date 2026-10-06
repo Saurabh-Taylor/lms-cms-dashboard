@@ -3,13 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { api } from "@/lib/api-client";
 import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { EnrollmentRow } from "@/lib/types";
-import { useTableParams } from "@/hooks/use-table-params";
-import { useList } from "@/hooks/use-list";
+import { useServerTable } from "@/hooks/use-server-table";
 import { DataTable } from "@/components/data-table/data-table";
 import { SearchInput, TableToolbar } from "@/components/data-table/table-toolbar";
 import { FilterSelect } from "@/components/data-table/filter-select";
@@ -36,33 +35,25 @@ export function EnrollmentsTable({
   compact?: boolean;
 }) {
   const router = useRouter();
-  const tp = useTableParams();
-  const [selection, setSelection] = React.useState<RowSelectionState>({});
-  const [prevParams, setPrevParams] = React.useState(tp.params);
-  if (prevParams !== tp.params) {
-    setPrevParams(tp.params);
-    setSelection({});
-  }
-
-  const query = useList<EnrollmentRow>("/api/admin/enrollments", {
-    page: tp.page,
-    pageSize: tp.pageSize,
-    q: tp.q || undefined,
-    sort: tp.sort,
-    order: tp.sort ? tp.order : undefined,
-    status: tp.params.status,
-    courseId: fixedCourseId ?? tp.params.courseId,
-    userId: fixedUserId ?? tp.params.userId,
-    cohortId: tp.params.cohortId,
-  });
+  const st = useServerTable<EnrollmentRow>(
+    "/api/admin/enrollments",
+    ["status", "courseId", "userId", "cohortId"],
+    {
+      ...(fixedCourseId ? { courseId: fixedCourseId } : {}),
+      ...(fixedUserId ? { userId: fixedUserId } : {}),
+    }
+  );
 
   const bulk = useApiMutation({
     mutationFn: ({ ids, action }: { ids: number[]; action: string }) =>
       api("/api/admin/enrollments", { method: "PATCH", body: JSON.stringify({ ids, action }) }),
     invalidate: [qk.enrollments],
     successToast: (_, v) => `Updated ${v.ids.length} enrollment(s)`,
-    onSuccess: () => setSelection({}),
+    onSuccess: st.clearSelection,
   });
+  // Destructure the stable mutate fn — whole-mutation objects are recreated
+  // each render, which would make the columns useMemo useless.
+  const { mutate: bulkMutate } = bulk;
 
   const columns = React.useMemo<ColumnDef<EnrollmentRow, unknown>[]>(() => {
     const cols: ColumnDef<EnrollmentRow, unknown>[] = [];
@@ -122,51 +113,37 @@ export function EnrollmentsTable({
               { label: "View learner", onClick: () => router.push(`/admin/learners/${row.original.userId}` as never) },
               { label: "View course", onClick: () => router.push(`/admin/courses/${row.original.courseId}` as never) },
               row.original.status === "suspended"
-                ? { label: "Reactivate", onClick: () => bulk.mutate({ ids: [row.original.id], action: "reactivate" }), separatorAbove: true }
-                : { label: "Suspend", destructive: true, onClick: () => bulk.mutate({ ids: [row.original.id], action: "suspend" }), separatorAbove: true },
+                ? { label: "Reactivate", onClick: () => bulkMutate({ ids: [row.original.id], action: "reactivate" }), separatorAbove: true }
+                : { label: "Suspend", destructive: true, onClick: () => bulkMutate({ ids: [row.original.id], action: "suspend" }), separatorAbove: true },
             ]}
           />
         ),
       }
     );
     return cols;
-  }, [hideLearnerCol, hideCourseCol, router, bulk]);
-
-  const selIds = Object.keys(selection).map(Number);
+  }, [hideLearnerCol, hideCourseCol, router, bulkMutate]);
 
   return (
     <DataTable
       columns={columns}
-      data={query.data?.data ?? []}
-      total={query.data?.total ?? 0}
-      page={tp.page}
-      pageSize={tp.pageSize}
-      sort={tp.sort}
-      order={tp.order}
-      onSort={tp.toggleSort}
-      onPageChange={(p) => tp.setParams({ page: p })}
-      onPageSizeChange={(s) => tp.setParams({ pageSize: s, page: undefined })}
-      isLoading={query.isLoading}
-      isFetching={query.isFetching}
-      error={query.error?.message ?? null}
-      onRetry={() => query.refetch()}
+      {...st.tableProps}
       selectable
-      rowSelection={selection}
-      onRowSelectionChange={setSelection}
+      rowSelection={st.selection}
+      onRowSelectionChange={st.setSelection}
       getRowId={(r) => String(r.id)}
       emptyTitle="No enrollments"
       emptyDescription="Enrollments will appear here once learners are assigned to courses."
       toolbar={
         <TableToolbar>
-          <SearchInput value={tp.q} onChange={(v) => tp.setFilter({ q: v })} placeholder="Search learner or course…" className={compact ? "w-52" : "w-64"} />
-          <FilterSelect value={tp.params.status} onChange={(v) => tp.setFilter({ status: v })} options={STATUS_OPTS} placeholder="Status" allLabel="All statuses" className="w-36" />
+          <SearchInput value={st.q} onChange={(v) => st.setFilter({ q: v })} placeholder="Search learner or course…" className={compact ? "w-52" : "w-64"} />
+          <FilterSelect value={st.params.status} onChange={(v) => st.setFilter({ status: v })} options={STATUS_OPTS} placeholder="Status" allLabel="All statuses" className="w-36" />
         </TableToolbar>
       }
       bulkBar={
         <>
-          <Button size="sm" variant="outline" onClick={() => bulk.mutate({ ids: selIds, action: "suspend" })}>Suspend</Button>
-          <Button size="sm" variant="outline" onClick={() => bulk.mutate({ ids: selIds, action: "reactivate" })}>Reactivate</Button>
-          <Button size="sm" variant="destructive" onClick={() => bulk.mutate({ ids: selIds, action: "delete" })}>Remove</Button>
+          <Button size="sm" variant="outline" onClick={() => bulkMutate({ ids: st.selectedIds, action: "suspend" })}>Suspend</Button>
+          <Button size="sm" variant="outline" onClick={() => bulkMutate({ ids: st.selectedIds, action: "reactivate" })}>Reactivate</Button>
+          <Button size="sm" variant="destructive" onClick={() => bulkMutate({ ids: st.selectedIds, action: "delete" })}>Remove</Button>
         </>
       }
     />

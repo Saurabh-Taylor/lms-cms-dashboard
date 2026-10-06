@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -62,16 +62,10 @@ export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: numbe
   const st = useServerTable<UserRow>("/api/admin/users", [
     "status", "cohortId", "activeWithinDays", "courseId",
   ], { role });
-  const [selection, setSelection] = React.useState<RowSelectionState>({});
   const [createOpen, setCreateOpen] = React.useState(false);
   const [assignTarget, setAssignTarget] = React.useState<UserRow | null>(null);
   const [roleTarget, setRoleTarget] = React.useState<UserRow | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<UserRow | null>(null);
-  const [prevParams, setPrevParams] = React.useState(st.params);
-  if (prevParams !== st.params) {
-    setPrevParams(st.params);
-    setSelection({});
-  }
 
   const cohorts = useQuery({
     queryKey: ["options", "cohorts"],
@@ -123,13 +117,6 @@ export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: numbe
   const { mutate: resendInviteTo } = resendInvite;
   const { mutate: approveReq } = approveRequest;
   const { mutate: rejectReq } = rejectRequest;
-
-  // force the role filter into every request
-  const tableProps = {
-    ...st.tableProps,
-    data: st.query.data?.data ?? [],
-    total: st.query.data?.total ?? 0,
-  };
 
   const columns = React.useMemo<ColumnDef<UserRow, unknown>[]>(
     () => [
@@ -232,16 +219,14 @@ export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: numbe
     [role, meId, meAppRole, router, patchUser, sendResetTo, resendInviteTo, approveReq, rejectReq]
   );
 
-  const selIds = Object.keys(selection).map(Number);
-
   return (
     <>
       <DataTable
         columns={columns}
-        {...tableProps}
+        {...st.tableProps}
         selectable
-        rowSelection={selection}
-        onRowSelectionChange={setSelection}
+        rowSelection={st.selection}
+        onRowSelectionChange={st.setSelection}
         getRowId={(r) => String(r.id)}
         onRowClick={(r) => router.push(`/admin/learners/${r.id}` as never)}
         emptyTitle={`No ${role}s found`}
@@ -265,10 +250,10 @@ export function UsersTable({ role, meId, meAppRole }: { role: Role; meId?: numbe
         }
         bulkBar={
           <Button size="sm" variant="destructive" onClick={() => {
-            for (const id of selIds) patch.mutate({ id, body: { status: "suspended" } });
-            setSelection({});
+            for (const id of st.selectedIds) patch.mutate({ id, body: { status: "suspended" } });
+            st.clearSelection();
           }}>
-            Suspend {selIds.length}
+            Suspend {st.selectedIds.length}
           </Button>
         }
       />

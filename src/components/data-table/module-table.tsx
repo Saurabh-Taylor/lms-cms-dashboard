@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useServerTable } from "@/hooks/use-server-table";
 import { DataTable } from "@/components/data-table/data-table";
 import { SearchInput, TableToolbar } from "@/components/data-table/table-toolbar";
@@ -27,7 +27,6 @@ interface ModuleTableProps<T> {
   emptyTitle: string;
   emptyDescription?: string;
   emptyAction?: React.ReactNode;
-  extraParams?: Record<string, unknown>;
 }
 
 export function ModuleTable<T extends { id: number }>({
@@ -40,14 +39,6 @@ export function ModuleTable<T extends { id: number }>({
     (filters ?? []).map((f) => f.param),
     fixed
   );
-  const [selection, setSelection] = React.useState<RowSelectionState>({});
-  // Reset selection whenever URL params change (render-phase adjust)
-  const [prevParams, setPrevParams] = React.useState(st.params);
-  if (prevParams !== st.params) {
-    setPrevParams(st.params);
-    setSelection({});
-  }
-
   const hasActiveFilters =
     !!st.q || (filters ?? []).some((f) => st.params[f.param]);
   const clearFilters = () =>
@@ -63,8 +54,8 @@ export function ModuleTable<T extends { id: number }>({
       columns={columns}
       {...st.tableProps}
       selectable={selectable}
-      rowSelection={selection}
-      onRowSelectionChange={setSelection}
+      rowSelection={st.selection}
+      onRowSelectionChange={st.setSelection}
       getRowId={(r) => String(r.id)}
       onRowClick={onRowClick}
       emptyTitle={emptyTitle}
@@ -100,7 +91,7 @@ export function ModuleTable<T extends { id: number }>({
         ) : undefined
       }
       bulkBar={selectable && bulkActions
-        ? bulkActions(Object.keys(selection).map(Number), () => setSelection({}))
+        ? bulkActions(st.selectedIds, st.clearSelection)
         : undefined}
     />
   );

@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { RowSelectionState } from "@tanstack/react-table";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -40,16 +39,9 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
   const st = useServerTable<CourseRow>("/api/admin/courses", [
     "status", "categoryId", "difficulty", "instructorId",
   ]);
-  const [selection, setSelection] = React.useState<RowSelectionState>({});
   const [formOpen, setFormOpen] = React.useState(openNew);
   const [deleting, setDeleting] = React.useState<CourseRow | null>(null);
   const [bulkDelete, setBulkDelete] = React.useState(false);
-
-  const [prevParams, setPrevParams] = React.useState(st.params);
-  if (prevParams !== st.params) {
-    setPrevParams(st.params);
-    setSelection({});
-  }
 
   const categories = useQuery({
     queryKey: ["options", "categories"],
@@ -84,7 +76,7 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
     },
     invalidate: [["/api/admin/courses"]],
     successToast: (_, ids) => `${ids.length} course(s) deleted`,
-    onSuccess: () => { setBulkDelete(false); setSelection({}); },
+    onSuccess: () => { setBulkDelete(false); st.clearSelection(); },
   });
 
   const columns = React.useMemo<ColumnDef<CourseRow, unknown>[]>(
@@ -179,7 +171,6 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
     [router, mut, duplicate]
   );
 
-  const selectedIds = Object.keys(selection).map((k) => Number(k));
 
   return (
     <>
@@ -187,8 +178,8 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
         columns={columns}
         {...st.tableProps}
         selectable
-        rowSelection={selection}
-        onRowSelectionChange={setSelection}
+        rowSelection={st.selection}
+        onRowSelectionChange={st.setSelection}
         getRowId={(r) => String(r.id)}
         onRowClick={(r) => router.push(`/admin/courses/${r.id}` as never)}
         emptyTitle="No courses found"
@@ -213,10 +204,10 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
         }
         bulkBar={
           <>
-            <Button size="sm" variant="outline" onClick={() => { for (const id of selectedIds) mut.mutate({ id, body: { status: "published" } }); }}>
+            <Button size="sm" variant="outline" onClick={() => { for (const id of st.selectedIds) mut.mutate({ id, body: { status: "published" } }); }}>
               Publish
             </Button>
-            <Button size="sm" variant="outline" onClick={() => { for (const id of selectedIds) mut.mutate({ id, body: { status: "archived" } }); setSelection({}); }}>
+            <Button size="sm" variant="outline" onClick={() => { for (const id of st.selectedIds) mut.mutate({ id, body: { status: "archived" } }); st.clearSelection(); }}>
               Archive
             </Button>
             <Button size="sm" variant="destructive" onClick={() => setBulkDelete(true)}>
@@ -240,12 +231,12 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
       <ConfirmDialog
         open={bulkDelete}
         onOpenChange={setBulkDelete}
-        title={`Delete ${selectedIds.length} course(s)?`}
+        title={`Delete ${st.selectedIds.length} course(s)?`}
         description="This permanently removes the selected courses and their content."
         confirmLabel="Delete all"
         destructive
         loading={bulkDel.isPending}
-        onConfirm={() => bulkDel.mutate(selectedIds)}
+        onConfirm={() => bulkDel.mutate(st.selectedIds)}
       />
     </>
   );
