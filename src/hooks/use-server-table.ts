@@ -47,7 +47,7 @@ export function useServerTable<T extends { id: number }>(
     page: tp.page,
     pageSize: tp.pageSize,
     sort: tp.sort,
-    order: tp.order as "asc" | "desc",
+    order: tp.order,
     onSort: tp.toggleSort,
     onPageChange: (p: number) => tp.setParams({ page: p }),
     onPageSizeChange: (s: number) => tp.setParams({ pageSize: s, page: undefined }),

@@ -4,8 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { qk } from "@/lib/query-keys";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import type { CourseRow, OptionItem } from "@/lib/types";
 import { useServerTable } from "@/hooks/use-server-table";
@@ -20,8 +22,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { fmtRelative, initials } from "@/lib/format";
 import { CourseFormDialog } from "@/components/courses/course-form-dialog";
-import { api as apiClient } from "@/lib/api-client";
-import { useQuery } from "@tanstack/react-query";
 
 const STATUS_OPTS = [
   { value: "published", label: "Published" },
@@ -51,30 +51,30 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
 
   const mut = useApiMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, unknown> }) =>
-      apiClient(`/api/admin/courses/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-    invalidate: [["/api/admin/courses"]],
+      api(`/api/admin/courses/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    invalidate: [qk.courses],
     successToast: (_, v) =>
       v.body.status === "published" ? "Course published" : v.body.status === "archived" ? "Course archived" : "Course updated",
   });
 
   const duplicate = useApiMutation({
-    mutationFn: (id: number) => apiClient(`/api/admin/courses/${id}/duplicate`, { method: "POST" }),
-    invalidate: [["/api/admin/courses"]],
+    mutationFn: (id: number) => api(`/api/admin/courses/${id}/duplicate`, { method: "POST" }),
+    invalidate: [qk.courses],
     successToast: "Course duplicated as draft",
   });
 
   const del = useApiMutation({
-    mutationFn: (id: number) => apiClient(`/api/admin/courses/${id}`, { method: "DELETE" }),
-    invalidate: [["/api/admin/courses"]],
+    mutationFn: (id: number) => api(`/api/admin/courses/${id}`, { method: "DELETE" }),
+    invalidate: [qk.courses],
     successToast: "Course deleted",
     onSuccess: () => setDeleting(null),
   });
 
   const bulkDel = useApiMutation({
     mutationFn: async (ids: number[]) => {
-      for (const id of ids) await apiClient(`/api/admin/courses/${id}`, { method: "DELETE" });
+      for (const id of ids) await api(`/api/admin/courses/${id}`, { method: "DELETE" });
     },
-    invalidate: [["/api/admin/courses"]],
+    invalidate: [qk.courses],
     successToast: (_, ids) => `${ids.length} course(s) deleted`,
     onSuccess: () => { setBulkDelete(false); st.clearSelection(); },
   });
@@ -204,7 +204,7 @@ export function CoursesTable({ openNew }: { openNew: boolean }) {
         }
         bulkBar={
           <>
-            <Button size="sm" variant="outline" onClick={() => { for (const id of st.selectedIds) mut.mutate({ id, body: { status: "published" } }); }}>
+            <Button size="sm" variant="outline" onClick={() => { for (const id of st.selectedIds) mut.mutate({ id, body: { status: "published" } }); st.clearSelection(); }}>
               Publish
             </Button>
             <Button size="sm" variant="outline" onClick={() => { for (const id of st.selectedIds) mut.mutate({ id, body: { status: "archived" } }); st.clearSelection(); }}>
