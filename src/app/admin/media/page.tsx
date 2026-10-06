@@ -75,7 +75,7 @@ export default function MediaPage() {
   const columns = React.useMemo(() => buildCols(canDelete), [canDelete]);
 
   const quota = useQuery({
-    queryKey: ["media-quota"],
+    queryKey: qk.mediaQuota,
     queryFn: () =>
       api<{
         configured: boolean;
@@ -138,7 +138,7 @@ function MediaRowActions({ row, canDelete }: { row: MediaRow; canDelete: boolean
   const [mode, setMode] = React.useState<"preview" | "delete" | null>(null);
   const del = useApiMutation({
     mutationFn: () => api(`/api/admin/media/${row.id}`, { method: "DELETE" }),
-    invalidate: [qk.media, ["media-quota"]],
+    invalidate: [qk.media, qk.mediaQuota],
     successToast: "Media deleted",
     onSuccess: () => setMode(null),
   });

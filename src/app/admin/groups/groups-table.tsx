@@ -143,7 +143,7 @@ function MembersSheet({ group, onClose }: { group: GroupRow; onClose: () => void
   if (debounced !== prevQ) { setPrevQ(debounced); setPage(1); }
 
   const membersQ = useQuery({
-    queryKey: ["group-members", group.id, debounced, page],
+    queryKey: [...qk.groupMembers(group.id), debounced, page],
     queryFn: () =>
       api<ListResponse<MemberRow>>(
         `/api/admin/groups/${group.id}/members?page=${page}&pageSize=${MEMBER_PAGE}&q=${encodeURIComponent(debounced)}`,
@@ -160,14 +160,14 @@ function MembersSheet({ group, onClose }: { group: GroupRow; onClose: () => void
         method: "POST",
         body: JSON.stringify({ userIds: picked.map((p) => p.id) }),
       }),
-    invalidate: [["group-members", group.id], qk.groups],
+    invalidate: [qk.groupMembers(group.id), qk.groups],
     successToast: (d) => `${(d as { added: number }).added} member(s) added`,
     onSuccess: () => setPicked([]),
   });
   const remove = useApiMutation({
     mutationFn: (userId: number) =>
       api(`/api/admin/groups/${group.id}/members/${userId}`, { method: "DELETE" }),
-    invalidate: [["group-members", group.id], qk.groups],
+    invalidate: [qk.groupMembers(group.id), qk.groups],
     successToast: "Member removed",
   });
 

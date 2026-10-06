@@ -14,8 +14,12 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const KEY_POSITION = /\b(queryKey|invalidate)\s*:/;
+const KEY_POSITION = /\b(queryKey|invalidate|setQueryData)\s*[:(]/;
 const API_LITERAL = /["'`]\/api\//;
+// Call-site args (api("…"), apiServer("…"), fetch("…")) hold endpoint literals
+// legitimately — blank them before the literal test so a one-line
+// useQuery({queryKey: qk.x, queryFn: () => api("/api/x")}) stays legal.
+const CALL_ARG = /\b(api|apiServer|fetch|qs|proxy)\s*\([^;]*\)/g;
 // Laundered drift: an api literal bound to a name (const KEY = "/api/…",
 // return [`/api/…`]) still bypasses qk when the name lands in a key position.
 // Only flags literals that ARE the bound value — `const res = api("/api/x")`
@@ -47,12 +51,17 @@ for (const file of files) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
-    if (trimmed.startsWith("//") || trimmed.startsWith("*")) continue;
+    if (
+      trimmed.startsWith("//") ||
+      trimmed.startsWith("*") ||
+      trimmed.startsWith("/*")
+    )
+      continue;
     if (!isRouteHandler && BOUND_LITERAL.test(line)) {
       errors.push(`${file}:${i + 1} endpoint literal bound to a name — put it in qk.* instead`);
     }
     if (depth === 0 && !KEY_POSITION.test(line)) continue;
-    if (API_LITERAL.test(line)) {
+    if (API_LITERAL.test(line.replace(CALL_ARG, ""))) {
       errors.push(`${file}:${i + 1} endpoint literal in query key — use a qk.* entry`);
     }
     depth += (line.match(/\[/g) ?? []).length - (line.match(/]/g) ?? []).length;

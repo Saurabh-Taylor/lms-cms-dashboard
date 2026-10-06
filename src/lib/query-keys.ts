@@ -42,5 +42,8 @@ export const qk = {
   // entity keys — detail reads, never list prefixes
   assessmentQuestions: (id: number) => [`/api/admin/assessments/${id}/questions`],
   course: (id: number) => ["course", id],
+  groupMembers: (groupId: number) => ["group-members", groupId],
   pathAssignments: (pathId: number) => ["path-assignments", pathId],
+  // semantic non-endpoint keys that are invalidation targets
+  mediaQuota: ["media-quota"],
 };
